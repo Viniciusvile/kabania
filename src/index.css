@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-app: #181A20;       /* Very dark background */
+  --bg-sidebar: #13151A;   /* Darker sidebar */
+  --bg-panel: #1F222A;     /* Panels, headers */
+  --bg-card: #252831;      /* Task cards */
+  --bg-card-hover: #2B2F3A;
+  
+  --border-color: #2F333E;
+  --border-light: rgba(255, 255, 255, 0.08);
+  
+  --accent-cyan: #00E5FF;
+  --accent-cyan-dim: rgba(0, 229, 255, 0.15);
+  
+  --text-main: #FFFFFF;
+  --text-muted: #8F95B2;
+  --text-dark: #646A85;
+  
+  --color-green: #22C55E;
+  --color-purple: #A855F7;
+  --color-orange: #F97316;
+  --color-red: #EF4444;
+
+  --font-sans: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  overflow: hidden; /* App is a fixed dashboard */
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dark);
+}
+
+.badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}

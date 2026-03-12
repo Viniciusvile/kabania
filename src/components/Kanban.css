@@ -1,0 +1,238 @@
+/* --- Kanban Board styles --- */
+.kanban-wrapper {
+  margin-top: 1rem;
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.kanban-board {
+  display: flex;
+  gap: 1.5rem;
+  height: 100%;
+  padding-bottom: 1rem;
+  min-width: 1400px; /* Force scroll if needed */
+}
+
+.kanban-column {
+  flex: 1;
+  min-width: 260px;
+  background-color: var(--bg-panel);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  max-height: 100%;
+}
+
+.column-header {
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.column-content {
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+/* Base Card */
+.task-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: all 0.2s;
+  cursor: grab;
+}
+
+.task-card:hover {
+  background-color: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.card-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-assignees {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.avatar-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+
+/* Bottleneck Alert */
+.bottleneck-alert {
+  background: linear-gradient(to bottom right, rgba(239, 68, 68, 0.1), var(--bg-card));
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* AI Highlighted Column */
+.column-highlighted {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 15px rgba(0, 229, 255, 0.1);
+  border: 2px solid var(--accent-cyan);
+  position: relative;
+  transform: translateY(-4px);
+  z-index: 10;
+}
+
+.column-highlighted .column-header {
+  border-bottom-color: rgba(0, 229, 255, 0.2);
+}
+
+/* AI Suggestion Detailed Card */
+.ai-suggestion-card {
+  background-color: #121A2A; /* Dark blue specific to AI card */
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.ai-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.ai-section {
+  margin-bottom: 1.5rem;
+  font-size: 0.8rem;
+}
+
+.ai-section-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.ai-section p {
+  line-height: 1.5;
+}
+
+.btn-ai-action {
+  width: 100%;
+  background-color: var(--accent-cyan);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  margin-top: 1rem;
+}
+
+.btn-ai-action:hover {
+  background-color: #00B8D4;
+}
+
+.card-ghost {
+  display: flex;
+  padding: 1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: transparent;
+  align-items: flex-start;
+}
+
+/* Utilities */
+.text-accent { color: var(--accent-cyan); }
+.text-red-500 { color: var(--color-red); }
+.text-purple-400 { color: #c084fc; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+.font-normal { font-weight: 400; }
+.underline { text-decoration: underline; }
+.cursor-pointer { cursor: pointer; }
+.flex { display: flex; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.pl-4 { padding-left: 1rem; }
+.list-disc { list-style-type: disc; }
+.space-y-1 > * + * { margin-top: 0.25rem; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group:hover .group-hover\:opacity-100 { opacity: 1; }
+
+/* --- Responsiveness: Kanban Board --- */
+@media (max-width: 1024px) {
+  .kanban-column {
+    min-width: 320px; /* Slightly wider cards for better touch on tablets */
+  }
+}
+
+@media (max-width: 768px) {
+  .kanban-board {
+    padding-bottom: 2rem;
+  }
+  
+  .kanban-column {
+    min-width: 280px;
+  }
+  
+  /* Make Remove Button Always Visible on Mobile */
+  .group .opacity-0 {
+    opacity: 1;
+    color: var(--text-muted);
+  }
+  
+  .group .opacity-0:active {
+    color: var(--color-red);
+  }
+  
+  .ai-suggestion-card {
+    padding: 1rem;
+  }
+  
+  .ai-section-title {
+    font-size: 0.65rem;
+  }
+}

@@ -1,0 +1,82 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const API_KEY = 'AIzaSyBzAmPDGbETA0dMk-kEPbE1S68fBpCVgzU';
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+function getAuthorizedTags() {
+  const currentUser = localStorage.getItem('synapseCurrentUser');
+  const storageKey = currentUser ? `synapseKnowledgeState_${currentUser}` : 'synapseKnowledgeState_default';
+  
+  const savedState = localStorage.getItem(storageKey);
+  if (!savedState) return 'NENHUMA TAG AUTORIZADA';
+  
+  try {
+    const items = JSON.parse(savedState);
+    const activeItems = items.filter(i => i.enabled);
+    
+    if (activeItems.length === 0) return 'NENHUMA TAG AUTORIZADA';
+    
+    const allTags = new Set();
+    activeItems.forEach(item => {
+      // Add the title as a tag so the overarching theme is recognized
+      allTags.add(item.title);
+      // Add explicit tags
+      if (item.tags) {
+        item.tags.forEach(t => allTags.add(t));
+      }
+    });
+    
+    let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
+    allTags.forEach(tag => {
+      tagsString += `[TAG: ${tag}]\n`;
+    });
+    
+    return tagsString;
+  } catch (e) {
+    console.error('Failed to parse knowledge state', e);
+    return 'NENHUMA TAG AUTORIZADA';
+  }
+}
+
+export async function processTaskWithAI(taskDescription) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const authorizedTags = getAuthorizedTags();
+    
+    const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
+
+IMPORTANTE: Existe um sistema de TAGS que controla quais assuntos podem ser respondidos.
+
+REGRAS DE FUNCIONAMENTO
+1. A Base de Conhecimento contém apenas TAGS de autorização de tema.
+2. Cada TAG representa um assunto que está autorizado para resposta.
+3. Quando o usuário fizer uma pergunta, você deve:
+   - PASSO 1: Identificar o tema principal da pergunta.
+   - PASSO 2: Verificar se existe uma TAG correspondente ou logicamente relacionada a esse tema na lista de "TAGS AUTORIZADAS DISPONÍVEIS".
+   - PASSO 3:
+     * SE EXISTIR TAG AUTORIZADA: Você pode responder normalmente usando seu conhecimento externo generalizado. Forneça uma resposta completa e clara.
+     * SE NÃO EXISTIR TAG AUTORIZADA: Você NÃO pode responder a pergunta. Responda APENAS e EXATAMENTE com a frase: "Este assunto não está autorizado no sistema."
+4. As TAGS não contêm informação, apenas controle de acesso.
+5. Nunca ignore o sistema de TAGS.
+
+${authorizedTags}
+
+Cartão/Dúvida do Usuário:
+"${taskDescription}"
+
+Resposta da IA:`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error("Erro na API do Gemini:", error);
+    
+    // Check if it is a 429 Rate Limit error
+    if (error.message && error.message.includes("429")) {
+      return "⚠️ Limite de requisições (Quota) atingido. Por favor, aguarde um momento e tente novamente.";
+    }
+    
+    return `Ocorreu um erro: ${error.message || error.toString()}.`;
+  }
+}
