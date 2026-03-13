@@ -2,16 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw } from 'lucide-react';
 import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
+import { supabase } from '../supabaseClient';
 import './CompanyPanel.css';
 
 export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
   const [members, setMembers] = useState([]);
   const [copied, setCopied] = useState(false);
 
-  const loadMembers = () => {
-    if (!currentCompany) return;
-    const users = JSON.parse(localStorage.getItem('synapseUsers') || '[]');
-    setMembers(users.filter(u => u.companyId === currentCompany.id));
+  const loadMembers = async () => {
+    if (!currentCompany?.id) return;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('company_id', currentCompany.id);
+
+    if (!error && data) {
+      // Map back to handle potential camelCase/snake_case differences
+      const mapped = data.map(u => ({
+        ...u,
+        companyId: u.company_id
+      }));
+      setMembers(mapped);
+    } else if (error) {
+      console.error('Error loading members:', error);
+    }
   };
 
   useEffect(() => {
@@ -25,31 +39,42 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleToggleRole = (memberEmail) => {
+  const handleToggleRole = async (memberEmail) => {
     if (memberEmail === currentUser) return;
-    const users = JSON.parse(localStorage.getItem('synapseUsers') || '[]');
-    const updated = users.map(u =>
-      u.email === memberEmail && u.companyId === currentCompany.id
-        ? { ...u, role: u.role === 'admin' ? 'member' : 'admin' }
-        : u
-    );
-    localStorage.setItem('synapseUsers', JSON.stringify(updated));
-    setMembers(updated.filter(u => u.companyId === currentCompany.id));
-    logEvent(currentCompany.id, currentUser, 'MEMBER_ROLE_CHANGE', `Permissões de ${memberEmail} alteradas.`);
+    const member = members.find(m => m.email === memberEmail);
+    if (!member) return;
+
+    const newRole = member.role === 'admin' ? 'member' : 'admin';
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('email', memberEmail);
+
+    if (!error) {
+      setMembers(prev => prev.map(u =>
+        u.email === memberEmail ? { ...u, role: newRole } : u
+      ));
+      logEvent(currentCompany.id, currentUser, 'MEMBER_ROLE_CHANGE', `Permissões de ${memberEmail} alteradas para ${newRole}.`);
+    } else {
+      console.error('Error toggling role:', error);
+    }
   };
 
-  const handleRemoveMember = (memberEmail) => {
+  const handleRemoveMember = async (memberEmail) => {
     if (memberEmail === currentUser) return;
     if (!window.confirm(`Remover ${memberEmail} da empresa?`)) return;
-    const users = JSON.parse(localStorage.getItem('synapseUsers') || '[]');
-    const updated = users.map(u =>
-      u.email === memberEmail && u.companyId === currentCompany.id
-        ? { ...u, companyId: null, role: null }
-        : u
-    );
-    localStorage.setItem('synapseUsers', JSON.stringify(updated));
-    setMembers(updated.filter(u => u.companyId === currentCompany.id));
-    logEvent(currentCompany.id, currentUser, 'MEMBER_REMOVED', `Membro ${memberEmail} removido da empresa.`);
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ company_id: null, role: null })
+      .eq('email', memberEmail);
+
+    if (!error) {
+      setMembers(prev => prev.filter(u => u.email !== memberEmail));
+      logEvent(currentCompany.id, currentUser, 'MEMBER_REMOVED', `Membro ${memberEmail} removido da empresa.`);
+    } else {
+      console.error('Error removing member:', error);
+    }
   };
 
   const sectorInfo = currentCompany ? SECTOR_TEMPLATES[currentCompany.sector] : null;
