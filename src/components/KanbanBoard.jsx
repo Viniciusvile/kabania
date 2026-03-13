@@ -461,8 +461,17 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         if (tasks[ai].columnId !== tasks[oi].columnId) {
           const t = [...tasks];
           const newColId = tasks[oi].columnId;
+          const oldColId = tasks[ai].columnId;
           t[ai] = { ...t[ai], columnId: newColId };
-          if (newColId !== 'ai') { t[ai].aiResponse = null; t[ai].isAiLoading = false; }
+          
+          // Only clear AI response if moving INTO the AI column from somewhere else
+          if (newColId === 'ai' && oldColId !== 'ai') {
+            t[ai].aiResponse = null;
+          } else if (newColId !== 'ai') {
+            // Stop loading state if moving out of AI
+            t[ai].isAiLoading = false;
+          }
+          
           return arrayMove(t, ai, oi);
         }
         return arrayMove(tasks, ai, oi);
@@ -473,10 +482,19 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       if (isOverCol) {
         setTasks(tasks => {
           const ai = tasks.findIndex(t => t.id === active.id);
-          if (tasks[ai].columnId !== over.id) {
+          const oldColId = tasks[ai].columnId;
+          if (oldColId !== over.id) {
             const t = [...tasks];
             t[ai] = { ...t[ai], columnId: over.id };
-            if (over.id !== 'ai') { t[ai].aiResponse = null; t[ai].isAiLoading = false; }
+            
+            // Only clear AI response if moving INTO the AI column from somewhere else
+            if (over.id === 'ai' && oldColId !== 'ai') {
+              t[ai].aiResponse = null;
+            } else if (over.id !== 'ai') {
+              // Stop loading state if moving out of AI
+              t[ai].isAiLoading = false;
+            }
+            
             return t;
           }
           return tasks;
