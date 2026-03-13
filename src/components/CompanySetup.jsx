@@ -68,7 +68,23 @@ export default function CompanySetup({ currentUser, onComplete }) {
     const { error: coError } = await supabase.from('companies').insert([newCompany]);
 
     if (!coError) {
-      // Update user profile
+      // 2. Initialize knowledge base with templates if any
+      if (selectedSector && SECTOR_TEMPLATES[selectedSector]?.tags.length > 0) {
+        const template = SECTOR_TEMPLATES[selectedSector];
+        const initialKB = {
+          id: `kb-init-${Date.now()}`,
+          title: `Base de Autorizações: ${template.label}`,
+          description: `Configuração inicial para o setor de ${template.label}.`,
+          enabled: true,
+          type: 'document',
+          tags: template.tags,
+          company_id: companyId,
+          created_at: new Date().toISOString()
+        };
+        await supabase.from('knowledge_base').insert([initialKB]);
+      }
+
+      // 3. Update user profile
       const { error: profError } = await supabase
         .from('profiles')
         .update({ company_id: companyId, role: 'admin' })

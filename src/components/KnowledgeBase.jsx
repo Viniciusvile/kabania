@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock } from 'lucide-react';
+import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { SECTOR_TEMPLATES } from './CompanySetup';
 import './KnowledgeBase.css';
 
 export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
@@ -90,6 +91,33 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       case 'file': return <BookOpen size={20} color="#4ade80" />;
       default: return <FileText size={20} color="var(--accent-cyan)" />;
     }
+  };
+
+  const handleLoadTemplates = async () => {
+    if (!isAdmin || !currentCompany?.sector || !SECTOR_TEMPLATES[currentCompany.sector]) return;
+    
+    if (!window.confirm(`Deseja carregar as tags sugeridas para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`)) return;
+
+    setLoading(true);
+    const template = SECTOR_TEMPLATES[currentCompany.sector];
+    const newItem = {
+      id: `kb-init-${Date.now()}`,
+      title: `Base de Autorizações: ${template.label}`,
+      description: `Configuração sugerida para o setor de ${template.label}.`,
+      enabled: true,
+      type: 'document',
+      tags: template.tags,
+      company_id: currentCompany.id,
+      created_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('knowledge_base').insert([newItem]);
+    if (!error) {
+      setKnowledgeItems(prev => [newItem, ...prev]);
+    } else {
+      alert('Erro ao carregar templates.');
+    }
+    setLoading(false);
   };
 
   const handleAddNew = async (e) => {
@@ -223,7 +251,16 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         {filteredItems.length === 0 && (
           <div className="kb-empty">
             {knowledgeItems.length === 0
-              ? 'Nenhum tema cadastrado. ' + (isAdmin ? 'Clique em "Conectar Nova Fonte" para começar.' : 'Aguarde o administrador configurar a base.')
+              ? (
+                <div className="flex flex-col items-center gap-4">
+                  <p>Nenhum tema cadastrado. {isAdmin ? 'Clique em "Conectar Nova Fonte" para começar.' : 'Aguarde o administrador configurar a base.'}</p>
+                  {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector]?.tags.length > 0 && (
+                    <button className="kb-btn-template" onClick={handleLoadTemplates}>
+                      <Sparkles size={16} /> Carregar Sugestões do Setor ({SECTOR_TEMPLATES[currentCompany.sector].label})
+                    </button>
+                  )}
+                </div>
+              )
               : 'Nenhum tema encontrado com esse nome.'}
           </div>
         )}
