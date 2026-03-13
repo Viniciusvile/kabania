@@ -5,20 +5,8 @@ import './KnowledgeBase.css';
 export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
   const isAdmin = userRole === 'admin';
 
-  const getStorageKey = () => {
-    // Use company-level storage when a company is available
-    if (currentCompany?.id) {
-      return `synapseKnowledgeState_COMPANY_${currentCompany.id}`;
-    }
-    // Fallback: per-user (legacy)
-    return currentUser ? `synapseKnowledgeState_${currentUser}` : 'synapseKnowledgeState_default';
-  };
-
-  const [knowledgeItems, setKnowledgeItems] = useState(() => {
-    const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [knowledgeItems, setKnowledgeItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -26,27 +14,58 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [newTags, setNewTags] = useState('');
   const [editingItem, setEditingItem] = useState(null);
 
-  // Reload when company/user changes
+  // Fetch from Supabase
   useEffect(() => {
-    const saved = localStorage.getItem(getStorageKey());
-    setKnowledgeItems(saved ? JSON.parse(saved) : []);
-  }, [currentUser, currentCompany]);
+    const fetchKnowledge = async () => {
+      if (!currentCompany?.id) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('knowledge_base')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('created_at', { ascending: false });
 
-  // Persist to localStorage
-  useEffect(() => {
-    localStorage.setItem(getStorageKey(), JSON.stringify(knowledgeItems));
-  }, [knowledgeItems, currentUser, currentCompany]);
+      if (!error && data) {
+        setKnowledgeItems(data);
+      } else if (error) {
+        console.error('Error fetching knowledge:', error);
+      }
+      setLoading(false);
+    };
 
-  const toggleItem = (id) => {
+    fetchKnowledge();
+  }, [currentCompany]);
+
+  const toggleItem = async (id) => {
     if (!isAdmin) return;
-    setKnowledgeItems(prev => prev.map(item =>
-      item.id === id ? { ...item, enabled: !item.enabled } : item
-    ));
+    const item = knowledgeItems.find(it => it.id === id);
+    if (!item) return;
+
+    const { error } = await supabase
+      .from('knowledge_base')
+      .update({ enabled: !item.enabled })
+      .eq('id', id);
+
+    if (!error) {
+      setKnowledgeItems(prev => prev.map(it =>
+        it.id === id ? { ...it, enabled: !item.enabled } : it
+      ));
+    }
   };
 
-  const deleteItem = (id) => {
+  const deleteItem = async (id) => {
     if (!isAdmin) return;
-    setKnowledgeItems(prev => prev.filter(item => item.id !== id));
+    const { error } = await supabase
+      .from('knowledge_base')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setKnowledgeItems(prev => prev.filter(item => item.id !== id));
+    }
   };
 
   const handleEdit = (item) => {
@@ -58,32 +77,29 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setIsModalOpen(true);
   };
 
-  const filteredItems = knowledgeItems.filter(item =>
-    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const getIconForType = (type) => {
-    switch (type) {
-      case 'database': return <Database size={20} color="var(--accent-cyan)" />;
-      case 'document': return <FileText size={20} color="#60a5fa" />;
-      case 'file': return <BookOpen size={20} color="#4ade80" />;
-      default: return <FileText size={20} color="var(--accent-cyan)" />;
-    }
-  };
-
-  const handleAddNew = (e) => {
+  const handleAddNew = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newDesc.trim()) return;
 
     const parsedTags = newTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
 
     if (editingItem) {
-      setKnowledgeItems(prev => prev.map(item =>
-        item.id === editingItem.id
-          ? { ...item, title: newTitle.trim(), description: newDesc.trim(), tags: parsedTags.length > 0 ? parsedTags : item.tags }
-          : item
-      ));
+      const payload = {
+        title: newTitle.trim(),
+        description: newDesc.trim(),
+        tags: parsedTags.length > 0 ? parsedTags : editingItem.tags
+      };
+
+      const { error } = await supabase
+        .from('knowledge_base')
+        .update(payload)
+        .eq('id', editingItem.id);
+
+      if (!error) {
+        setKnowledgeItems(prev => prev.map(item =>
+          item.id === editingItem.id ? { ...item, ...payload } : item
+        ));
+      }
     } else {
       const newItem = {
         id: `kb-${Date.now()}`,
@@ -91,9 +107,17 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         description: newDesc.trim(),
         enabled: true,
         type: 'document',
-        tags: parsedTags.length > 0 ? parsedTags : ['Adicionado Manualmente']
+        tags: parsedTags.length > 0 ? parsedTags : ['Adicionado Manualmente'],
+        company_id: currentCompany?.id
       };
-      setKnowledgeItems(prev => [newItem, ...prev]);
+
+      const { error } = await supabase
+        .from('knowledge_base')
+        .insert([newItem]);
+
+      if (!error) {
+        setKnowledgeItems(prev => [newItem, ...prev]);
+      }
     }
 
     setNewTitle('');

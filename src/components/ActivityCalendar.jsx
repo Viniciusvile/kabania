@@ -213,17 +213,41 @@ function DayView({ date, activities, onEventClick }) {
 }
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
-export default function ActivityCalendar({ currentUser }) {
+export default function ActivityCalendar({ currentUser, currentCompany }) {
   const [view, setView]       = useState('month'); // 'month' | 'week' | 'day'
   const [cursor, setCursor]   = useState(new Date());
   const [selected, setSelected] = useState(null); // activity detail popover
-  const [activities, setActivities] = useState(getActivities);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const refresh = () => setActivities(getActivities());
+  const fetchActivities = async () => {
+    if (!currentCompany?.id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('company_id', currentCompany.id);
 
-  const userActivities = useMemo(() => {
-    return activities.filter(a => a.createdBy === currentUser);
-  }, [activities, currentUser]);
+    if (!error && data) {
+      // Map keys if necessary to match the UI expectations (though here they seem OK)
+      setActivities(data);
+    } else if (error) {
+      console.error('Error fetching calendar activities:', error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchActivities();
+  }, [currentCompany]);
+
+  const refresh = fetchActivities;
+
+  // Show all activities for the company as per team requirements
+  const companyActivities = activities;
 
   const label = useMemo(() => {
     if (view === 'month') return `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
@@ -288,15 +312,15 @@ export default function ActivityCalendar({ currentUser }) {
           <MonthView
             year={cursor.getFullYear()}
             month={cursor.getMonth()}
-            activities={userActivities}
+            activities={companyActivities}
             onEventClick={setSelected}
           />
         )}
         {view === 'week' && (
-          <WeekView date={cursor} activities={userActivities} onEventClick={setSelected} />
+          <WeekView date={cursor} activities={companyActivities} onEventClick={setSelected} />
         )}
         {view === 'day' && (
-          <DayView date={cursor} activities={userActivities} onEventClick={setSelected} />
+          <DayView date={cursor} activities={companyActivities} onEventClick={setSelected} />
         )}
       </div>
 

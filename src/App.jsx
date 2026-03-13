@@ -135,14 +135,7 @@ function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  // Helper: get tasks for current user (for Reports Dashboard)
-  const getTasks = () => {
-    try {
-      return JSON.parse(localStorage.getItem(`synapseTasks_${currentUser}`) || '[]');
-    } catch {
-      return [];
-    }
-  };
+
 
   // Persist local auth only for "session" persistence
   useEffect(() => {
@@ -265,7 +258,7 @@ function App() {
           ) : currentView === 'activities' ? (
             <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
           ) : currentView === 'calendar' ? (
-            <ActivityCalendar currentUser={currentUser} />
+            <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
           ) : currentView === 'company' ? (
             <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
           ) : currentView === 'reports' ? (
