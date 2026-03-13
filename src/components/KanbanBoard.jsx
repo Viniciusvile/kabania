@@ -247,6 +247,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         // Map back consistent with UI (snake_case to camelCase)
         const mapped = data.map(t => ({
           ...t,
+          desc: t.description,
           projectId: t.project_id,
           companyId: t.company_id,
           columnId: t.column_id,
@@ -382,7 +383,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     const payload = {
       title: updatedTask.title,
       description: updatedTask.desc,
-      status: updatedTask.status,
+      column_id: updatedTask.columnId,
       deadline: updatedTask.deadline,
       assignees: updatedTask.assignees,
       comments: updatedTask.comments,
