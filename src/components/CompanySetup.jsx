@@ -80,26 +80,25 @@ export default function CompanySetup({ currentUser, onComplete }) {
         ];
 
         // Prepare items (Global + Sector Specific tags as separate subjects)
+        const timestamp = Date.now();
         const itemsToInsert = [
-          ...globalDefaults.map(d => ({
-            id: `kb-def-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          ...globalDefaults.map((d, i) => ({
+            id: `kb-def-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
             company_id: companyId,
             title: d.title,
             description: d.desc,
             enabled: true,
             type: d.type,
-            tags: [d.tag],
-            created_at: new Date().toISOString()
+            tags: [d.tag]
           })),
           ...template.tags.map((tag, idx) => ({
-            id: `kb-sec-${Date.now()}-${idx}`,
+            id: `kb-sec-${timestamp}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
             company_id: companyId,
             title: tag,
             description: `Assunto autorizado: ${tag} (${template.label})`,
             enabled: true,
             type: 'document',
-            tags: [tag],
-            created_at: new Date().toISOString()
+            tags: [tag]
           }))
         ];
 

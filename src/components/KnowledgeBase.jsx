@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
+import { logEvent } from '../services/historyService';
 import './KnowledgeBase.css';
 
 export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
@@ -110,40 +111,40 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       ];
 
       // 2. Prepare all items (Global + Sector Specific tags as separate subjects)
+      const timestamp = Date.now();
       const itemsToInsert = [
-        ...globalDefaults.map(d => ({
-          id: `kb-def-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        ...globalDefaults.map((d, i) => ({
+          id: `kb-def-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
           company_id: currentCompany.id,
           title: d.title,
           description: d.desc,
           enabled: true,
           type: d.type,
-          tags: [d.tag],
-          created_at: new Date().toISOString()
+          tags: [d.tag]
         })),
         ...template.tags.map((tag, idx) => ({
-          id: `kb-sec-${Date.now()}-${idx}`,
+          id: `kb-sec-${timestamp}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
           company_id: currentCompany.id,
           title: tag,
           description: `Assunto autorizado: ${tag} (${template.label})`,
           enabled: true,
           type: 'document',
-          tags: [tag],
-          created_at: new Date().toISOString()
+          tags: [tag]
         }))
       ];
 
-      const { error } = await supabase.from('knowledge_base').insert(itemsToInsert);
+      const { data, error } = await supabase.from('knowledge_base').insert(itemsToInsert).select();
       
       if (!error) {
-        setKnowledgeItems(prev => [...itemsToInsert, ...prev]);
+        setKnowledgeItems(prev => [...(data || itemsToInsert), ...prev]);
         logEvent(currentCompany.id, currentUser, 'LOAD_KB_TEMPLATES', `Carregada lista presetada de ${itemsToInsert.length} temas para o setor ${template.label}.`);
       } else {
-        console.error('Error inserting templates:', error);
-        alert('Erro ao carregar templates.');
+        console.error('Supabase error detail:', error);
+        alert(`Erro ao salvar no banco: ${error.message || 'Verifique sua conexão ou permissões.'}`);
       }
     } catch (err) {
-      console.error('Error in handleLoadTemplates:', err);
+      console.error('Crash in handleLoadTemplates:', err);
+      alert('Ocorreu um erro inesperado ao processar os temas.');
     } finally {
       setLoading(false);
     }
