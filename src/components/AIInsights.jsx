@@ -42,18 +42,20 @@ export default function AIInsights({ currentUser, currentCompany }) {
     const kanbanData = getKanbanData();
     const activitiesData = getActivitiesData();
 
+    const coName = currentCompany?.name || 'Empresa';
+    
     switch(type) {
       case 'productivity':
-        res = await analyzeProductivity({ kanban: kanbanData, activities: activitiesData });
+        res = await analyzeProductivity({ kanban: kanbanData, activities: activitiesData }, coName);
         break;
       case 'summary':
-        res = await generateWeeklySummary(activitiesData);
+        res = await generateWeeklySummary(activitiesData, coName);
         break;
       case 'priority':
-        res = await suggestPrioritization(kanbanData);
+        res = await suggestPrioritization(kanbanData, coName);
         break;
       case 'bottlenecks':
-        res = await detectBottlenecks(kanbanData);
+        res = await detectBottlenecks(kanbanData, coName);
         break;
       default: break;
     }

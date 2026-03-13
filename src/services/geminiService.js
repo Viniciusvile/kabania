@@ -84,13 +84,19 @@ Resposta curta:`;
   }
 }
 
-export async function analyzeProductivity(data) {
+export async function analyzeProductivity(data, companyName = "Empresa") {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `Você é um analista de produtividade especialista em Kanban. 
-    Analise os seguintes dados e sugira 3 melhorias de processo:
+    const prompt = `Você é um consultor executivo de performance para a empresa ${companyName}.
+    Analise estes dados de produtividade (Kanban e Atividades):
     ${JSON.stringify(data)}
-    Responda em português, de forma executiva e profissional.`;
+    
+    REGRAS:
+    1. Seja extremamente conciso.
+    2. Liste 3-4 pontos acionáveis em forma de tópicos curtos.
+    3. Use um tom executivo e personalizado para a ${companyName}.
+    4. Não use introduções longas.`;
+    
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
@@ -98,12 +104,17 @@ export async function analyzeProductivity(data) {
   }
 }
 
-export async function generateWeeklySummary(data) {
+export async function generateWeeklySummary(data, companyName = "Empresa") {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `Gere um resumo semanal das atividades desta empresa para um relatório de diretoria:
+    const prompt = `Gere um Resumo Executivo Semanal personalizado para ${companyName} baseado nestas atividades:
     ${JSON.stringify(data)}
-    Destaque as conclusões e pontos de atenção. Responda em português.`;
+    
+    FORMATO:
+    - Um parágrafo curto de 3 linhas com o status geral.
+    - 3 destaques principais em tópicos.
+    - Tom profissional e direto.`;
+    
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
@@ -111,12 +122,14 @@ export async function generateWeeklySummary(data) {
   }
 }
 
-export async function suggestPrioritization(tasks) {
+export async function suggestPrioritization(tasks, companyName = "Empresa") {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `Com base nestas tarefas do usuário, qual deve ser a prioridade #1 para hoje e por quê?
-    ${JSON.stringify(tasks)}
-    Considere prazos e importância. Responda de forma curta e motivadora em português.`;
+    const prompt = `Como consultor da ${companyName}, qual deve ser a prioridade #1 deste usuário hoje?
+    Dados: ${JSON.stringify(tasks)}
+    
+    REPOSTA: Máximo 3 sentenças curtas e motivadoras, focadas no impacto para a ${companyName}.`;
+    
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
@@ -124,12 +137,14 @@ export async function suggestPrioritization(tasks) {
   }
 }
 
-export async function detectBottlenecks(kanbanData) {
+export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `Identifique potenciais gargalos neste quadro Kanban (tarefas paradas há muito tempo ou excesso em uma coluna):
+    const prompt = `Identifique 2 gargalos críticos no Kanban da ${companyName} e sugira a solução imediata:
     ${JSON.stringify(kanbanData)}
-    Responda em português com sugestões de ação.`;
+    
+    Responda em no máximo 50 palavras no total, direto ao ponto.`;
+    
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
