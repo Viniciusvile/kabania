@@ -1,0 +1,347 @@
+.business-mgmt {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bm-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: var(--bg-panel);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  transition: var(--transition-theme);
+}
+
+.bm-header-info h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.bm-header-info p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.bm-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.bm-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.bm-tab:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.bm-tab.active {
+  background-color: var(--accent-cyan);
+  color: white;
+}
+
+.bm-content {
+  flex: 1;
+}
+
+/* History Styles */
+.bm-history-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bm-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bm-filters button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-panel);
+  color: var(--text-muted);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bm-filters button.active {
+  background-color: var(--accent-cyan);
+  color: white;
+  border-color: var(--accent-cyan);
+}
+
+.bm-timeline {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: var(--transition-theme);
+}
+
+.bm-timeline-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bm-timeline-item:last-child {
+  border-bottom: none;
+}
+
+.bm-timeline-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-card-hover);
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+}
+
+.bm-timeline-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bm-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bm-event-user {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bm-event-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.bm-event-details {
+  font-size: 0.95rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.bm-event-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  background-color: var(--bg-card-hover);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* Export Styles */
+.bm-export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.bm-export-card {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  transition: transform 0.2s ease, var(--transition-theme);
+}
+
+.bm-export-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-cyan);
+}
+
+.bm-export-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.bm-export-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.bm-export-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.bm-export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.bm-btn-export {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.bm-btn-export.prim {
+  background-color: var(--accent-cyan);
+  color: white;
+}
+
+.bm-btn-export.prim:hover {
+  background-color: #0044aa;
+}
+
+.bm-btn-export.sec {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+.bm-btn-export.sec:hover {
+  background-color: var(--border-color);
+}
+
+.bm-empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Soft colors for icons */
+.bg-cyan-soft { background-color: rgba(0, 82, 204, 0.1); color: var(--accent-cyan); }
+.bg-purple-soft { background-color: rgba(167, 139, 250, 0.1); color: #8b5cf6; }
+
+/* Print Styles */
+@media print {
+  .sidebar, .topbar, .bm-header, .bm-filters, .bm-tabs, .bm-export-actions, .bm-export-card, .btn-details, .btn-delete-activity, .pagination-footer, .activity-header, .activity-search-bar {
+    display: none !important;
+  }
+  
+  .app-container {
+    display: block !important;
+  }
+  
+  .main-content, .content-scroll {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .business-mgmt {
+    background: white !important;
+    color: black !important;
+  }
+
+  .printable-report {
+    display: block !important;
+  }
+}
+
+.printable-report {
+  display: none;
+  background-color: white;
+  color: black;
+  padding: 2rem;
+}
+
+.print-header {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+}
+
+.print-header h1 {
+  font-size: 24pt;
+  margin: 0;
+}
+
+.print-header p {
+  color: #666;
+  font-style: italic;
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+.print-table th, .print-table td {
+  border: 1px solid #ddd;
+  padding: 10pt;
+  text-align: left;
+}
+
+.print-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.print-footer {
+  margin-top: 3rem;
+  border-top: 1px solid #ddd;
+  padding-top: 1rem;
+  text-align: right;
+  font-size: 9pt;
+  color: #999;
+}

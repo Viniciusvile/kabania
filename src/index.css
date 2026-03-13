@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-app: #181A20;       /* Very dark background */
-  --bg-sidebar: #13151A;   /* Darker sidebar */
-  --bg-panel: #1F222A;     /* Panels, headers */
-  --bg-card: #252831;      /* Task cards */
+  /* Default Theme (Dark) */
+  --bg-app: #181A20;
+  --bg-sidebar: #13151A;
+  --bg-panel: #1F222A;
+  --bg-card: #252831;
   --bg-card-hover: #2B2F3A;
   
   --border-color: #2F333E;
@@ -23,6 +24,27 @@
   --color-red: #EF4444;
 
   --font-sans: 'Inter', sans-serif;
+  --transition-theme: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme='light'] {
+  --bg-app: #FBF9F1;      /* Tom amarelado/off-white suave */
+  --bg-sidebar: #FFFFFF;
+  --bg-panel: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FDFCF7;
+  
+  --border-color: #E8E5D5; /* Borda levemente aquecida */
+  --border-light: rgba(0, 0, 0, 0.05);
+  
+  --accent-cyan: #0052CC; /* Adjusting for light background */
+  --accent-cyan-dim: rgba(0, 82, 204, 0.1);
+  
+  --text-main: #1E293B;
+  --text-muted: #64748B;
+  --text-dark: #94A3B8;
+
+  /* Colors remain similar but can be adjusted if needed */
 }
 
 * {
@@ -36,6 +58,7 @@ body {
   color: var(--text-main);
   font-family: var(--font-sans);
   overflow: hidden; /* App is a fixed dashboard */
+  transition: var(--transition-theme);
 }
 
 /* Scrollbar styling */

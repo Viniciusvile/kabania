@@ -205,7 +205,7 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 }
 
 // ---- Main Board ----
-export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null }) {
+export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null }) {
   const storageKey = `synapseTasks_${currentUser}`;
 
   const [tasks, setTasks] = useState(() => {
@@ -291,7 +291,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       deadline: formDeadline || null,
       assignees: formAssignees,
       comments: [],
-      createdBy: currentUser
+      createdBy: currentUser,
+      projectId: projectId
     };
     setTasks(prev => [...prev, newTask]);
     if (formAssignees.length > 0) notifyAssignment(newTask, formAssignees, currentUser);
@@ -433,6 +434,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           {COLUMNS.map(col => {
             const colTasks = tasks.filter(t => {
               if (t.columnId !== col.id) return false;
+              // Strict Project filtering
+              if (projectId && t.projectId !== projectId) return false;
               if (!searchQuery) return true;
               const q = searchQuery.toLowerCase();
               return t.title.toLowerCase().includes(q) || (t.desc?.toLowerCase().includes(q));

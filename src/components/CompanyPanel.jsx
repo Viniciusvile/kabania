@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw } from 'lucide-react';
+import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import './CompanyPanel.css';
 
@@ -34,6 +35,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     );
     localStorage.setItem('synapseUsers', JSON.stringify(updated));
     setMembers(updated.filter(u => u.companyId === currentCompany.id));
+    logEvent(currentCompany.id, currentUser, 'MEMBER_ROLE_CHANGE', `Permissões de ${memberEmail} alteradas.`);
   };
 
   const handleRemoveMember = (memberEmail) => {
@@ -47,6 +49,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     );
     localStorage.setItem('synapseUsers', JSON.stringify(updated));
     setMembers(updated.filter(u => u.companyId === currentCompany.id));
+    logEvent(currentCompany.id, currentUser, 'MEMBER_REMOVED', `Membro ${memberEmail} removido da empresa.`);
   };
 
   const sectorInfo = currentCompany ? SECTOR_TEMPLATES[currentCompany.sector] : null;

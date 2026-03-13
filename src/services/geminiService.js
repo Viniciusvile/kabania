@@ -98,3 +98,56 @@ Resposta da IA:`;
     return `Ocorreu um erro: ${error.message || error.toString()}.`;
   }
 }
+
+export async function analyzeProductivity(data) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Você é um analista de produtividade especialista em Kanban. 
+    Analise os seguintes dados e sugira 3 melhorias de processo:
+    ${JSON.stringify(data)}
+    Responda em português, de forma executiva e profissional.`;
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na análise: ${error.message}`;
+  }
+}
+
+export async function generateWeeklySummary(data) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Gere um resumo semanal das atividades desta empresa para um relatório de diretoria:
+    ${JSON.stringify(data)}
+    Destaque as conclusões e pontos de atenção. Responda em português.`;
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro no resumo: ${error.message}`;
+  }
+}
+
+export async function suggestPrioritization(tasks) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Com base nestas tarefas do usuário, qual deve ser a prioridade #1 para hoje e por quê?
+    ${JSON.stringify(tasks)}
+    Considere prazos e importância. Responda de forma curta e motivadora em português.`;
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na priorização: ${error.message}`;
+  }
+}
+
+export async function detectBottlenecks(kanbanData) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Identifique potenciais gargalos neste quadro Kanban (tarefas paradas há muito tempo ou excesso em uma coluna):
+    ${JSON.stringify(kanbanData)}
+    Responda em português com sugestões de ação.`;
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na detecção: ${error.message}`;
+  }
+}

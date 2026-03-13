@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Star, RotateCcw, Filter, LayoutGrid, MoreHorizontal, Plus, Search, Trash2, Eye, Edit2, Copy, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import NewActivityModal from './NewActivityModal';
 import ActivityDetailModal from './ActivityDetailModal';
+import { logEvent } from '../services/historyService';
 import './ActivityList.css';
 
 const STORAGE_KEY = 'synapseActivities_v2';
@@ -104,7 +105,7 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
   );
 }
 
-export default function ActivityList({ currentUser }) {
+export default function ActivityList({ currentUser, currentCompany }) {
   const [activities, setActivities] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -132,22 +133,37 @@ export default function ActivityList({ currentUser }) {
   const nowStr = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
   const handleSave = (newActivity) => {
-    const activityWithUser = { ...newActivity, createdBy: currentUser };
+    const activityWithUser = { 
+      ...newActivity, 
+      createdBy: currentUser,
+      companyId: currentCompany?.id 
+    };
     const updated = [activityWithUser, ...activities];
     setActivities(updated);
     setCurrentPage(1);
+
+    if (currentCompany) {
+      logEvent(currentCompany.id, currentUser, 'CREATE_ACTIVITY', `Nova solicitação criada: ${newActivity.id} para ${newActivity.location}`);
+    }
   };
 
   const handleUpdate = (updatedActivity) => {
     setActivities(prev => prev.map(a =>
       a.id === updatedActivity.id ? { ...updatedActivity, updated: nowStr() } : a
     ));
+    if (currentCompany) {
+      logEvent(currentCompany.id, currentUser, 'UPDATE_ACTIVITY', `Solicitação ${updatedActivity.id} atualizada.`);
+    }
   };
 
   const confirmDelete = (id) => {
+    const act = activities.find(a => a.id === id);
     setActivities(prev => prev.filter(a => a.id !== id));
     setPendingDeleteId(null);
     setDetailActivity(null);
+    if (currentCompany && act) {
+      logEvent(currentCompany.id, currentUser, 'DELETE_ACTIVITY', `Solicitação ${id} (${act.location}) excluída.`);
+    }
   };
 
   const handleDuplicate = (activity) => {

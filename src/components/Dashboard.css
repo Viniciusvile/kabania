@@ -1,5 +1,5 @@
 .sidebar {
-  width: 260px;
+  width: 280px;
   background-color: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -13,6 +13,14 @@
 .sidebar.collapsed {
   width: 80px;
   padding: 1.5rem 0.75rem;
+  align-items: center;
+}
+
+.sidebar.collapsed .nav-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .sidebar-brand {
@@ -94,25 +102,56 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding-left: 3rem;
+  padding-left: 3.25rem;
   margin-top: -0.25rem;
   margin-bottom: 0.5rem;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.nav-group.expanded .nav-submenu {
+  max-height: 200px;
+  opacity: 1;
+  pointer-events: all;
+  margin-bottom: 1rem;
 }
 
 .submenu-item {
   color: var(--text-muted);
   font-size: 0.85rem;
-  padding: 0.4rem 0;
+  padding: 0.5rem 0;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.submenu-item::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  opacity: 0.5;
 }
 
 .submenu-item:hover {
   color: var(--text-main);
+  padding-left: 0.25rem;
+}
+
+.submenu-item.active {
+  color: var(--accent-cyan);
+  font-weight: 600;
 }
 
 .sidebar.collapsed .nav-submenu {
-  display: none;
+  display: none !important;
 }
 
 .sidebar-footer {
@@ -130,6 +169,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 1.5rem;
+  transition: var(--transition-theme);
 }
 
 .topbar-left {
@@ -582,4 +622,65 @@
   height: 1px;
   background-color: var(--border-color);
   margin: 0.25rem 0;
+}
+
+.project-create-inline {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 0 8px 8px;
+}
+
+.project-create-inline input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.project-create-inline input:focus {
+  border-color: var(--accent-cyan);
+}
+
+.project-create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.project-create-actions button {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 0.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.project-create-actions .btn-save {
+  color: var(--accent-cyan);
+  background: rgba(0, 229, 255, 0.1);
+}
+
+.project-create-actions .btn-save:hover {
+  background: var(--accent-cyan);
+  color: #000;
+}
+
+.project-create-actions .btn-cancel {
+  color: var(--text-muted);
+}
+
+.project-create-actions .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main);
 }

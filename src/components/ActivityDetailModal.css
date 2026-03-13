@@ -2,26 +2,26 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 800;
-  padding: 1.5rem;
+  z-index: 2000;
+  padding: 2vh 2vw;
+  backdrop-filter: blur(8px);
 }
 
 .detail-modal {
   background: white;
-  width: 700px;
-  max-width: calc(100vw - 3rem);
-  /* Never taller than viewport: header+footer always visible, body scrolls */
-  height: auto;
-  max-height: calc(100dvh - 3rem);
-  border-radius: 8px;
+  width: 60vw; /* Consistente com a redução global de 15% */
+  max-width: 900px;
+  height: 77vh;
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  margin: auto;
 }
 
 .detail-header {
@@ -31,6 +31,7 @@
   padding: 1rem 1.5rem;
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
+  flex-shrink: 0; /* Impede o cabeçalho de achatar */
 }
 
 .detail-header-left {
@@ -193,6 +194,7 @@
   padding: 1rem 1.5rem;
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
+  flex-shrink: 0; /* Impede o rodapé de sumir */
 }
 
 /* Context menu */

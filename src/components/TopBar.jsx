@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu, Search, Bell, ChevronDown, Check, User, Settings,
   LogOut, FileText, Crown, Shield, BellRing, CheckCheck,
-  AlertTriangle, ArrowRight, MessageSquare, Calendar
+  AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X
 } from 'lucide-react';
 import {
   getNotifications, markAllRead, getUnreadCount, formatNotifTime
@@ -16,11 +16,42 @@ const NOTIF_ICONS = {
   comment:    <MessageSquare size={14} style={{ color: '#34d399' }} />
 };
 
-export default function TopBar({ onToggleSidebar, searchQuery, onSearchChange, currentUser, currentCompany, userRole, onLogout }) {
+export default function TopBar({ 
+  onToggleSidebar, searchQuery, onSearchChange, 
+  currentUser, currentCompany, userRole, onLogout, 
+  theme, onToggleTheme,
+  projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject
+}) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
   const topbarRef = useRef(null);
+
+  const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];
+
+  const handleCreateProject = (e) => {
+    e.stopPropagation();
+    setIsCreatingProject(true);
+    setNewProjectName('');
+  };
+
+  const submitNewProject = (e) => {
+    e?.stopPropagation();
+    if (newProjectName.trim()) {
+      onAddProject(newProjectName.trim());
+      setIsCreatingProject(false);
+      setNewProjectName('');
+      setActiveDropdown(null);
+    }
+  };
+
+  const cancelCreateProject = (e) => {
+    e.stopPropagation();
+    setIsCreatingProject(false);
+    setNewProjectName('');
+  };
 
   const loadNotifications = () => {
     if (currentUser) {
@@ -75,17 +106,73 @@ export default function TopBar({ onToggleSidebar, searchQuery, onSearchChange, c
         </div>
 
         <div className="project-selector" onClick={() => toggleDropdown('project')}>
-          <span>Projeto 1</span>
+          <span>{selectedProject?.name || 'Selecionar Projeto'}</span>
           <ChevronDown size={14} className={`dropdown-arrow ${activeDropdown === 'project' ? 'open' : ''}`} />
           {activeDropdown === 'project' && (
             <div className="dropdown-menu project-menu">
-              <div className="dropdown-item active"><Check size={16} className="text-accent" /><span>Projeto 1</span></div>
-              <div className="dropdown-item"><span className="w-4"></span><span>Campanha de Marketing</span></div>
-              <div className="dropdown-item"><span className="w-4"></span><span>Entregáveis T3</span></div>
+              {projects.map(proj => (
+                <div 
+                  key={proj.id} 
+                  className={`dropdown-item group ${selectedProjectId === proj.id ? 'active' : ''}`}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onProjectChange(proj.id); 
+                    setActiveDropdown(null); 
+                  }}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {selectedProjectId === proj.id ? <Check size={16} className="text-accent" /> : <span className="w-4"></span>}
+                    <span>{proj.name}</span>
+                  </div>
+                  {projects.length > 1 && (
+                    <Trash2 
+                      size={14} 
+                      className="opacity-0 group-hover:opacity-100 text-muted hover:text-red-500 transition-all p-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveProject(proj.id);
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
               <div className="dropdown-divider"></div>
-              <div className="dropdown-item text-muted"><Menu size={16} /><span>Gerenciar Projetos</span></div>
+              
+              {isCreatingProject ? (
+                <div className="project-create-inline" onClick={e => e.stopPropagation()}>
+                  <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="Nome do projeto..."
+                    value={newProjectName}
+                    onChange={e => setNewProjectName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') submitNewProject();
+                      if (e.key === 'Escape') cancelCreateProject(e);
+                    }}
+                  />
+                  <div className="project-create-actions">
+                    <button className="btn-save" onClick={submitNewProject} title="Confirmar">
+                      <Check size={14} />
+                    </button>
+                    <button className="btn-cancel" onClick={cancelCreateProject} title="Cancelar">
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="dropdown-item text-muted" onClick={handleCreateProject}>
+                  <Plus size={16} />
+                  <span>Gerenciar Projetos (Novo)</span>
+                </div>
+              )}
             </div>
           )}
+        </div>
+
+        {/* Theme Toggle */}
+        <div className="topbar-icon theme-toggle" onClick={onToggleTheme} title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}>
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </div>
 
         {/* Notifications Bell */}

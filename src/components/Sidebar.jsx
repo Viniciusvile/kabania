@@ -1,8 +1,16 @@
 import React from 'react';
-import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown } from 'lucide-react';
+import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChange, userRole }) {
+  const [expandedGroups, setExpandedGroups] = React.useState({
+    activities: true, // Default open
+    reports: false
+  });
+
+  const toggleGroup = (group) => {
+    setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
+  };
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-brand">
@@ -19,10 +27,13 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
           <span>Projetos</span>
         </div>
 
-        <div className="nav-group">
-          <div className="nav-item">
+        <div className={`nav-group ${expandedGroups.activities ? 'expanded' : ''}`}>
+          <div className="nav-item" onClick={() => toggleGroup('activities')}>
             <ClipboardList size={20} />
             <span>Atividades</span>
+            {!isCollapsed && (
+              <ChevronDown size={14} className={`ml-auto transition-transform ${expandedGroups.activities ? 'rotate-180' : ''}`} />
+            )}
           </div>
           <div className="nav-submenu">
             <div
@@ -37,16 +48,40 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
           </div>
         </div>
 
-        {/* Reports Dashboard — visible to all */}
-        <div
-          className={`nav-item ${currentView === 'reports' ? 'active' : ''}`}
-          onClick={() => onViewChange('reports')}
-        >
-          <BarChart2 size={20} />
-          <span>Relatórios</span>
+        {/* Reports Group */}
+        <div className={`nav-group ${expandedGroups.reports ? 'expanded' : ''}`}>
+          <div className="nav-item" onClick={() => toggleGroup('reports')}>
+            <BarChart2 size={20} />
+            <span>Relatórios</span>
+            {!isCollapsed && (
+              <ChevronDown size={14} className={`ml-auto transition-transform ${expandedGroups.reports ? 'rotate-180' : ''}`} />
+            )}
+          </div>
+          <div className="nav-submenu">
+            <div
+              className={`submenu-item ${currentView === 'reports' ? 'active' : ''}`}
+              onClick={() => onViewChange('reports')}
+            >Dashboard Geral</div>
+            
+            {userRole === 'admin' && (
+              <>
+                <div
+                  className={`submenu-item ${currentView === 'business_history' ? 'active' : ''}`}
+                  onClick={() => onViewChange('business_history')}
+                >Histórico de Atividades</div>
+                <div
+                  className={`submenu-item ${currentView === 'business_export' ? 'active' : ''}`}
+                  onClick={() => onViewChange('business_export')}
+                >Exportar Relatórios</div>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="nav-item">
+        <div
+          className={`nav-item ${currentView === 'ai_insights' ? 'active' : ''}`}
+          onClick={() => onViewChange('ai_insights')}
+        >
           <Lightbulb size={20} />
           <span>Insights de IA</span>
         </div>
@@ -59,15 +94,15 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
           <span>Base de Conhecimento</span>
         </div>
 
-        {/* Admin-only: Company Panel */}
+        {/* Admin Settings */}
         {userRole === 'admin' && (
           <div
             className={`nav-item ${currentView === 'company' ? 'active' : ''}`}
             onClick={() => onViewChange('company')}
           >
             <Building2 size={20} />
-            <span>Minha Empresa</span>
-            <Crown size={12} className="ml-auto text-yellow-400 opacity-70" />
+            <span>Configurações da Empresa</span>
+            {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
           </div>
         )}
       </nav>
