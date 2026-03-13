@@ -52,18 +52,19 @@ REGRAS DE FUNCIONAMENTO
    - PASSO 1: Identificar o tema principal da pergunta.
    - PASSO 2: Verificar se existe uma TAG correspondente ou logicamente relacionada a esse tema na lista de "TAGS AUTORIZADAS DISPONÍVEIS".
    - PASSO 3:
-     * SE EXISTIR TAG AUTORIZADA: Você pode responder normalmente usando seu conhecimento externo generalizado.
-       REQUISITO DE FORMATO: Forneça uma resposta ${isConcise ? 'EXTREMAMENTE CURTA E DIRETA (máximo 2 parágrafos curtos ou 3 bullet points). Seja objetivo e evite introduções longas.' : 'completa e clara.'}
-     * SE NÃO EXISTIR TAG AUTORIZADA: Você NÃO pode responder a pergunta. Responda APENAS e EXATAMENTE com a frase: "Este assunto não está autorizado no sistema."
+     * SE EXISTIR TAG AUTORIZADA: Responda de forma CURTA e DIRETA.
+       REQUISITO DE FORMATO: Forneça uma resposta de no máximo 3 sentenças curtas ou uma lista de tópicos. Seja objetivo.
+     * SE NÃO EXISTIR TAG AUTORIZADA: Responda APENAS: "Este assunto não está autorizado."
 4. As TAGS não contêm informação, apenas controle de acesso.
 5. Nunca ignore o sistema de TAGS.
+6. Vá direto ao ponto, evite introduções longas.
 
 ${authorizedTags}
 
-Cartão/Dúvida do Usuário:
+Mensagem do Usuário:
 "${taskDescription}"
 
-Resposta da IA:`;
+Resposta curta:`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
