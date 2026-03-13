@@ -154,44 +154,63 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
   const handleSave = async (activity) => {
     const newId = String(Math.floor(Math.random() * 90000) + 10000);
-    const newActivity = {
+    const nowIso = new Date().toISOString();
+    
+    // Prepare precisely what Supabase expects (matching the SQL schema)
+    const supabasePayload = {
       id: newId,
-      ...activity,
-      created: nowStr(),
-      updated: nowStr(),
+      location: activity.location || 'Sem cliente',
+      type: activity.type,
+      status: activity.status || 'Pendente',
+      rating: activity.rating || 0,
+      created: nowIso,
+      updated: nowIso,
+      last_appointment: activity.lastAppointment || null,
+      collaborator: activity.collaborator,
+      address: activity.address,
+      description: activity.description,
+      observation: activity.observation,
       company_id: currentCompany?.id,
-      created_by: currentUser,
-      last_appointment: activity.lastAppointment || null
+      created_by: currentUser // email of who created it
     };
 
-    const { error } = await supabase.from('activities').insert([newActivity]);
+    const { error } = await supabase.from('activities').insert([supabasePayload]);
 
     if (!error) {
-      setActivities(prev => [{ ...newActivity, companyId: currentCompany?.id, createdBy: currentUser }, ...prev]);
+      // For local UI state, we can keep camelCase if needed or just use what we have
+      const uiActivity = { 
+        ...supabasePayload, 
+        companyId: currentCompany?.id, 
+        createdBy: currentUser, 
+        lastAppointment: activity.lastAppointment,
+        created: nowStr(), // Human readable for the table UI
+        updated: nowStr()
+      };
+      setActivities(prev => [uiActivity, ...prev]);
       setCurrentPage(1);
       if (currentCompany) {
         logEvent(currentCompany.id, currentUser, 'CREATE_ACTIVITY', `Nova solicitação criada: ${newId} para ${activity.location}`);
       }
     } else {
       console.error('Error saving activity:', error);
-      alert('Erro ao salvar no banco de dados. Verifique se as tabelas foram criadas.');
+      alert(`Erro ao salvar no banco de dados: ${error.message}. Verifique se rodou o SQL do plano de migração.`);
     }
   };
 
   const handleUpdate = async (updatedActivity) => {
-    const now = nowStr();
+    const nowIso = new Date().toISOString();
     // Prepare data for Supabase (matching database schema)
     const payload = {
       location: updatedActivity.location,
       type: updatedActivity.type,
       status: updatedActivity.status,
       rating: updatedActivity.rating,
-      last_appointment: updatedActivity.lastAppointment,
+      last_appointment: updatedActivity.lastAppointment || null,
       collaborator: updatedActivity.collaborator,
       address: updatedActivity.address,
       description: updatedActivity.description,
       observation: updatedActivity.observation,
-      updated: now
+      updated: nowIso
     };
 
     const { error } = await supabase
@@ -201,13 +220,14 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
     if (!error) {
       setActivities(prev => prev.map(a =>
-        a.id === updatedActivity.id ? { ...updatedActivity, updated: now } : a
+        a.id === updatedActivity.id ? { ...updatedActivity, updated: nowStr() } : a
       ));
       if (currentCompany) {
         logEvent(currentCompany.id, currentUser, 'UPDATE_ACTIVITY', `Solicitação ${updatedActivity.id} atualizada.`);
       }
     } else {
       console.error('Error updating activity:', error);
+      alert(`Erro ao atualizar: ${error.message}`);
     }
   };
 
@@ -229,48 +249,67 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
   const handleDuplicate = async (activity) => {
     const newId = String(Math.floor(Math.random() * 90000) + 10000);
-    const dup = {
-      ...activity,
+    const nowIso = new Date().toISOString();
+    
+    const dupPayload = {
       id: newId,
-      created: nowStr(),
-      updated: nowStr(),
+      location: activity.location,
+      type: activity.type,
       status: 'Pendente',
+      rating: 0,
+      created: nowIso,
+      updated: nowIso,
+      last_appointment: activity.lastAppointment || null,
+      collaborator: activity.collaborator,
+      address: activity.address,
+      description: activity.description,
+      observation: activity.observation,
       company_id: currentCompany?.id,
-      created_by: currentUser,
-      last_appointment: activity.lastAppointment
+      created_by: currentUser
     };
 
-    const { error } = await supabase.from('activities').insert([dup]);
+    const { error } = await supabase.from('activities').insert([dupPayload]);
     if (!error) {
-      setActivities(prev => [{ ...dup, companyId: currentCompany?.id, createdBy: currentUser }, ...prev]);
+      const uiDup = {
+        ...dupPayload,
+        companyId: currentCompany?.id,
+        createdBy: currentUser,
+        lastAppointment: activity.lastAppointment,
+        created: nowStr(),
+        updated: nowStr()
+      };
+      setActivities(prev => [uiDup, ...prev]);
       setCurrentPage(1);
+    } else {
+      console.error('Error duplicating activity:', error);
+      alert(`Erro ao duplicar: ${error.message}`);
     }
   };
 
   const handleChangeStatus = async (id, newStatus) => {
-    const now = nowStr();
+    const nowIso = new Date().toISOString();
     const { error } = await supabase
       .from('activities')
-      .update({ status: newStatus, updated: now })
+      .update({ status: newStatus, updated: nowIso })
       .eq('id', id);
 
     if (!error) {
       setActivities(prev => prev.map(a =>
-        a.id === id ? { ...a, status: newStatus, updated: now } : a
+        a.id === id ? { ...a, status: newStatus, updated: nowStr() } : a
       ));
     }
   };
 
   const handleRatingChange = async (activityId, stars) => {
-    const now = nowStr();
+    const nowIso = new Date().toISOString();
     const { error } = await supabase
       .from('activities')
-      .update({ rating: stars, updated: now })
+      .update({ rating: stars, updated: nowIso })
       .eq('id', activityId);
 
     if (!error) {
       setActivities(prev => prev.map(a =>
-        a.id === activityId ? { ...a, rating: stars, updated: now } : a
+        a.id === activityId ? { ...a, rating: stars, updated: nowStr() } : a
       ));
     }
   };
