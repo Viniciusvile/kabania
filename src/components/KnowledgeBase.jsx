@@ -96,28 +96,57 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const handleLoadTemplates = async () => {
     if (!isAdmin || !currentCompany?.sector || !SECTOR_TEMPLATES[currentCompany.sector]) return;
     
-    if (!window.confirm(`Deseja carregar as tags sugeridas para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`)) return;
+    if (!window.confirm(`Deseja carregar a lista presetada de sugestões para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`)) return;
 
     setLoading(true);
-    const template = SECTOR_TEMPLATES[currentCompany.sector];
-    const newItem = {
-      id: `kb-init-${Date.now()}`,
-      title: `Base de Autorizações: ${template.label}`,
-      description: `Configuração sugerida para o setor de ${template.label}.`,
-      enabled: true,
-      type: 'document',
-      tags: template.tags,
-      company_id: currentCompany.id,
-      created_at: new Date().toISOString()
-    };
+    try {
+      const template = SECTOR_TEMPLATES[currentCompany.sector];
+      
+      // 1. Define global defaults
+      const globalDefaults = [
+        { title: 'Histórico da Empresa', desc: 'Dados sobre fundação, valores e cultura corporativa.', type: 'document', tag: 'Histórico' },
+        { title: 'Políticas e Regras', desc: 'Regimento interno, normas de conduta e horários.', type: 'file', tag: 'Regras' },
+        { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
+      ];
 
-    const { error } = await supabase.from('knowledge_base').insert([newItem]);
-    if (!error) {
-      setKnowledgeItems(prev => [newItem, ...prev]);
-    } else {
-      alert('Erro ao carregar templates.');
+      // 2. Prepare all items (Global + Sector Specific tags as separate subjects)
+      const itemsToInsert = [
+        ...globalDefaults.map(d => ({
+          id: `kb-def-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          company_id: currentCompany.id,
+          title: d.title,
+          description: d.desc,
+          enabled: true,
+          type: d.type,
+          tags: [d.tag],
+          created_at: new Date().toISOString()
+        })),
+        ...template.tags.map((tag, idx) => ({
+          id: `kb-sec-${Date.now()}-${idx}`,
+          company_id: currentCompany.id,
+          title: tag,
+          description: `Assunto autorizado: ${tag} (${template.label})`,
+          enabled: true,
+          type: 'document',
+          tags: [tag],
+          created_at: new Date().toISOString()
+        }))
+      ];
+
+      const { error } = await supabase.from('knowledge_base').insert(itemsToInsert);
+      
+      if (!error) {
+        setKnowledgeItems(prev => [...itemsToInsert, ...prev]);
+        logEvent(currentCompany.id, currentUser, 'LOAD_KB_TEMPLATES', `Carregada lista presetada de ${itemsToInsert.length} temas para o setor ${template.label}.`);
+      } else {
+        console.error('Error inserting templates:', error);
+        alert('Erro ao carregar templates.');
+      }
+    } catch (err) {
+      console.error('Error in handleLoadTemplates:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleAddNew = async (e) => {
