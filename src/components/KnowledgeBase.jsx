@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import './KnowledgeBase.css';
 
 export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
