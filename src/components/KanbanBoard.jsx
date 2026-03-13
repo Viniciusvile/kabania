@@ -289,11 +289,25 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   useEffect(() => {
     const unanalyzed = tasks.filter(t => t.columnId === 'ai' && !t.aiResponse && !t.isAiLoading);
     if (unanalyzed.length === 0) return;
-    unanalyzed.forEach(task => {
+    
+    unanalyzed.forEach(async (task) => {
+      // Set loading state locally
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
-      processTaskWithAI(task.desc || task.title, currentCompany?.id, true).then(response => {
-        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
-      });
+      
+      const response = await processTaskWithAI(task.desc || task.title, currentCompany?.id, true);
+      
+      // Update locally
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
+      
+      // Persist to database
+      const { error } = await supabase
+        .from('tasks')
+        .update({ ai_response: response })
+        .eq('id', task.id);
+        
+      if (error) {
+        console.error('Error persisting AI response:', error);
+      }
     });
   }, [tasks]);
 
@@ -486,9 +500,13 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     if (currentTask && newColId && newColId !== dragStartColumn) {
       // Persist column change to Supabase
       const payload = { 
-        column_id: newColId, 
-        ai_response: null 
+        column_id: newColId
       };
+
+      // Only clear AI response if moving INTO the AI column to force a new analysis
+      if (newColId === 'ai') {
+        payload.ai_response = null;
+      }
       
       const { error } = await supabase
         .from('tasks')
