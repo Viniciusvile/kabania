@@ -16,6 +16,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [newDesc, setNewDesc] = useState('');
   const [newTags, setNewTags] = useState('');
   const [editingItem, setEditingItem] = useState(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   // Fetch from Supabase
   useEffect(() => {
@@ -94,11 +95,13 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     }
   };
 
-  const handleLoadTemplates = async () => {
+  const handleLoadTemplates = () => {
     if (!isAdmin || !currentCompany?.sector || !SECTOR_TEMPLATES[currentCompany.sector]) return;
-    
-    if (!window.confirm(`Deseja carregar a lista presetada de sugestões para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`)) return;
+    setIsConfirmOpen(true);
+  };
 
+  const confirmLoadTemplates = async () => {
+    setIsConfirmOpen(false);
     setLoading(true);
     try {
       const template = SECTOR_TEMPLATES[currentCompany.sector];
@@ -365,6 +368,35 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Confirmation Modal for Presets */}
+      {isConfirmOpen && (
+        <div className="kb-modal-overlay" onClick={() => setIsConfirmOpen(false)}>
+          <div className="kb-modal confirm-modal" onClick={e => e.stopPropagation()}>
+            <div className="kb-modal-header">
+              <h2>
+                <Sparkles size={20} color="var(--accent-cyan)" /> Confirmar Restauração
+              </h2>
+              <button className="kb-modal-close" onClick={() => setIsConfirmOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="kb-modal-body py-8 text-center">
+              <p className="text-lg mb-2">Deseja carregar a lista presetada de sugestões?</p>
+              <p className="text-sm text-muted">Ação para o setor: <strong className="text-cyan-400">{SECTOR_TEMPLATES[currentCompany.sector]?.label}</strong></p>
+              <p className="text-xs mt-4 opacity-50 italic">Isso adicionará novos temas de autorização à sua base atual.</p>
+            </div>
+            <div className="kb-modal-footer justify-center gap-4">
+              <button className="kb-btn-cancel px-8" onClick={() => setIsConfirmOpen(false)}>
+                Agora não
+              </button>
+              <button className="kb-btn-submit px-8" onClick={confirmLoadTemplates}>
+                Sim, carregar temas
+              </button>
+            </div>
           </div>
         </div>
       )}

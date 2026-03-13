@@ -449,3 +449,36 @@
   cursor: not-allowed;
   opacity: 0.4;
 }
+
+/* --- Confirm Modal Specifics --- */
+.confirm-modal .kb-modal-body {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.confirm-modal .text-lg {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-modal .text-cyan-400 {
+  color: var(--accent-cyan);
+}
+
+.confirm-modal .opacity-50 {
+  opacity: 0.5;
+}
+
+.confirm-modal .italic {
+  font-style: italic;
+}
+
+.confirm-modal .kb-modal-footer {
+  justify-content: center;
+}
+
+.confirm-modal .px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
