@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, EyeOff, Eye } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { supabase } from '../supabaseClient';
 import './Login.css';
 
 export default function Login({ onLogin }) {
@@ -11,64 +12,63 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const getUsersDB = () => {
-    const users = localStorage.getItem('synapseUsers');
-    return users ? JSON.parse(users) : [];
-  };
-
-  const saveUsersDB = (users) => {
-    localStorage.setItem('synapseUsers', JSON.stringify(users));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
-    
-    // Simulate network delay
-    setTimeout(() => {
-      const users = getUsersDB();
-      
+
+    const performAuth = async () => {
       if (isRegistering) {
-        // Handle Registration
-        if (users.find(u => u.email === email)) {
-          setErrorMsg('Este email já está cadastrado.');
+        const { error } = await supabase.from('profiles').insert([
+          { email, password, role: 'member' }
+        ]);
+        
+        if (error) {
+          setErrorMsg(errorMap[error.code] || 'Erro ao cadastrar: ' + error.message);
           setIsLoading(false);
           return;
         }
-        
-        users.push({ email, password });
-        saveUsersDB(users);
-        onLogin(email); // Auto-login after register
+        onLogin(email);
       } else {
-        // Handle Login
-        const user = users.find(u => u.email === email && u.password === password);
-        if (user) {
-          onLogin(email);
-        } else {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', email)
+          .eq('password', password)
+          .single();
+
+        if (error || !data) {
           setErrorMsg('Email ou senha incorretos.');
+        } else {
+          onLogin(email);
         }
       }
       setIsLoading(false);
-    }, 800);
+    };
+
+    performAuth();
   };
 
-  const handleGoogleSuccess = (credentialResponse) => {
+  const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      // Decode JWT payload from Google's id_token
       const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
       const googleEmail = payload.email;
       const googleName  = payload.name;
 
-      // Save/update user in local DB
-      const users = getUsersDB();
-      if (!users.find(u => u.email === googleEmail)) {
-        users.push({ email: googleEmail, password: 'google-oauth', name: googleName, provider: 'google' });
-        saveUsersDB(users);
+      // Upsert profile
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', googleEmail);
+
+      if (!error && (data.length === 0)) {
+        await supabase.from('profiles').insert([
+          { email: googleEmail, password: 'google-oauth', name: googleName }
+        ]);
       }
       onLogin(googleEmail);
     } catch (err) {
-      setErrorMsg('Falha ao autenticar com o Google. Tente novamente.');
+      setErrorMsg('Falha ao autenticar com o Google.');
     }
   };
 

@@ -4,6 +4,7 @@ import { Star, RotateCcw, Filter, LayoutGrid, MoreHorizontal, Plus, Search, Tras
 import NewActivityModal from './NewActivityModal';
 import ActivityDetailModal from './ActivityDetailModal';
 import { logEvent } from '../services/historyService';
+import { supabase } from '../supabaseClient';
 import './ActivityList.css';
 
 const STORAGE_KEY = 'synapseActivities_v2';
@@ -106,16 +107,8 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
 }
 
 export default function ActivityList({ currentUser, currentCompany }) {
-  const [activities, setActivities] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      const parsed = saved ? JSON.parse(saved) : null;
-      if (parsed && Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch {}
-    // Seed defaults and persist immediately
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ACTIVITIES));
-    return DEFAULT_ACTIVITIES;
-  });
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailActivity, setDetailActivity] = useState(null);
@@ -125,76 +118,165 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const [openMenu, setOpenMenu] = useState(null); // { id: rowKey, rect: DOMRect }
   const [pendingDeleteId, setPendingDeleteId] = useState(null); // inline confirm
 
-  // Persist to localStorage whenever activities change
+  // Fetch activities from Supabase on load and whenever company changes
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(activities));
-  }, [activities]);
+    const fetchActivities = async () => {
+      if (!currentCompany?.id) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('created', { ascending: false });
+
+      if (!error && data) {
+        // Map back consistent with the UI (snake_case to camelCase)
+        const mapped = data.map(item => ({
+          ...item,
+          companyId: item.company_id,
+          createdBy: item.created_by,
+          lastAppointment: item.last_appointment
+        }));
+        setActivities(mapped);
+      } else if (error) {
+        console.error('Error fetching activities:', error);
+      }
+      setLoading(false);
+    };
+
+    fetchActivities();
+  }, [currentCompany]);
 
   const nowStr = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
-  const handleSave = (newActivity) => {
-    const activityWithUser = { 
-      ...newActivity, 
-      createdBy: currentUser,
-      companyId: currentCompany?.id 
+  const handleSave = async (activity) => {
+    const newId = String(Math.floor(Math.random() * 90000) + 10000);
+    const newActivity = {
+      id: newId,
+      ...activity,
+      created: nowStr(),
+      updated: nowStr(),
+      company_id: currentCompany?.id,
+      created_by: currentUser,
+      last_appointment: activity.lastAppointment || null
     };
-    const updated = [activityWithUser, ...activities];
-    setActivities(updated);
-    setCurrentPage(1);
 
-    if (currentCompany) {
-      logEvent(currentCompany.id, currentUser, 'CREATE_ACTIVITY', `Nova solicitação criada: ${newActivity.id} para ${newActivity.location}`);
+    const { error } = await supabase.from('activities').insert([newActivity]);
+
+    if (!error) {
+      setActivities(prev => [{ ...newActivity, companyId: currentCompany?.id, createdBy: currentUser }, ...prev]);
+      setCurrentPage(1);
+      if (currentCompany) {
+        logEvent(currentCompany.id, currentUser, 'CREATE_ACTIVITY', `Nova solicitação criada: ${newId} para ${activity.location}`);
+      }
+    } else {
+      console.error('Error saving activity:', error);
+      alert('Erro ao salvar no banco de dados. Verifique se as tabelas foram criadas.');
     }
   };
 
-  const handleUpdate = (updatedActivity) => {
-    setActivities(prev => prev.map(a =>
-      a.id === updatedActivity.id ? { ...updatedActivity, updated: nowStr() } : a
-    ));
-    if (currentCompany) {
-      logEvent(currentCompany.id, currentUser, 'UPDATE_ACTIVITY', `Solicitação ${updatedActivity.id} atualizada.`);
+  const handleUpdate = async (updatedActivity) => {
+    const now = nowStr();
+    // Prepare data for Supabase (matching database schema)
+    const payload = {
+      location: updatedActivity.location,
+      type: updatedActivity.type,
+      status: updatedActivity.status,
+      rating: updatedActivity.rating,
+      last_appointment: updatedActivity.lastAppointment,
+      collaborator: updatedActivity.collaborator,
+      address: updatedActivity.address,
+      description: updatedActivity.description,
+      observation: updatedActivity.observation,
+      updated: now
+    };
+
+    const { error } = await supabase
+      .from('activities')
+      .update(payload)
+      .eq('id', updatedActivity.id);
+
+    if (!error) {
+      setActivities(prev => prev.map(a =>
+        a.id === updatedActivity.id ? { ...updatedActivity, updated: now } : a
+      ));
+      if (currentCompany) {
+        logEvent(currentCompany.id, currentUser, 'UPDATE_ACTIVITY', `Solicitação ${updatedActivity.id} atualizada.`);
+      }
+    } else {
+      console.error('Error updating activity:', error);
     }
   };
 
-  const confirmDelete = (id) => {
+  const confirmDelete = async (id) => {
     const act = activities.find(a => a.id === id);
-    setActivities(prev => prev.filter(a => a.id !== id));
-    setPendingDeleteId(null);
-    setDetailActivity(null);
-    if (currentCompany && act) {
-      logEvent(currentCompany.id, currentUser, 'DELETE_ACTIVITY', `Solicitação ${id} (${act.location}) excluída.`);
+    const { error } = await supabase.from('activities').delete().eq('id', id);
+
+    if (!error) {
+      setActivities(prev => prev.filter(a => a.id !== id));
+      setPendingDeleteId(null);
+      setDetailActivity(null);
+      if (currentCompany && act) {
+        logEvent(currentCompany.id, currentUser, 'DELETE_ACTIVITY', `Solicitação ${id} (${act.location}) excluída.`);
+      }
+    } else {
+      console.error('Error deleting activity:', error);
     }
   };
 
-  const handleDuplicate = (activity) => {
+  const handleDuplicate = async (activity) => {
+    const newId = String(Math.floor(Math.random() * 90000) + 10000);
     const dup = {
       ...activity,
-      id: String(Math.floor(Math.random() * 90000) + 10000),
+      id: newId,
       created: nowStr(),
       updated: nowStr(),
       status: 'Pendente',
-      createdBy: currentUser
+      company_id: currentCompany?.id,
+      created_by: currentUser,
+      last_appointment: activity.lastAppointment
     };
-    setActivities(prev => [dup, ...prev]);
-    setCurrentPage(1);
+
+    const { error } = await supabase.from('activities').insert([dup]);
+    if (!error) {
+      setActivities(prev => [{ ...dup, companyId: currentCompany?.id, createdBy: currentUser }, ...prev]);
+      setCurrentPage(1);
+    }
   };
 
-  const handleChangeStatus = (id, newStatus) => {
-    setActivities(prev => prev.map(a =>
-      a.id === id ? { ...a, status: newStatus, updated: nowStr() } : a
-    ));
+  const handleChangeStatus = async (id, newStatus) => {
+    const now = nowStr();
+    const { error } = await supabase
+      .from('activities')
+      .update({ status: newStatus, updated: now })
+      .eq('id', id);
+
+    if (!error) {
+      setActivities(prev => prev.map(a =>
+        a.id === id ? { ...a, status: newStatus, updated: now } : a
+      ));
+    }
   };
 
-  const handleRatingChange = (activityId, stars) => {
-    setActivities(prev => prev.map(a =>
-      a.id === activityId ? { ...a, rating: stars, updated: nowStr() } : a
-    ));
+  const handleRatingChange = async (activityId, stars) => {
+    const now = nowStr();
+    const { error } = await supabase
+      .from('activities')
+      .update({ rating: stars, updated: now })
+      .eq('id', activityId);
+
+    if (!error) {
+      setActivities(prev => prev.map(a =>
+        a.id === activityId ? { ...a, rating: stars, updated: now } : a
+      ));
+    }
   };
 
-  // Filter by user first, then by search
-  const userActivities = activities.filter(a => a.createdBy === currentUser);
-  
-  const filtered = userActivities.filter(a =>
+  // The simplified filter for team collaboration
+  const filtered = activities.filter(a =>
     search === '' ||
     a.id.toLowerCase().includes(search.toLowerCase()) ||
     a.location.toLowerCase().includes(search.toLowerCase()) ||

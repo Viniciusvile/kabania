@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Building2, Key, ChevronRight, ChevronLeft, Check, Sparkles } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import './CompanySetup.css';
 
 export const SECTOR_TEMPLATES = {
@@ -50,79 +51,67 @@ export default function CompanySetup({ currentUser, onComplete }) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const getCompaniesDB = () => JSON.parse(localStorage.getItem('synapseCompanies') || '[]');
-  const saveCompaniesDB = (c) => localStorage.setItem('synapseCompanies', JSON.stringify(c));
-  const getUsersDB = () => JSON.parse(localStorage.getItem('synapseUsers') || '[]');
-  const saveUsersDB = (u) => localStorage.setItem('synapseUsers', JSON.stringify(u));
   const generateCode = (id) => id.slice(-6).toUpperCase();
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setIsLoading(true);
     setError('');
-    setTimeout(() => {
-      const companies = getCompaniesDB();
-      const newCompany = {
-        id: `co-${Date.now()}`,
-        name: companyName.trim(),
-        sector: selectedSector,
-        createdAt: new Date().toISOString()
-      };
-      newCompany.code = generateCode(newCompany.id);
-      companies.push(newCompany);
-      saveCompaniesDB(companies);
+    
+    const companyId = `co-${Date.now()}`;
+    const newCompany = {
+      id: companyId,
+      name: companyName.trim(),
+      sector: selectedSector,
+      code: generateCode(companyId)
+    };
 
-      // Update user with companyId + admin role
-      const users = getUsersDB();
-      const updatedUsers = users.map(u =>
-        u.email === currentUser ? { ...u, companyId: newCompany.id, role: 'admin' } : u
-      );
-      saveUsersDB(updatedUsers);
+    const { error: coError } = await supabase.from('companies').insert([newCompany]);
 
-      // Pre-load sector template tags into company knowledge base
-      const template = SECTOR_TEMPLATES[selectedSector];
-      if (template && template.tags.length > 0) {
-        const knowledgeItems = template.tags.map((tag, i) => ({
-          id: `kb-${Date.now()}-${i}`,
-          title: tag,
-          description: `Tag de autorização pré-configurada para o setor: ${template.label}`,
-          enabled: true,
-          type: 'document',
-          tags: [tag]
-        }));
-        localStorage.setItem(`synapseKnowledgeState_COMPANY_${newCompany.id}`, JSON.stringify(knowledgeItems));
+    if (!coError) {
+      // Update user profile
+      const { error: profError } = await supabase
+        .from('profiles')
+        .update({ company_id: companyId, role: 'admin' })
+        .eq('email', currentUser);
+
+      if (!profError) {
+        // Pre-load logic (keep as reminder but ideally this would be server-side or handled differently)
+        onComplete({ company: newCompany, role: 'admin' });
+      } else {
+        setError('Erro ao vincular administrador.');
       }
-
-      localStorage.setItem('synapseCurrentCompany', JSON.stringify({ ...newCompany, role: 'admin' }));
-      localStorage.setItem('synapseUserRole', 'admin');
-      onComplete({ company: newCompany, role: 'admin' });
-      setIsLoading(false);
-    }, 900);
+    } else {
+      setError('Erro ao criar empresa no banco de dados.');
+    }
+    setIsLoading(false);
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!joinCode.trim()) { setError('Digite o código da empresa.'); return; }
     setIsLoading(true);
     setError('');
-    setTimeout(() => {
-      const companies = getCompaniesDB();
-      const company = companies.find(c => c.code === joinCode.trim().toUpperCase());
-      if (!company) {
-        setError('Código inválido. Verifique e tente novamente.');
-        setIsLoading(false);
-        return;
+
+    const { data: companies, error: coError } = await supabase
+      .from('companies')
+      .select('*')
+      .eq('code', joinCode.trim().toUpperCase());
+
+    if (!coError && companies && companies.length > 0) {
+      const company = companies[0];
+      const { error: profError } = await supabase
+        .from('profiles')
+        .update({ company_id: company.id, role: 'member' })
+        .eq('email', currentUser);
+
+      if (!profError) {
+        onComplete({ company, role: 'member' });
+      } else {
+        setError('Erro ao ingressar na empresa.');
       }
-
-      const users = getUsersDB();
-      const updatedUsers = users.map(u =>
-        u.email === currentUser ? { ...u, companyId: company.id, role: 'member' } : u
-      );
-      saveUsersDB(updatedUsers);
-
-      localStorage.setItem('synapseCurrentCompany', JSON.stringify({ ...company, role: 'member' }));
-      localStorage.setItem('synapseUserRole', 'member');
-      onComplete({ company, role: 'member' });
-      setIsLoading(false);
-    }, 800);
+    } else {
+      setError('Código inválido ou empresa não encontrada.');
+    }
+    setIsLoading(false);
   };
 
   return (

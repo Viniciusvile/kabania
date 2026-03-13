@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { processTaskWithAI } from '../services/geminiService';
 import {
   notifyTaskMoved,
@@ -206,12 +207,8 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 
 // ---- Main Board ----
 export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null }) {
-  const storageKey = `synapseTasks_${currentUser}`;
-
-  const [tasks, setTasks] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); }
-    catch { return []; }
-  });
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [activeTask, setActiveTask] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -232,10 +229,39 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     return users.filter(u => u.companyId === currentCompany.id).map(u => u.email);
   }, [currentCompany]);
 
-  // Persist tasks
+  // Fetch tasks from Supabase
   useEffect(() => {
-    if (currentUser) localStorage.setItem(storageKey, JSON.stringify(tasks));
-  }, [tasks, currentUser]);
+    const fetchTasks = async () => {
+      if (!projectId) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('project_id', projectId);
+
+      if (!error && data) {
+        // Map back consistent with UI (snake_case to camelCase)
+        const mapped = data.map(t => ({
+          ...t,
+          projectId: t.project_id,
+          companyId: t.company_id,
+          columnId: t.column_id,
+          aiResponse: t.ai_response,
+          tagColor: t.tag_color
+        }));
+        setTasks(mapped);
+      } else if (error) {
+        console.error('Error fetching tasks:', error);
+      }
+      setLoading(false);
+    };
+
+    fetchTasks();
+  }, [projectId]);
 
   // Deadline notifications on load
   useEffect(() => {
@@ -278,52 +304,111 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     setFormAssignees(task.assignees || []);
   };
 
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
+    const newId = `t_${Date.now()}`;
     const newTask = {
-      id: `t_${Date.now()}`,
-      columnId: newTaskCol,
+      id: newId,
+      column_id: newTaskCol,
       title: formTitle.trim(),
-      desc: formDesc.trim(),
+      description: formDesc.trim(),
       tag: 'New',
-      tagColor: 'green',
+      tag_color: 'green',
       deadline: formDeadline || null,
       assignees: formAssignees,
       comments: [],
-      createdBy: currentUser,
-      projectId: projectId
+      company_id: currentCompany?.id,
+      project_id: projectId
     };
-    setTasks(prev => [...prev, newTask]);
-    if (formAssignees.length > 0) notifyAssignment(newTask, formAssignees, currentUser);
-    setIsAddingTask(false);
+
+    const { error } = await supabase.from('tasks').insert([newTask]);
+
+    if (!error) {
+      // Map for local state consistency
+      const mapped = { 
+        ...newTask, 
+        columnId: newTaskCol, 
+        desc: formDesc.trim(), 
+        tagColor: 'green', 
+        projectId, 
+        companyId: currentCompany?.id 
+      };
+      setTasks(prev => [...prev, mapped]);
+      if (formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
+      setIsAddingTask(false);
+    } else {
+      console.error('Error adding task:', error);
+    }
   };
 
-  const handleUpdateTask = (e) => {
+  const handleUpdateTask = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
     const prevTask = editingTask;
-    const updatedTask = {
-      ...prevTask,
+    const payload = {
       title: formTitle.trim(),
-      desc: formDesc.trim(),
+      description: formDesc.trim(),
       deadline: formDeadline || null,
       assignees: formAssignees,
-      aiResponse: null,
-      isAiLoading: false
+      ai_response: null
     };
-    setTasks(prev => prev.map(t => t.id === prevTask.id ? updatedTask : t));
-    // Notify newly added assignees
-    const newAssignees = formAssignees.filter(e => !(prevTask.assignees || []).includes(e));
-    if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
-    setEditingTask(null);
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(payload)
+      .eq('id', prevTask.id);
+
+    if (!error) {
+      const updatedTask = {
+        ...prevTask,
+        title: formTitle.trim(),
+        desc: formDesc.trim(),
+        deadline: formDeadline || null,
+        assignees: formAssignees,
+        aiResponse: null,
+        isAiLoading: false
+      };
+      setTasks(prev => prev.map(t => t.id === prevTask.id ? updatedTask : t));
+      const newAssignees = formAssignees.filter(e => !(prevTask.assignees || []).includes(e));
+      if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
+      setEditingTask(null);
+    } else {
+      console.error('Error updating task:', error);
+    }
   };
 
-  const handleUpdateFromDetail = (updatedTask) => {
-    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+  const handleUpdateFromDetail = async (updatedTask) => {
+    const payload = {
+      title: updatedTask.title,
+      description: updatedTask.desc,
+      status: updatedTask.status,
+      deadline: updatedTask.deadline,
+      assignees: updatedTask.assignees,
+      comments: updatedTask.comments,
+      ai_response: updatedTask.aiResponse
+    };
+
+    const { error } = await supabase
+      .from('tasks')
+      .update(payload)
+      .eq('id', updatedTask.id);
+
+    if (!error) {
+      setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+    } else {
+      console.error('Error updating from detail:', error);
+    }
   };
 
-  const handleDeleteTask = (taskId) => setTasks(prev => prev.filter(t => t.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+    if (!error) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+    } else {
+      console.error('Error deleting task:', error);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -367,7 +452,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
   };
 
-  const handleDragEnd = ({ active, over }) => {
+  const handleDragEnd = async ({ active, over }) => {
     setActiveTask(null);
     if (!over || active.id === over.id) return;
     const movedTask = tasks.find(t => t.id === active.id);
@@ -375,8 +460,19 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       const newColId = over.data.current?.type === 'Task'
         ? tasks.find(t => t.id === over.id)?.columnId
         : over.id;
+      
       if (newColId && newColId !== movedTask.columnId) {
-        notifyTaskMoved({ ...movedTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+        // Persist column change to Supabase
+        const { error } = await supabase
+          .from('tasks')
+          .update({ column_id: newColId, ai_response: newColId === 'ai' ? movedTask.aiResponse : null })
+          .eq('id', movedTask.id);
+
+        if (!error) {
+          notifyTaskMoved({ ...movedTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+        } else {
+          console.error('Error persisting drag and drop:', error);
+        }
       }
     }
   };

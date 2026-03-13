@@ -1,58 +1,61 @@
+import { supabase } from '../supabaseClient';
+
 /**
  * Service to manage company-wide activity history (audit log).
- * Stores events in localStorage scoped by companyId.
+ * Stores events in Supabase.
  */
-
-const STORAGE_KEY_PREFIX = 'synapse_history_';
 
 /**
  * Log a new event to the company history.
- * @param {string} companyId - The ID of the company.
- * @param {string} userEmail - The email of the user who performed the action.
- * @param {string} action - The action type (e.g., 'CREATE_ACTIVITY', 'MEMBER_PROMOTED').
- * @param {string} details - A human-readable description of the event.
  */
-export const logEvent = (companyId, userEmail, action, details) => {
+export const logEvent = async (companyId, userEmail, action, details) => {
   if (!companyId) return;
 
-  const key = `${STORAGE_KEY_PREFIX}${companyId}`;
-  const event = {
-    id: String(Date.now() + Math.floor(Math.random() * 1000)),
-    timestamp: new Date().toISOString(),
-    userEmail,
-    action,
-    details
-  };
+  const { error } = await supabase.from('audit_logs').insert([
+    {
+      company_id: companyId,
+      user_email: userEmail,
+      action: action,
+      details: details
+    }
+  ]);
 
-  try {
-    const history = JSON.parse(localStorage.getItem(key) || '[]');
-    // Keep last 1000 events to manage storage
-    const updatedHistory = [event, ...history].slice(0, 1000);
-    localStorage.setItem(key, JSON.stringify(updatedHistory));
-  } catch (error) {
-    console.error('Error logging event:', error);
+  if (error) {
+    console.error('Error logging audit event:', error);
   }
 };
 
 /**
  * Retrieve the event history for a specific company.
- * @param {string} companyId - The ID of the company.
- * @returns {Array} - Array of event objects.
  */
-export const getHistory = (companyId) => {
+export const getHistory = async (companyId) => {
   if (!companyId) return [];
-  try {
-    return JSON.parse(localStorage.getItem(`${STORAGE_KEY_PREFIX}${companyId}`) || '[]');
-  } catch {
-    return [];
+  
+  const { data, error } = await supabase
+    .from('audit_logs')
+    .select('*')
+    .eq('company_id', companyId)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (!error && data) {
+    // Map back to internal object structure for consistency
+    return data.map(log => ({
+      id: String(log.id),
+      timestamp: log.created_at,
+      userEmail: log.user_email,
+      action: log.action,
+      details: log.details
+    }));
   }
+  return [];
 };
 
 /**
- * Clear the history for a specific company (Admin only).
- * @param {string} companyId - The ID of the company.
+ * Clear history not implemented for cloud to avoid data loss, 
+ * but kept for interface consistency.
  */
-export const clearHistory = (companyId) => {
+export const clearHistory = async (companyId) => {
   if (!companyId) return;
-  localStorage.removeItem(`${STORAGE_KEY_PREFIX}${companyId}`);
+  // Admin action would go here
 };

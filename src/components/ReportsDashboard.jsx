@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 import { BarChart2, Clock, Users, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import { getDeadlineStatus } from '../services/notificationService';
 import './ReportsDashboard.css';
@@ -33,7 +34,32 @@ function formatDate(isoDate) {
   return new Date(isoDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 }
 
-export default function ReportsDashboard({ tasks = [], currentUser }) {
+export default function ReportsDashboard({ currentUser, currentCompany }) {
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllCompanyTasks = async () => {
+      if (!currentCompany?.id) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('company_id', currentCompany.id);
+
+      if (!error && data) {
+        const mapped = data.map(t => ({
+          ...t,
+          columnId: t.column_id,
+          tagColor: t.tag_color
+        }));
+        setTasks(mapped);
+      }
+      setLoading(false);
+    };
+
+    fetchAllCompanyTasks();
+  }, [currentCompany]);
   // Tasks by column
   const tasksByColumn = useMemo(() => {
     const counts = { backlog: 0, todo: 0, progress: 0, ai: 0, done: 0 };
