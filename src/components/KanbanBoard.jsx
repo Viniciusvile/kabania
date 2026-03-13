@@ -277,7 +277,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     if (unanalyzed.length === 0) return;
     unanalyzed.forEach(task => {
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
-      processTaskWithAI(task.desc || task.title, true).then(response => {
+      processTaskWithAI(task.desc || task.title, currentCompany?.id, true).then(response => {
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
       });
     });
@@ -464,13 +464,20 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       
       if (newColId && newColId !== movedTask.columnId) {
         // Persist column change to Supabase
+        const payload = { 
+          column_id: newColId, 
+          // Clear response if moving to AI to force re-analysis, or clear if moving out
+          ai_response: null 
+        };
+        
         const { error } = await supabase
           .from('tasks')
-          .update({ column_id: newColId, ai_response: newColId === 'ai' ? movedTask.aiResponse : null })
+          .update(payload)
           .eq('id', movedTask.id);
 
         if (!error) {
-          notifyTaskMoved({ ...movedTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+          setTasks(prev => prev.map(t => t.id === movedTask.id ? { ...t, columnId: newColId, aiResponse: null } : t));
+          notifyTaskMoved({ ...movedTask, columnId: newColId, aiResponse: null }, COLUMN_LABELS[newColId] || newColId, currentUser);
         } else {
           console.error('Error persisting drag and drop:', error);
         }
