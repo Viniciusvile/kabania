@@ -224,11 +224,18 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {isAdmin && (
-          <button className="kb-btn-add" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
-            <Plus size={18} /> Conectar Nova Fonte
-          </button>
-        )}
+        <div className="flex gap-2">
+          {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector] && (
+            <button className="kb-btn-template" onClick={handleLoadTemplates} title="Recarregar temas padrão do setor">
+              <Sparkles size={18} /> Restaurar Preset
+            </button>
+          )}
+          {isAdmin && (
+            <button className="kb-btn-add" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
+              <Plus size={18} /> Conectar Nova Fonte
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="kb-grid">

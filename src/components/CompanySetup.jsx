@@ -71,17 +71,39 @@ export default function CompanySetup({ currentUser, onComplete }) {
       // 2. Initialize knowledge base with templates if any
       if (selectedSector && SECTOR_TEMPLATES[selectedSector]?.tags.length > 0) {
         const template = SECTOR_TEMPLATES[selectedSector];
-        const initialKB = {
-          id: `kb-init-${Date.now()}`,
-          title: `Base de Autorizações: ${template.label}`,
-          description: `Configuração inicial para o setor de ${template.label}.`,
-          enabled: true,
-          type: 'document',
-          tags: template.tags,
-          company_id: companyId,
-          created_at: new Date().toISOString()
-        };
-        await supabase.from('knowledge_base').insert([initialKB]);
+        
+        // Define global defaults
+        const globalDefaults = [
+          { title: 'Histórico da Empresa', desc: 'Dados sobre fundação, valores e cultura corporativa.', type: 'document', tag: 'Histórico' },
+          { title: 'Políticas e Regras', desc: 'Regimento interno, normas de conduta e horários.', type: 'file', tag: 'Regras' },
+          { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
+        ];
+
+        // Prepare items (Global + Sector Specific tags as separate subjects)
+        const itemsToInsert = [
+          ...globalDefaults.map(d => ({
+            id: `kb-def-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            company_id: companyId,
+            title: d.title,
+            description: d.desc,
+            enabled: true,
+            type: d.type,
+            tags: [d.tag],
+            created_at: new Date().toISOString()
+          })),
+          ...template.tags.map((tag, idx) => ({
+            id: `kb-sec-${Date.now()}-${idx}`,
+            company_id: companyId,
+            title: tag,
+            description: `Assunto autorizado: ${tag} (${template.label})`,
+            enabled: true,
+            type: 'document',
+            tags: [tag],
+            created_at: new Date().toISOString()
+          }))
+        ];
+
+        await supabase.from('knowledge_base').insert(itemsToInsert);
       }
 
       // 3. Update user profile
