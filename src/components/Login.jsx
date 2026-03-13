@@ -4,6 +4,10 @@ import { GoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 import './Login.css';
 
+const errorMap = {
+  '23505': 'Este email já está cadastrado.'
+};
+
 export default function Login({ onLogin }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
