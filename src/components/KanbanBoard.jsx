@@ -1,129 +1,103 @@
 import React, { useState, useEffect } from 'react';
 import { processTaskWithAI } from '../services/geminiService';
-import { MoreHorizontal, Plus, AlertTriangle, Sparkles, ExternalLink, Trash2, Edit2 } from 'lucide-react';
 import {
-  DndContext,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragOverlay
+  notifyTaskMoved,
+  notifyAssignment,
+  checkDeadlineNotifications,
+  getDeadlineStatus
+} from '../services/notificationService';
+import {
+  MoreHorizontal, Plus, AlertTriangle, Sparkles, Trash2, Edit2,
+  Calendar, Users, MessageSquare, X, Check, Clock
+} from 'lucide-react';
+import {
+  DndContext, closestCorners, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, DragOverlay
 } from '@dnd-kit/core';
 import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable
+  SortableContext, arrayMove, sortableKeyboardCoordinates,
+  verticalListSortingStrategy, useSortable
 } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import CardDetailModal from './CardDetailModal';
 import './Kanban.css';
 
-// Initial data structure matching exactly what we had visually
-const initialTasks = [];
-
 const COLUMNS = [
-  { id: 'backlog', title: 'BACKLOG' },
-  { id: 'todo', title: 'TO DO' },
+  { id: 'backlog',  title: 'BACKLOG' },
+  { id: 'todo',     title: 'TO DO' },
   { id: 'progress', title: 'IN PROGRESS' },
-  { id: 'ai', title: 'AI ANALYSIS', isHighlighted: true },
-  { id: 'done', title: 'DONE' }
+  { id: 'ai',       title: 'AI ANALYSIS', isHighlighted: true },
+  { id: 'done',     title: 'DONE' }
 ];
 
-function SortableTaskCard({ task, onDelete, onEdit }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: task.id, data: { type: 'Task', task } });
+const COLUMN_LABELS = {
+  backlog: 'Backlog', todo: 'To Do', progress: 'Em Progresso', ai: 'AI Analysis', done: 'Concluído'
+};
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 100 : 'auto',
-  };
+// ---- Avatar helpers ----
+function getInitials(email) { return email ? email.substring(0, 2).toUpperCase() : '?'; }
+function getAvatarColor(email) {
+  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = email.charCodeAt(i) + ((h << 5) - h);
+  return colors[Math.abs(h) % colors.length];
+}
+function formatDeadlineShort(isoDate) {
+  if (!isoDate) return '';
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
 
-  if (task.type === 'bottleneck-alert') {
-    return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="task-card bottleneck-alert">
-        <div className="card-title text-sm mb-1 flex items-center justify-between group">
-          <div className="flex items-center gap-2">
-            {task.title} <AlertTriangle size={14} className="text-red-500"/>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-              onPointerDown={e => e.stopPropagation()}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
-              title="Editar"
-            >
-              <Edit2 size={13} />
-            </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} 
-              onPointerDown={e => e.stopPropagation()}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-              title="Remove Task"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </div>
-        <p className="card-desc text-xs mt-2">
-          {task.desc} <br/>
-          <span className="text-accent underline cursor-pointer pointer-events-auto" onPointerDown={e=>e.stopPropagation()}>View AI recommendation?</span>
-        </p>
-      </div>
-    );
-  }
+// ---- Sortable Task Card ----
+function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id, data: { type: 'Task', task }
+  });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
 
-  if (task.type === 'ghost') {
-    return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="card-ghost">
-        <Sparkles size={14} className="text-purple-400 mr-2" />
-        <span className="text-xs text-muted">{task.title}</span>
-      </div>
-    );
-  }
+  const deadlineStatus = getDeadlineStatus(task.deadline);
+  const commentCount = task.comments?.length || 0;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="task-card group">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`task-card group ${deadlineStatus?.color === 'red' ? 'card-overdue' : ''}`}
+      onDoubleClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}
+    >
+      {/* Card Header */}
       <div className="card-header">
         <span className="card-title">{task.title}</span>
-        <div className="flex items-center gap-3">
-          {task.hasAlert ? <AlertTriangle size={14} className="text-red-500" /> : <Sparkles size={14} className="text-accent opacity-30" />}
+        <div className="flex items-center gap-2">
+          {deadlineStatus?.color === 'red' && <AlertTriangle size={13} className="text-red-500" />}
+          {task.hasAlert && !deadlineStatus && <AlertTriangle size={14} className="text-red-500" />}
+          {!task.hasAlert && !deadlineStatus && <Sparkles size={14} className="text-accent opacity-30" />}
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
             onPointerDown={e => e.stopPropagation()}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
             title="Editar"
-          >
-            <Edit2 size={13} />
-          </button>
-          <button 
-            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} 
+          ><Edit2 size={13} /></button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
             onPointerDown={e => e.stopPropagation()}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-            title="Remove Task"
-          >
-            <Trash2 size={14} />
-          </button>
+            title="Excluir"
+          ><Trash2 size={14} /></button>
         </div>
       </div>
+
+      {/* Description */}
       <p className="card-desc">{task.desc}</p>
-      
+
+      {/* AI Loading / Response */}
       {task.isAiLoading && (
         <div className="mt-2 text-xs text-accent flex items-center gap-1 animate-pulse">
           <Sparkles size={12} /> Analisando com IA...
         </div>
       )}
-      
       {task.aiResponse && (
         <div className="mt-2 p-2 bg-black/20 rounded border border-accent/20 text-xs">
           <div className="flex items-center gap-1 text-accent font-semibold mb-1">
@@ -132,31 +106,53 @@ function SortableTaskCard({ task, onDelete, onEdit }) {
           <p className="text-gray-300 leading-tight">{task.aiResponse}</p>
         </div>
       )}
-      
+
+      {/* Deadline badge */}
+      {task.deadline && deadlineStatus && (
+        <div className={`card-deadline-badge card-dl-${deadlineStatus.color}`}>
+          <Clock size={11} />
+          <span>{formatDeadlineShort(task.deadline)}</span>
+          <span className="card-dl-label">{deadlineStatus.icon} {deadlineStatus.label}</span>
+        </div>
+      )}
+
+      {/* Footer: assignees + tag + comments */}
       <div className="card-footer">
-        <div className="card-assignees">
-          <span>Assignees</span>
+        <div className="card-meta-left">
           {task.tag && (
-            <span className="badge" style={{ backgroundColor: `rgba(255,255,255,0.1)`, color: `var(--color-${task.tagColor})` }}>
+            <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: `var(--color-${task.tagColor}, #00e5ff)` }}>
               {task.tag}
             </span>
           )}
+          {commentCount > 0 && (
+            <span className="card-comment-badge" onPointerDown={e => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}>
+              <MessageSquare size={11} /> {commentCount}
+            </span>
+          )}
         </div>
-        <img src="https://ui-avatars.com/api/?name=User&background=random" className="avatar-small" alt="Assignee" />
+        <div className="card-assignee-avatars">
+          {task.assignees?.slice(0, 4).map(email => (
+            <div
+              key={email}
+              className="card-avatar"
+              style={{ background: getAvatarColor(email) }}
+              title={email}
+            >
+              {getInitials(email)}
+            </div>
+          ))}
+          {!task.assignees?.length && (
+            <div className="card-avatar card-avatar-empty" title="Sem responsável">?</div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, searchQuery }) {
-  const { setNodeRef } = useDroppable({
-    id: col.id,
-    data: {
-      type: 'Column',
-      column: col
-    }
-  });
-
+// ---- Kanban Column ----
+function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenDetail }) {
+  const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column', column: col } });
   return (
     <div className={`kanban-column ${col.isHighlighted ? 'column-highlighted' : ''}`}>
       <div className={`column-header ${col.isHighlighted ? 'text-accent' : ''}`}>
@@ -167,171 +163,202 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, searchQ
           </button>
         )}
       </div>
-
       <div ref={setNodeRef} className="column-content relative" style={{ minHeight: '100px' }}>
         <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map(task => (
-            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} />
+            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} />
           ))}
-          
         </SortableContext>
       </div>
     </div>
   );
 }
 
-function AddTaskForm({ columnId, onAdd, onCancel }) {
-  const [title, setTitle] = useState('');
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (title.trim()) {
-      onAdd(columnId, title);
-      setTitle(''); // Clear input after adding
-    }
-  };
-
+// ---- Assignee Picker ----
+function AssigneePicker({ companyMembers, selected, onChange }) {
   return (
-    <form onSubmit={handleSubmit} className="add-task-form">
-      <input 
-        autoFocus
-        type="text" 
-        placeholder="Digite um título..." 
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="add-task-input"
-      />
-      <div className="add-task-actions">
-        <button type="submit" className="add-task-btn bg-accent text-bg-app px-3 py-1 rounded text-xs font-semibold">Salvar</button>
-        <button type="button" onClick={onCancel} className="add-task-btn text-muted hover:text-white px-2 text-xs">Cancelar</button>
-      </div>
-    </form>
+    <div className="km-assignee-picker">
+      {companyMembers.length === 0 && (
+        <p className="km-no-members">Nenhum membro na empresa ainda.</p>
+      )}
+      {companyMembers.map(email => {
+        const isSelected = selected.includes(email);
+        return (
+          <button
+            key={email}
+            type="button"
+            className={`km-member-pill ${isSelected ? 'selected' : ''}`}
+            onClick={() => {
+              onChange(isSelected ? selected.filter(e => e !== email) : [...selected, email]);
+            }}
+          >
+            <div className="km-mp-avatar" style={{ background: getAvatarColor(email) }}>
+              {getInitials(email)}
+            </div>
+            <span>{email.split('@')[0]}</span>
+            {isSelected && <Check size={12} className="km-mp-check" />}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
-export default function KanbanBoard({ searchQuery = '', currentUser = 'default' }) {
+// ---- Main Board ----
+export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null }) {
+  const storageKey = `synapseTasks_${currentUser}`;
+
   const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem(`synapseTasks_${currentUser}`);
-    if (savedTasks) {
-      try {
-        return JSON.parse(savedTasks);
-      } catch (e) {
-        console.error("Failed to parse tasks from local storage", e);
-      }
-    }
-    return initialTasks;
+    try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); }
+    catch { return []; }
   });
-
-  // Save to local database on every task change, tied to the user
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`synapseTasks_${currentUser}`, JSON.stringify(tasks));
-    }
-  }, [tasks, currentUser]);
-
-  // Monitor AI column
-  useEffect(() => {
-    const unanalyzedTasks = tasks.filter(t => t.columnId === 'ai' && !t.aiResponse && !t.isAiLoading);
-    if (unanalyzedTasks.length === 0) return;
-
-    unanalyzedTasks.forEach(taskToProcess => {
-      // Mark as loading immediately to avoid infinite loop
-      setTasks(prev => prev.map(t => 
-        t.id === taskToProcess.id ? { ...t, isAiLoading: true } : t
-      ));
-      
-      // Fire off AI request
-      processTaskWithAI(taskToProcess.desc || taskToProcess.title).then(response => {
-        setTasks(prev => prev.map(t => 
-          t.id === taskToProcess.id ? { ...t, isAiLoading: false, aiResponse: response } : t
-        ));
-      });
-    });
-  }, [tasks]);
 
   const [activeTask, setActiveTask] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskCol, setNewTaskCol] = useState(null);
-  const [editingTask, setEditingTask] = useState(null); // task being edited
+  const [editingTask, setEditingTask] = useState(null);
+  const [detailTask, setDetailTask] = useState(null);
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+  // Modal form state
+  const [formTitle, setFormTitle] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+  const [formDeadline, setFormDeadline] = useState('');
+  const [formAssignees, setFormAssignees] = useState([]);
+
+  // Get company members for assignee picker
+  const companyMembers = React.useMemo(() => {
+    if (!currentCompany?.id) return [];
+    const users = JSON.parse(localStorage.getItem('synapseUsers') || '[]');
+    return users.filter(u => u.companyId === currentCompany.id).map(u => u.email);
+  }, [currentCompany]);
+
+  // Persist tasks
+  useEffect(() => {
+    if (currentUser) localStorage.setItem(storageKey, JSON.stringify(tasks));
+  }, [tasks, currentUser]);
+
+  // Deadline notifications on load
+  useEffect(() => {
+    if (tasks.length > 0 && currentUser) {
+      checkDeadlineNotifications(tasks, currentUser);
+    }
+  }, []);
+
+  // AI Analysis column watcher
+  useEffect(() => {
+    const unanalyzed = tasks.filter(t => t.columnId === 'ai' && !t.aiResponse && !t.isAiLoading);
+    if (unanalyzed.length === 0) return;
+    unanalyzed.forEach(task => {
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
+      processTaskWithAI(task.desc || task.title, true).then(response => {
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
+      });
+    });
+  }, [tasks]);
+
+  // Keep detail panel in sync with task updates
+  useEffect(() => {
+    if (detailTask) {
+      const updated = tasks.find(t => t.id === detailTask.id);
+      if (updated) setDetailTask(updated);
+    }
+  }, [tasks]);
+
+  const openAddModal = (colId) => {
+    setNewTaskCol(colId);
+    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]);
+    setIsAddingTask(true);
+  };
+
+  const openEditModal = (task) => {
+    setEditingTask(task);
+    setFormTitle(task.title || '');
+    setFormDesc(task.desc || '');
+    setFormDeadline(task.deadline || '');
+    setFormAssignees(task.assignees || []);
+  };
+
+  const handleAddTask = (e) => {
+    e.preventDefault();
+    if (!formTitle.trim()) return;
+    const newTask = {
+      id: `t_${Date.now()}`,
+      columnId: newTaskCol,
+      title: formTitle.trim(),
+      desc: formDesc.trim(),
+      tag: 'New',
+      tagColor: 'green',
+      deadline: formDeadline || null,
+      assignees: formAssignees,
+      comments: [],
+      createdBy: currentUser
+    };
+    setTasks(prev => [...prev, newTask]);
+    if (formAssignees.length > 0) notifyAssignment(newTask, formAssignees, currentUser);
+    setIsAddingTask(false);
   };
 
   const handleUpdateTask = (e) => {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const title = fd.get('title');
-    const desc = fd.get('desc');
-    if (!title.trim()) return;
-    setTasks(prev => prev.map(t =>
-      t.id === editingTask.id ? { ...t, title, desc } : t
-    ));
+    if (!formTitle.trim()) return;
+    const prevTask = editingTask;
+    const updatedTask = {
+      ...prevTask,
+      title: formTitle.trim(),
+      desc: formDesc.trim(),
+      deadline: formDeadline || null,
+      assignees: formAssignees,
+      aiResponse: null,
+      isAiLoading: false
+    };
+    setTasks(prev => prev.map(t => t.id === prevTask.id ? updatedTask : t));
+    // Notify newly added assignees
+    const newAssignees = formAssignees.filter(e => !(prevTask.assignees || []).includes(e));
+    if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
     setEditingTask(null);
   };
+
+  const handleUpdateFromDetail = (updatedTask) => {
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+  };
+
+  const handleDeleteTask = (taskId) => setTasks(prev => prev.filter(t => t.id !== taskId));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragStart = (event) => {
-    const { active } = event;
-    const task = tasks.find(t => t.id === active.id);
-    setActiveTask(task);
-  };
+  const handleDragStart = ({ active }) => setActiveTask(tasks.find(t => t.id === active.id));
 
-  const handleDragOver = (event) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
-
+  const handleDragOver = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
     const isActiveTask = active.data.current?.type === 'Task';
     const isOverTask = over.data.current?.type === 'Task';
-    
-    // Dragging over another task
     if (isActiveTask && isOverTask) {
       setTasks(tasks => {
-        const activeIndex = tasks.findIndex(t => t.id === activeId);
-        const overIndex = tasks.findIndex(t => t.id === overId);
-        
-        if (tasks[activeIndex].columnId !== tasks[overIndex].columnId) {
-          const newTasks = [...tasks];
-          newTasks[activeIndex] = { ...newTasks[activeIndex], columnId: tasks[overIndex].columnId };
-          
-          // Clear AI response when moving OUT of the AI column
-          if (newTasks[activeIndex].columnId !== 'ai') {
-            newTasks[activeIndex].aiResponse = null;
-            newTasks[activeIndex].isAiLoading = false;
-          }
-          
-          return arrayMove(newTasks, activeIndex, overIndex);
+        const ai = tasks.findIndex(t => t.id === active.id);
+        const oi = tasks.findIndex(t => t.id === over.id);
+        if (tasks[ai].columnId !== tasks[oi].columnId) {
+          const t = [...tasks];
+          const newColId = tasks[oi].columnId;
+          t[ai] = { ...t[ai], columnId: newColId };
+          if (newColId !== 'ai') { t[ai].aiResponse = null; t[ai].isAiLoading = false; }
+          return arrayMove(t, ai, oi);
         }
-        return arrayMove(tasks, activeIndex, overIndex);
+        return arrayMove(tasks, ai, oi);
       });
     }
-
-    // Dragging over an empty column area
     if (isActiveTask && !isOverTask) {
-      const isOverColumn = COLUMNS.some(col => col.id === overId);
-      if (isOverColumn) {
+      const isOverCol = COLUMNS.some(c => c.id === over.id);
+      if (isOverCol) {
         setTasks(tasks => {
-          const activeIndex = tasks.findIndex(t => t.id === activeId);
-          if (tasks[activeIndex].columnId !== overId) {
-             const newTasks = [...tasks];
-             newTasks[activeIndex] = { ...newTasks[activeIndex], columnId: overId };
-             
-             // Clear AI response when moving OUT of the AI column
-             if (overId !== 'ai') {
-               newTasks[activeIndex].aiResponse = null;
-               newTasks[activeIndex].isAiLoading = false;
-             }
-             
-             return newTasks;
+          const ai = tasks.findIndex(t => t.id === active.id);
+          if (tasks[ai].columnId !== over.id) {
+            const t = [...tasks];
+            t[ai] = { ...t[ai], columnId: over.id };
+            if (over.id !== 'ai') { t[ai].aiResponse = null; t[ai].isAiLoading = false; }
+            return t;
           }
           return tasks;
         });
@@ -339,104 +366,105 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default' 
     }
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = ({ active, over }) => {
     setActiveTask(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
-
-    if (activeId === overId) return;
+    if (!over || active.id === over.id) return;
+    const movedTask = tasks.find(t => t.id === active.id);
+    if (movedTask) {
+      const newColId = over.data.current?.type === 'Task'
+        ? tasks.find(t => t.id === over.id)?.columnId
+        : over.id;
+      if (newColId && newColId !== movedTask.columnId) {
+        notifyTaskMoved({ ...movedTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+      }
+    }
   };
 
-  const addTask = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const title = fd.get('title');
-    const desc = fd.get('desc');
-    if (!title) return;
+  const closeModal = () => { setIsAddingTask(false); setEditingTask(null); };
 
-    setTasks(prev => [...prev, {
-      id: `t_${Date.now()}`,
-      columnId: newTaskCol,
-      title,
-      desc,
-      tag: 'New',
-      tagColor: 'green'
-    }]);
-    setIsAddingTask(false);
-    setNewTaskCol(null);
-  };
+  // Shared Modal Form JSX
+  const renderModalForm = (isEditing, onSubmit) => (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={closeModal}
+    >
+      <div
+        className="km-modal"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="km-modal-header">
+          <h3><Edit2 size={17} style={{ color: 'var(--accent-cyan)' }} /> {isEditing ? 'Editar Tarefa' : `Nova Tarefa — ${COLUMNS.find(c => c.id === newTaskCol)?.title}`}</h3>
+          <button className="km-modal-close" onClick={closeModal}><X size={18} /></button>
+        </div>
+        <form onSubmit={onSubmit}>
+          <div className="km-modal-body">
+            <div className="km-field">
+              <label>Título <span className="km-required">*</span></label>
+              <input autoFocus placeholder="Título da tarefa" value={formTitle} onChange={e => setFormTitle(e.target.value)} required />
+            </div>
+            <div className="km-field">
+              <label>Descrição</label>
+              <textarea placeholder="Descreva a tarefa..." value={formDesc} onChange={e => setFormDesc(e.target.value)} rows={3} />
+            </div>
+            <div className="km-two-col">
+              <div className="km-field">
+                <label><Calendar size={13} /> Prazo / Deadline</label>
+                <input type="date" value={formDeadline} onChange={e => setFormDeadline(e.target.value)} />
+              </div>
+            </div>
+            <div className="km-field">
+              <label><Users size={13} /> Responsáveis</label>
+              <AssigneePicker companyMembers={companyMembers} selected={formAssignees} onChange={setFormAssignees} />
+            </div>
+          </div>
+          <div className="km-modal-footer">
+            <button type="button" className="km-btn-cancel" onClick={closeModal}>Cancelar</button>
+            <button type="submit" className="km-btn-submit">{isEditing ? 'Salvar Alterações' : 'Criar Tarefa'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="kanban-wrapper">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="kanban-board">
           {COLUMNS.map(col => {
             const colTasks = tasks.filter(t => {
               if (t.columnId !== col.id) return false;
               if (!searchQuery) return true;
               const q = searchQuery.toLowerCase();
-              return t.title.toLowerCase().includes(q) || (t.desc && t.desc.toLowerCase().includes(q));
+              return t.title.toLowerCase().includes(q) || (t.desc?.toLowerCase().includes(q));
             });
-            return <KanbanColumn key={col.id} col={col} tasks={colTasks} onAddTask={(id) => { setIsAddingTask(true); setNewTaskCol(id); }} onDeleteTask={handleDeleteTask} onEditTask={(task) => setEditingTask(task)} />;
+            return (
+              <KanbanColumn
+                key={col.id}
+                col={col}
+                tasks={colTasks}
+                onAddTask={openAddModal}
+                onDeleteTask={handleDeleteTask}
+                onEditTask={openEditModal}
+                onOpenDetail={(task) => setDetailTask(task)}
+              />
+            );
           })}
         </div>
-
         <DragOverlay>
-          {activeTask ? (
-            <SortableTaskCard task={activeTask} />
-          ) : null}
+          {activeTask ? <SortableTaskCard task={activeTask} onDelete={() => {}} onEdit={() => {}} onOpenDetail={() => {}} /> : null}
         </DragOverlay>
       </DndContext>
 
-      {/* Basic Modal for New Task */}
-      {isAddingTask && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '8px', width: '380px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>Add New Task to {COLUMNS.find(c=>c.id===newTaskCol)?.title}</h3>
-            <form onSubmit={addTask} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <input name="title" autoFocus placeholder="Task Title" style={{ backgroundColor: 'var(--bg-app)', color: 'white', border: '1px solid var(--border-color)', padding: '0.5rem', borderRadius: '4px', outline: 'none' }} />
-              <textarea name="desc" placeholder="Task Description" style={{ backgroundColor: 'var(--bg-app)', color: 'white', border: '1px solid var(--border-color)', padding: '0.5rem', borderRadius: '4px', outline: 'none', height: '6rem', resize: 'none' }}></textarea>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setIsAddingTask(false)} style={{ padding: '0.5rem 1rem', borderRadius: '4px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Cancel</button>
-                <button type="submit" style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--accent-cyan)', color: 'black', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 600 }}>Add Task</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {isAddingTask && renderModalForm(false, handleAddTask)}
+      {editingTask && renderModalForm(true, handleUpdateTask)}
 
-      {/* Edit Task Modal */}
-      {editingTask && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '8px', width: '380px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Edit2 size={18} style={{ color: 'var(--accent-cyan)' }} /> Editar Card
-            </h3>
-            <form onSubmit={handleUpdateTask} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Título</label>
-                <input name="title" autoFocus defaultValue={editingTask.title} placeholder="Título do card" style={{ backgroundColor: 'var(--bg-app)', color: 'white', border: '1px solid var(--border-color)', padding: '0.5rem', borderRadius: '4px', outline: 'none' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Descrição</label>
-                <textarea name="desc" defaultValue={editingTask.desc || ''} placeholder="Descrição do card" style={{ backgroundColor: 'var(--bg-app)', color: 'white', border: '1px solid var(--border-color)', padding: '0.5rem', borderRadius: '4px', outline: 'none', height: '6rem', resize: 'none' }}></textarea>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button type="button" onClick={() => setEditingTask(null)} style={{ padding: '0.5rem 1rem', borderRadius: '4px', fontSize: '0.875rem', color: 'var(--text-muted)', background: 'none', border: '1px solid var(--border-color)', cursor: 'pointer' }}>Cancelar</button>
-                <button type="submit" style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--accent-cyan)', color: 'black', borderRadius: '4px', fontSize: '0.875rem', fontWeight: 600, border: 'none', cursor: 'pointer' }}>Salvar</button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {detailTask && (
+        <CardDetailModal
+          task={detailTask}
+          currentUser={currentUser}
+          onClose={() => setDetailTask(null)}
+          onUpdate={handleUpdateFromDetail}
+        />
       )}
     </div>
   );

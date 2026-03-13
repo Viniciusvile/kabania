@@ -384,3 +384,23 @@
     transform: translateY(0);
   }
 }
+
+/* --- Read-only / non-admin styles --- */
+.kb-readonly-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.09);
+  border: 1px solid rgba(251, 191, 36, 0.18);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+}
+
+.kb-toggle-btn.disabled-toggle {
+  cursor: not-allowed;
+  opacity: 0.4;
+}

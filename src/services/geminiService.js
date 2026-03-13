@@ -4,33 +4,49 @@ const API_KEY = 'AIzaSyBzAmPDGbETA0dMk-kEPbE1S68fBpCVgzU';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 function getAuthorizedTags() {
+  // Priority 1: Company-level knowledge base (shared among all members)
+  const companyData = localStorage.getItem('synapseCurrentCompany');
+  if (companyData) {
+    try {
+      const company = JSON.parse(companyData);
+      if (company?.id) {
+        const companyKey = `synapseKnowledgeState_COMPANY_${company.id}`;
+        const savedState = localStorage.getItem(companyKey);
+        if (savedState) {
+          const items = JSON.parse(savedState);
+          const activeItems = items.filter(i => i.enabled);
+          if (activeItems.length > 0) {
+            const allTags = new Set();
+            activeItems.forEach(item => {
+              allTags.add(item.title);
+              if (item.tags) { item.tags.forEach(t => allTags.add(t)); }
+            });
+            let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
+            allTags.forEach(tag => { tagsString += `[TAG: ${tag}]\n`; });
+            return tagsString;
+          }
+        }
+      }
+    } catch (e) { console.error('Error reading company knowledge:', e); }
+  }
+
+  // Fallback: per-user knowledge base (legacy)
   const currentUser = localStorage.getItem('synapseCurrentUser');
   const storageKey = currentUser ? `synapseKnowledgeState_${currentUser}` : 'synapseKnowledgeState_default';
-  
   const savedState = localStorage.getItem(storageKey);
   if (!savedState) return 'NENHUMA TAG AUTORIZADA';
   
   try {
     const items = JSON.parse(savedState);
     const activeItems = items.filter(i => i.enabled);
-    
     if (activeItems.length === 0) return 'NENHUMA TAG AUTORIZADA';
-    
     const allTags = new Set();
     activeItems.forEach(item => {
-      // Add the title as a tag so the overarching theme is recognized
       allTags.add(item.title);
-      // Add explicit tags
-      if (item.tags) {
-        item.tags.forEach(t => allTags.add(t));
-      }
+      if (item.tags) { item.tags.forEach(t => allTags.add(t)); }
     });
-    
     let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
-    allTags.forEach(tag => {
-      tagsString += `[TAG: ${tag}]\n`;
-    });
-    
+    allTags.forEach(tag => { tagsString += `[TAG: ${tag}]\n`; });
     return tagsString;
   } catch (e) {
     console.error('Failed to parse knowledge state', e);
@@ -38,7 +54,8 @@ function getAuthorizedTags() {
   }
 }
 
-export async function processTaskWithAI(taskDescription) {
+
+export async function processTaskWithAI(taskDescription, isConcise = false) {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const authorizedTags = getAuthorizedTags();
@@ -54,7 +71,8 @@ REGRAS DE FUNCIONAMENTO
    - PASSO 1: Identificar o tema principal da pergunta.
    - PASSO 2: Verificar se existe uma TAG correspondente ou logicamente relacionada a esse tema na lista de "TAGS AUTORIZADAS DISPONÍVEIS".
    - PASSO 3:
-     * SE EXISTIR TAG AUTORIZADA: Você pode responder normalmente usando seu conhecimento externo generalizado. Forneça uma resposta completa e clara.
+     * SE EXISTIR TAG AUTORIZADA: Você pode responder normalmente usando seu conhecimento externo generalizado.
+       REQUISITO DE FORMATO: Forneça uma resposta ${isConcise ? 'EXTREMAMENTE CURTA E DIRETA (máximo 2 parágrafos curtos ou 3 bullet points). Seja objetivo e evite introduções longas.' : 'completa e clara.'}
      * SE NÃO EXISTIR TAG AUTORIZADA: Você NÃO pode responder a pergunta. Responda APENAS e EXATAMENTE com a frase: "Este assunto não está autorizado no sistema."
 4. As TAGS não contêm informação, apenas controle de acesso.
 5. Nunca ignore o sistema de TAGS.

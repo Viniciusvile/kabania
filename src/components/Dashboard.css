@@ -191,12 +191,74 @@
   border: 2px solid var(--bg-app);
 }
 
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  background: #ef4444;
+  border-radius: 30px;
+  border: 1.5px solid var(--bg-app);
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
 .user-profile {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   font-size: 0.9rem;
   cursor: pointer;
+}
+
+.user-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.2;
+}
+
+.user-display-name {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.user-company-name {
+  font-size: 0.7rem;
+  color: var(--accent-cyan);
+  opacity: 0.8;
+}
+
+.topbar-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 30px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+  width: fit-content;
+}
+
+.topbar-role-pill.admin {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.topbar-role-pill.member {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.2);
 }
 
 .avatar {

@@ -1,0 +1,407 @@
+/* ============================================
+   CompanySetup Wizard Styles
+   ============================================ */
+
+.company-setup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 9, 20, 0.96);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.5rem;
+}
+
+.company-setup-card {
+  background: #0b1120;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 40px rgba(0, 229, 255, 0.04);
+  animation: cs-appear 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cs-appear {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---- Header ---- */
+.company-setup-header {
+  padding: 2.25rem 2rem 2rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(160deg, rgba(0,229,255,0.06) 0%, transparent 55%);
+}
+
+.cs-logo {
+  color: #00e5ff;
+  margin-bottom: 0.75rem;
+}
+
+.company-setup-header h1 {
+  font-size: 1.45rem;
+  font-weight: 750;
+  color: #fff;
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.02em;
+}
+
+.company-setup-header p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0 0 1.75rem;
+}
+
+/* Progress dots */
+.cs-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.cs-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+  transition: all 0.35s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.cs-dot.active {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: #00e5ff;
+  color: #00e5ff;
+}
+
+.cs-dot.done {
+  background: #00e5ff;
+  border-color: #00e5ff;
+  color: #000;
+}
+
+.cs-line {
+  width: 40px;
+  height: 2px;
+  background: rgba(255,255,255,0.08);
+  transition: background 0.35s ease;
+}
+
+.cs-line.done {
+  background: #00e5ff;
+}
+
+/* ---- Body ---- */
+.company-setup-body {
+  padding: 2rem;
+}
+
+.cs-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #f87171;
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.cs-step-content h2 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: #e2e8f0;
+  margin: 0 0 1.5rem;
+}
+
+/* ---- Mode selection ---- */
+.cs-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cs-mode-card {
+  background: rgba(255,255,255,0.025);
+  border: 2px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  transition: all 0.22s ease;
+  text-align: center;
+}
+
+.cs-mode-card:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  background: rgba(0, 229, 255, 0.05);
+  color: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+.cs-mode-card.selected {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.08);
+}
+
+.cs-mode-card strong {
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.cs-mode-card span {
+  font-size: 0.72rem;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+/* ---- Form ---- */
+.cs-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.cs-form-group > label {
+  display: block;
+  font-size: 0.825rem;
+  color: #94a3b8;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+}
+
+.cs-label-hint {
+  font-size: 0.75rem;
+  color: #00e5ff;
+  font-weight: 400;
+}
+
+.cs-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: #fff;
+  padding: 0.8rem 1rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.cs-input:focus {
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.07);
+}
+
+.cs-input-code {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.35rem;
+  text-transform: uppercase;
+  padding: 1rem;
+}
+
+.cs-hint-text {
+  font-size: 0.75rem;
+  color: #475569;
+  margin-top: 0.6rem;
+  line-height: 1.5;
+}
+
+/* ---- Sector cards ---- */
+.cs-sectors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.cs-sector-card {
+  background: rgba(255,255,255,0.025);
+  border: 2px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 0.9rem 0.65rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.cs-sector-card:hover {
+  border-color: rgba(0, 229, 255, 0.25);
+  background: rgba(0, 229, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.cs-sector-card.selected {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.09);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.08);
+}
+
+.cs-sector-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.cs-sector-card strong {
+  font-size: 0.7rem;
+  font-weight: 650;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+.cs-sector-desc {
+  font-size: 0.62rem;
+  color: #475569;
+  line-height: 1.35;
+}
+
+.cs-sector-preview {
+  font-size: 0.6rem;
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.15rem;
+  opacity: 0.85;
+}
+
+/* ---- Buttons ---- */
+.cs-btn-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.cs-btn-row .cs-btn-primary {
+  flex: 1;
+}
+
+.cs-btn-primary {
+  background: #00e5ff;
+  color: #001820;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  letter-spacing: 0.01em;
+}
+
+.cs-btn-primary:hover:not(:disabled) {
+  background: #00cde8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.25);
+}
+
+.cs-btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cs-btn-confirm {
+  background: linear-gradient(135deg, #00e5ff 0%, #0094a8 100%);
+}
+
+.cs-btn-secondary {
+  background: rgba(255,255,255,0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 0.8rem 1.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cs-btn-secondary:hover {
+  background: rgba(255,255,255,0.09);
+  color: #e2e8f0;
+}
+
+/* ---- Confirmation step ---- */
+.cs-confirm {
+  text-align: center;
+}
+
+.cs-confirm-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.cs-confirm h2 {
+  margin-bottom: 1.5rem;
+}
+
+.cs-summary {
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.12);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.75rem;
+  text-align: left;
+}
+
+.cs-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.cs-summary-row:last-child {
+  border-bottom: none;
+}
+
+.cs-summary-row span {
+  color: #64748b;
+}
+
+.cs-summary-row strong {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.cs-role-gold {
+  color: #fbbf24 !important;
+}

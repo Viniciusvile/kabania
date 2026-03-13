@@ -1,0 +1,325 @@
+/* ============================================
+   CompanyPanel Styles
+   ============================================ */
+
+.company-panel {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ---- Header ---- */
+.cp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cp-header-emoji {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.cp-header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.02em;
+}
+
+.cp-sector-tag {
+  font-size: 0.78rem;
+  color: #00e5ff;
+  font-weight: 500;
+}
+
+.cp-role-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 30px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cp-role-badge.admin {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.cp-role-badge.member {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+/* ---- Grid ---- */
+.cp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .cp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Cards ---- */
+.cp-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.cp-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: #e2e8f0;
+  margin: 0 0 1.25rem;
+}
+
+/* ---- Info list ---- */
+.cp-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cp-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0;
+  font-size: 0.825rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.cp-info-row:last-child {
+  border-bottom: none;
+}
+
+.cp-info-row span {
+  color: #64748b;
+}
+
+.cp-info-row strong {
+  color: #e2e8f0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.cp-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 1.25rem 0;
+}
+
+/* ---- Invite section ---- */
+.cp-invite-section label {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+}
+
+.cp-hint {
+  color: #00e5ff;
+  font-weight: 400;
+}
+
+.cp-code-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+.cp-code-box code {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: 0.3rem;
+  color: #00e5ff;
+  flex: 1;
+  font-family: 'Courier New', monospace;
+}
+
+.cp-copy-btn {
+  background: rgba(0, 229, 255, 0.12);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 8px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cp-copy-btn:hover, .cp-copy-btn.copied {
+  background: #00e5ff;
+  color: #001820;
+  border-color: #00e5ff;
+}
+
+.cp-invite-hint {
+  font-size: 0.72rem;
+  color: #475569;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* ---- Members ---- */
+.cp-members-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.cp-refresh-btn {
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.cp-refresh-btn:hover {
+  color: #e2e8f0;
+}
+
+.cp-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.cp-member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.cp-member-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cp-member-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+}
+
+.cp-member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cp-member-email {
+  display: block;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.cp-member-role {
+  font-size: 0.68rem;
+  display: inline-block;
+  margin-top: 0.15rem;
+  color: #64748b;
+}
+
+.cp-member-role.admin {
+  color: #fbbf24;
+}
+
+.cp-member-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.cp-action-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  padding: 0.35rem;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cp-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.cp-action-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.cp-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #475569;
+  font-size: 0.825rem;
+  line-height: 1.5;
+}
