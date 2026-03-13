@@ -38,7 +38,7 @@ async function getAuthorizedTags(companyId) {
 
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const authorizedTags = await getAuthorizedTags(companyId);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
@@ -82,7 +82,7 @@ Resposta da IA:`;
 
 export async function analyzeProductivity(data) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const prompt = `Você é um analista de produtividade especialista em Kanban. 
     Analise os seguintes dados e sugira 3 melhorias de processo:
     ${JSON.stringify(data)}
@@ -96,7 +96,7 @@ export async function analyzeProductivity(data) {
 
 export async function generateWeeklySummary(data) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const prompt = `Gere um resumo semanal das atividades desta empresa para um relatório de diretoria:
     ${JSON.stringify(data)}
     Destaque as conclusões e pontos de atenção. Responda em português.`;
@@ -109,7 +109,7 @@ export async function generateWeeklySummary(data) {
 
 export async function suggestPrioritization(tasks) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const prompt = `Com base nestas tarefas do usuário, qual deve ser a prioridade #1 para hoje e por quê?
     ${JSON.stringify(tasks)}
     Considere prazos e importância. Responda de forma curta e motivadora em português.`;
@@ -122,7 +122,7 @@ export async function suggestPrioritization(tasks) {
 
 export async function detectBottlenecks(kanbanData) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     const prompt = `Identifique potenciais gargalos neste quadro Kanban (tarefas paradas há muito tempo ou excesso em uma coluna):
     ${JSON.stringify(kanbanData)}
     Responda em português com sugestões de ação.`;
