@@ -2,6 +2,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '../supabaseClient';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+if (!API_KEY) {
+  console.error("ERRO: VITE_GEMINI_API_KEY não encontrada no arquivo .env");
+}
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 async function getAuthorizedTags(companyId) {
@@ -168,8 +171,9 @@ export async function analyzeServiceRequest(description, companyId) {
     RESPOSTA JSON:`;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = result.response.text();
+    
+    console.log("Resposta bruta da IA:", text);
     
     // Improved JSON extraction: find the first { and last }
     const jsonMatch = text.match(/\{[\s\S]*\}/);

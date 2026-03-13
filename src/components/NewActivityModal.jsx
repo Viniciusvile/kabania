@@ -63,22 +63,38 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
   };
 
   const handleSmartTriage = async () => {
-    if (!form.description) return;
-    setIsAnalysing(true);
-    const analysis = await analyzeServiceRequest(form.description, currentCompany?.id);
-    if (analysis) {
-      setForm(prev => ({
-        ...prev,
-        activityType: analysis.type + (analysis.duration ? ` - ${analysis.duration} minutos` : ''),
-        duration: analysis.duration,
-        status: 'Pendente' // Reset or keep
-      }));
-      
-      if (analysis.kb_suggested_tag) {
-        setSuggestedKB(analysis.kb_suggested_tag);
-      }
+    if (!form.description) {
+      console.warn("Smart Triage: Descrição vazia.");
+      return;
     }
-    setIsAnalysing(false);
+    
+    setIsAnalysing(true);
+    console.log("Iniciando Triagem IA para:", form.description);
+    
+    try {
+      const analysis = await analyzeServiceRequest(form.description, currentCompany?.id);
+      console.log("Resultado da análise IA:", analysis);
+      
+      if (analysis && analysis.type) {
+        setForm(prev => ({
+          ...prev,
+          activityType: analysis.type,
+          duration: String(analysis.duration || prev.duration),
+        }));
+        
+        if (analysis.kb_suggested_tag) {
+          setSuggestedKB(analysis.kb_suggested_tag);
+        }
+      } else {
+        console.error("Análise retornou dados inválidos:", analysis);
+        alert("A IA não conseguiu processar esta descrição de forma válida. Tente detalhar melhor o problema.");
+      }
+    } catch (error) {
+      console.error("Erro fatal na Triagem IA:", error);
+      alert("Erro ao conectar com o serviço de IA: " + error.message);
+    } finally {
+      setIsAnalysing(false);
+    }
   };
 
   const handleDuplicateCheck = async (desc) => {
