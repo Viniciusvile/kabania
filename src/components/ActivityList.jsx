@@ -315,12 +315,12 @@ export default function ActivityList({ currentUser, currentCompany }) {
   };
 
   // The simplified filter for team collaboration
-  const filtered = activities.filter(a =>
+  const filtered = (activities || []).filter(a =>
     search === '' ||
-    a.id.toLowerCase().includes(search.toLowerCase()) ||
-    a.location.toLowerCase().includes(search.toLowerCase()) ||
-    a.type.toLowerCase().includes(search.toLowerCase()) ||
-    a.status.toLowerCase().includes(search.toLowerCase())
+    (a.id && a.id.toLowerCase().includes(search.toLowerCase())) ||
+    (a.location && a.location.toLowerCase().includes(search.toLowerCase())) ||
+    (a.type && a.type.toLowerCase().includes(search.toLowerCase())) ||
+    (a.status && a.status.toLowerCase().includes(search.toLowerCase()))
   );
 
   // Pagination

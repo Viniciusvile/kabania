@@ -63,6 +63,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
   // Tasks by column
   const tasksByColumn = useMemo(() => {
     const counts = { backlog: 0, todo: 0, progress: 0, ai: 0, done: 0 };
+    if (!Array.isArray(tasks)) return counts;
     tasks.forEach(t => { if (counts[t.columnId] !== undefined) counts[t.columnId]++; });
     return counts;
   }, [tasks]);
@@ -75,6 +76,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
   // Tasks by assignee
   const tasksByAssignee = useMemo(() => {
     const map = {};
+    if (!Array.isArray(tasks)) return [];
     tasks.forEach(t => {
       (t.assignees || []).forEach(email => {
         if (!map[email]) map[email] = { total: 0, done: 0 };
@@ -87,18 +89,20 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
 
   // Deadline alerts
   const deadlineAlerts = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
     return tasks
-      .filter(t => t.deadline && t.columnId !== 'done')
+      .filter(t => t && t.deadline && t.columnId !== 'done')
       .map(t => ({ ...t, deadlineStatus: getDeadlineStatus(t.deadline) }))
       .filter(t => t.deadlineStatus && t.deadlineStatus.days <= 5)
-      .sort((a, b) => a.deadlineStatus.days - b.deadlineStatus.days)
+      .sort((a, b) => (a.deadlineStatus?.days || 0) - (b.deadlineStatus?.days || 0))
       .slice(0, 8);
   }, [tasks]);
 
   // Recent tasks (last 8 added)
   const recentTasks = useMemo(() => {
+    if (!Array.isArray(tasks)) return [];
     return [...tasks]
-      .filter(t => t.id)
+      .filter(t => t && t.id && typeof t.id === 'string')
       .sort((a, b) => {
         const aTime = parseInt(a.id.replace('t_', '')) || 0;
         const bTime = parseInt(b.id.replace('t_', '')) || 0;

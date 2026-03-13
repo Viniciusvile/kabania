@@ -28,7 +28,9 @@ export default function AIInsights({ currentUser, currentCompany }) {
   const getActivitiesData = () => {
     try {
       const STORAGE_KEY = 'synapseActivities_v2';
-      const activities = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const activities = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(activities)) return [];
       return activities.filter(a => a.companyId === currentCompany?.id);
     } catch { return []; }
   };
