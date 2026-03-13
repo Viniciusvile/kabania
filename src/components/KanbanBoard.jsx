@@ -287,7 +287,13 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   // AI Analysis column watcher
   useEffect(() => {
-    const unanalyzed = tasks.filter(t => t.columnId === 'ai' && !t.aiResponse && !t.isAiLoading);
+    // Prevent AI from triggering while the user is still dragging the card over the column
+    const unanalyzed = tasks.filter(t => 
+      t.columnId === 'ai' && 
+      !t.aiResponse && 
+      !t.isAiLoading && 
+      t.id !== activeTask?.id
+    );
     if (unanalyzed.length === 0) return;
     
     unanalyzed.forEach(async (task) => {
@@ -309,7 +315,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         console.error('Error persisting AI response:', error);
       }
     });
-  }, [tasks]);
+  }, [tasks, activeTask]);
 
   // Keep detail panel in sync with task updates
   useEffect(() => {
