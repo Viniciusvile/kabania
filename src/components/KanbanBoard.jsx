@@ -222,11 +222,24 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [formDeadline, setFormDeadline] = useState('');
   const [formAssignees, setFormAssignees] = useState([]);
 
-  // Get company members for assignee picker
-  const companyMembers = React.useMemo(() => {
-    if (!currentCompany?.id) return [];
-    const users = JSON.parse(localStorage.getItem('synapseUsers') || '[]');
-    return users.filter(u => u.companyId === currentCompany.id).map(u => u.email);
+  const [companyMembers, setCompanyMembers] = useState([]);
+
+  // Fetch company members from Supabase
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!currentCompany?.id) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('company_id', currentCompany.id);
+
+      if (!error && data) {
+        setCompanyMembers(data.map(p => p.email));
+      } else if (error) {
+        console.error('Error fetching company members:', error);
+      }
+    };
+    fetchMembers();
   }, [currentCompany]);
 
   // Fetch tasks from Supabase
