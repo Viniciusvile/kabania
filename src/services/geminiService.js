@@ -38,7 +38,7 @@ async function getAuthorizedTags(companyId) {
 
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const authorizedTags = await getAuthorizedTags(companyId);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
@@ -83,7 +83,7 @@ Resposta curta:`;
 
 export async function analyzeProductivity(data) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Você é um analista de produtividade especialista em Kanban. 
     Analise os seguintes dados e sugira 3 melhorias de processo:
     ${JSON.stringify(data)}
@@ -97,7 +97,7 @@ export async function analyzeProductivity(data) {
 
 export async function generateWeeklySummary(data) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Gere um resumo semanal das atividades desta empresa para um relatório de diretoria:
     ${JSON.stringify(data)}
     Destaque as conclusões e pontos de atenção. Responda em português.`;
@@ -110,7 +110,7 @@ export async function generateWeeklySummary(data) {
 
 export async function suggestPrioritization(tasks) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Com base nestas tarefas do usuário, qual deve ser a prioridade #1 para hoje e por quê?
     ${JSON.stringify(tasks)}
     Considere prazos e importância. Responda de forma curta e motivadora em português.`;
@@ -123,7 +123,7 @@ export async function suggestPrioritization(tasks) {
 
 export async function detectBottlenecks(kanbanData) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Identifique potenciais gargalos neste quadro Kanban (tarefas paradas há muito tempo ou excesso em uma coluna):
     ${JSON.stringify(kanbanData)}
     Responda em português com sugestões de ação.`;
@@ -136,7 +136,7 @@ export async function detectBottlenecks(kanbanData) {
 
 export async function analyzeServiceRequest(description, companyId) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const authorizedTags = await getAuthorizedTags(companyId);
 
     const prompt = `Você é um assistente de triagem inteligente para uma plataforma de gestão de serviços.
@@ -149,22 +149,36 @@ export async function analyzeServiceRequest(description, companyId) {
 
     REGRAS DE RETORNO:
     1. Retorne APENAS um objeto JSON puro, sem markdown, sem explicações.
-    2. Campos do JSON:
-       - "type": Escolha o mais adequado entre: "Manutenção Preventiva", "Manutenção Corretiva", "Instalação", "Vistoria".
+    2. O campo "type" DEVE ser exatamente uma das seguintes opções:
+       - "Manutenção Preventiva - 45 minutos"
+       - "Manutenção Corretiva - 60 minutos" 
+       - "Instalação Field Control - 90 minutos"
+       - "Instalação de Equipamento - 120 minutos"
+       - "Vistoria - 30 minutos"
+    3. Campos do JSON:
+       - "type": (Obrigatório) Uma das opções acima.
        - "duration": Estimativa em minutos (número inteiro).
        - "priority": "Baixa", "Média", "Alta" ou "Urgente".
        - "kb_suggested_tag": Se a descrição se relacionar com alguma das TAGS AUTORIZADAS, retorne o nome da TAG. Caso contrário, null.
        - "short_summary": Um resumo de no máximo 10 palavras.
 
     FORMATO DE RESPOSTA EXEMPLO:
-    {"type": "Manutenção Corretiva", "duration": 60, "priority": "Alta", "kb_suggested_tag": "Inadimplência", "short_summary": "Reparo urgente de vazamento no salão."}
+    {"type": "Manutenção Corretiva - 60 minutos", "duration": 60, "priority": "Alta", "kb_suggested_tag": "Inadimplência", "short_summary": "Reparo urgente de vazamento no salão."}
 
     RESPOSTA JSON:`;
 
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    // Clean potential markdown from response
-    const cleanJson = text.replace(/```json|```/gi, '').trim();
+    const response = await result.response;
+    const text = response.text();
+    
+    // Improved JSON extraction: find the first { and last }
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Não foi possível encontrar JSON na resposta da IA:", text);
+      return null;
+    }
+    
+    const cleanJson = jsonMatch[0];
     return JSON.parse(cleanJson);
   } catch (error) {
     console.error("Erro ao analisar solicitação:", error);
@@ -174,7 +188,7 @@ export async function analyzeServiceRequest(description, companyId) {
 
 export async function checkActivityDuplicates(description, existingActivities) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     // Send only relevant data to minimize tokens
     const context = existingActivities.slice(0, 10).map(a => ({
@@ -200,7 +214,10 @@ export async function checkActivityDuplicates(description, existingActivities) {
     Responda apenas o JSON:`;
 
     const result = await model.generateContent(prompt);
-    const cleanJson = result.response.text().replace(/```json|```/gi, '').trim();
+    const response = await result.response;
+    const cleanJson = response.text().match(/\{[\s\S]*\}/)?.[0];
+    
+    if (!cleanJson) return { isDuplicate: false };
     return JSON.parse(cleanJson);
   } catch (error) {
     console.error("Erro ao verificar duplicidade:", error);
