@@ -10,18 +10,27 @@ export default function BusinessManagement({ currentUser, currentCompany, userRo
   const [filter, setFilter] = useState('ALL');
 
   useEffect(() => {
-    if (currentCompany) {
-      setHistory(getHistory(currentCompany.id));
+    const loadData = async () => {
+      if (!currentCompany?.id) return;
       
-      // Fetch all company activities for the report
-      const STORAGE_KEY = 'synapseActivities_v2';
-      const allActivities = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      const companyActivities = allActivities.filter(a => a.companyId === currentCompany.id);
-      setActivities(companyActivities);
-    }
+      const historyData = await getHistory(currentCompany.id);
+      setHistory(Array.isArray(historyData) ? historyData : []);
+      
+      const { data: companyActivities, error } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('company_id', currentCompany.id);
+        
+      if (!error && companyActivities) {
+        setActivities(companyActivities);
+      }
+    };
+    
+    loadData();
   }, [currentCompany]);
 
-  const filteredHistory = history.filter(event => {
+  const filteredHistory = (history || []).filter(event => {
+    if (!event || !event.action) return false;
     if (filter === 'ALL') return true;
     if (filter === 'ACTIVITY') return event.action.includes('ACTIVITY');
     if (filter === 'MEMBER') return event.action.includes('MEMBER');
