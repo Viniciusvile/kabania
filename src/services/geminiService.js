@@ -95,7 +95,9 @@ export async function analyzeProductivity(data, companyName = "Empresa") {
     1. Seja extremamente conciso.
     2. Liste 3-4 pontos acionáveis em forma de tópicos curtos.
     3. Use um tom executivo e personalizado para a ${companyName}.
-    4. Não use introduções longas.`;
+    4. Se identificar itens parados (WIP), sugira "Reunião diária focada em desobstrução".
+    5. Se identificar excesso em testes, sugira "Swarming da equipe para acelerar testes".
+    6. Não use introduções longas.`;
     
     const result = await model.generateContent(prompt);
     return result.response.text();
@@ -142,6 +144,10 @@ export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `Identifique 2 gargalos críticos no Kanban da ${companyName} e sugira a solução imediata:
     ${JSON.stringify(kanbanData)}
+    
+    DIRETRIZES DE SOLUÇÃO:
+    - Para Itens Bloqueados (WIP paralisado): Sugira "Reunião diária focada exclusivamente em desobstrução e dependências".
+    - Para Fila de Testes Saturada: Sugira "Aplique swarming (equipe ajuda nos testes) para acelerar o fluxo".
     
     Responda em no máximo 50 palavras no total, direto ao ponto.`;
     
