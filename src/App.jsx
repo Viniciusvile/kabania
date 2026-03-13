@@ -277,7 +277,7 @@ function App() {
           )}
         </div>
       </div>
-      <AIChatFab />
+      <AIChatFab currentCompany={currentCompany} />
     </div>
   );
 }

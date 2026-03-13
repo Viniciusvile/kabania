@@ -3,7 +3,7 @@ import { Bot, X, Send, Sparkles } from 'lucide-react';
 import { processTaskWithAI } from '../services/geminiService';
 import './Dashboard.css';
 
-export default function AIChatFab() {
+  export default function AIChatFab({ currentCompany }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'ai', text: 'Olá! Sou a IA integrada. Posso consultar o histórico da empresa ou analisar tarefas. Como posso ajudar?' }
@@ -29,7 +29,7 @@ export default function AIChatFab() {
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
     setIsTyping(true);
 
-    const response = await processTaskWithAI(userMessage);
+    const response = await processTaskWithAI(userMessage, currentCompany?.id);
     
     setMessages(prev => [...prev, { role: 'ai', text: response }]);
     setIsTyping(false);

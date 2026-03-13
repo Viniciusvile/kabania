@@ -1,64 +1,45 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { supabase } from '../supabaseClient';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-function getAuthorizedTags() {
-  // Priority 1: Company-level knowledge base (shared among all members)
-  const companyData = localStorage.getItem('synapseCurrentCompany');
-  if (companyData) {
-    try {
-      const company = JSON.parse(companyData);
-      if (company?.id) {
-        const companyKey = `synapseKnowledgeState_COMPANY_${company.id}`;
-        const savedState = localStorage.getItem(companyKey);
-        if (savedState) {
-          const items = JSON.parse(savedState);
-          const activeItems = items.filter(i => i.enabled);
-          if (activeItems.length > 0) {
-            const allTags = new Set();
-            activeItems.forEach(item => {
-              allTags.add(item.title);
-              if (item.tags) { item.tags.forEach(t => allTags.add(t)); }
-            });
-            let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
-            allTags.forEach(tag => { tagsString += `[TAG: ${tag}]\n`; });
-            return tagsString;
-          }
-        }
-      }
-    } catch (e) { console.error('Error reading company knowledge:', e); }
-  }
+async function getAuthorizedTags(companyId) {
+  if (!companyId) return 'NENHUMA TAG AUTORIZADA';
 
-  // Fallback: per-user knowledge base (legacy)
-  const currentUser = localStorage.getItem('synapseCurrentUser');
-  const storageKey = currentUser ? `synapseKnowledgeState_${currentUser}` : 'synapseKnowledgeState_default';
-  const savedState = localStorage.getItem(storageKey);
-  if (!savedState) return 'NENHUMA TAG AUTORIZADA';
-  
   try {
-    const items = JSON.parse(savedState);
-    const activeItems = items.filter(i => i.enabled);
-    if (activeItems.length === 0) return 'NENHUMA TAG AUTORIZADA';
+    const { data: items, error } = await supabase
+      .from('knowledge_base')
+      .select('title, tags')
+      .eq('company_id', companyId)
+      .eq('enabled', true);
+
+    if (error || !items || items.length === 0) return 'NENHUMA TAG AUTORIZADA';
+
     const allTags = new Set();
-    activeItems.forEach(item => {
+    items.forEach(item => {
       allTags.add(item.title);
-      if (item.tags) { item.tags.forEach(t => allTags.add(t)); }
+      if (item.tags) {
+        item.tags.forEach(t => allTags.add(t));
+      }
     });
+
     let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
-    allTags.forEach(tag => { tagsString += `[TAG: ${tag}]\n`; });
+    allTags.forEach(tag => {
+      tagsString += `[TAG: ${tag}]\n`;
+    });
     return tagsString;
   } catch (e) {
-    console.error('Failed to parse knowledge state', e);
+    console.error('Error fetching company knowledge from Supabase:', e);
     return 'NENHUMA TAG AUTORIZADA';
   }
 }
 
 
-export async function processTaskWithAI(taskDescription, isConcise = false) {
+export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const authorizedTags = getAuthorizedTags();
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const authorizedTags = await getAuthorizedTags(companyId);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
 

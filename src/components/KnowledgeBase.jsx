@@ -77,6 +77,20 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setIsModalOpen(true);
   };
 
+  const filteredItems = knowledgeItems.filter(item =>
+    item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getIconForType = (type) => {
+    switch (type) {
+      case 'database': return <Database size={20} color="var(--accent-cyan)" />;
+      case 'document': return <FileText size={20} color="#60a5fa" />;
+      case 'file': return <BookOpen size={20} color="#4ade80" />;
+      default: return <FileText size={20} color="var(--accent-cyan)" />;
+    }
+  };
+
   const handleAddNew = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newDesc.trim()) return;
