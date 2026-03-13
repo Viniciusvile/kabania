@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, MapPin, MessageSquare, Phone, Mail, Star, Home, Info, Plus } from 'lucide-react';
+import { X, ChevronDown, MapPin, MessageSquare, Phone, Mail, Star, Home, Info, Plus, Sparkles, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { analyzeServiceRequest, checkActivityDuplicates } from '../services/geminiService';
+import { supabase } from '../supabaseClient';
 import './NewActivityModal.css';
 
 const ACTIVITY_TYPES = [
@@ -25,8 +27,11 @@ function formatDateTime(dateStr) {
   return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-export default function NewActivityModal({ isOpen, onClose, onSave }) {
+export default function NewActivityModal({ isOpen, onClose, onSave, currentCompany, existingActivities }) {
   const [activeTab, setActiveTab] = useState('GERAL');
+  const [isAnalysing, setIsAnalysing] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [suggestedKB, setSuggestedKB] = useState(null);
 
   const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -52,6 +57,38 @@ export default function NewActivityModal({ isOpen, onClose, onSave }) {
 
   const handleChange = (field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
+    if (field === 'description') {
+      handleDuplicateCheck(e.target.value);
+    }
+  };
+
+  const handleSmartTriage = async () => {
+    if (!form.description) return;
+    setIsAnalysing(true);
+    const analysis = await analyzeServiceRequest(form.description, currentCompany?.id);
+    if (analysis) {
+      setForm(prev => ({
+        ...prev,
+        activityType: analysis.type + (analysis.duration ? ` - ${analysis.duration} minutos` : ''),
+        duration: analysis.duration,
+        status: 'Pendente' // Reset or keep
+      }));
+      
+      if (analysis.kb_suggested_tag) {
+        setSuggestedKB(analysis.kb_suggested_tag);
+      }
+    }
+    setIsAnalysing(false);
+  };
+
+  const handleDuplicateCheck = async (desc) => {
+    if (desc.length < 20 || !existingActivities) return;
+    const result = await checkActivityDuplicates(desc, existingActivities);
+    if (result && result.isDuplicate && result.similarityScore > 70) {
+      setDuplicateWarning(result);
+    } else {
+      setDuplicateWarning(null);
+    }
   };
 
   const handleSave = () => {
@@ -212,7 +249,17 @@ export default function NewActivityModal({ isOpen, onClose, onSave }) {
 
               {/* Description */}
               <div className="form-group mt-4">
-                <label>Descrição da ordem de serviço</label>
+                <div className="label-with-ai">
+                  <label>Descrição da ordem de serviço</label>
+                  <button 
+                    className={`btn-ai-triage ${isAnalysing ? 'analysing' : ''}`}
+                    onClick={handleSmartTriage}
+                    disabled={isAnalysing || !form.description}
+                  >
+                    {isAnalysing ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                    Triagem por IA
+                  </button>
+                </div>
                 <textarea
                   className="textarea-underlined"
                   placeholder="Descreva o serviço a ser realizado..."
@@ -223,6 +270,31 @@ export default function NewActivityModal({ isOpen, onClose, onSave }) {
                 ></textarea>
                 <div className="char-count">{form.description.length} / 2000</div>
               </div>
+
+              {/* AI Insight Banners */}
+              {(duplicateWarning || suggestedKB) && (
+                <div className="ai-insights-container mt-2">
+                  {duplicateWarning && (
+                    <div className="ai-insight-banner duplicate-warning">
+                      <AlertCircle size={16} />
+                      <div className="insight-content">
+                        <strong>Possível duplicidade ({duplicateWarning.similarityScore}%)</strong>
+                        <span>{duplicateWarning.reason}</span>
+                      </div>
+                    </div>
+                  )}
+                  {suggestedKB && (
+                    <div className="ai-insight-banner kb-suggestion">
+                      <Sparkles size={16} />
+                      <div className="insight-content">
+                        <strong>Procedimento sugerido: {suggestedKB}</strong>
+                        <span>Encontramos um guia na Base de Conhecimento que pode ajudar o técnico.</span>
+                      </div>
+                      <ExternalLink size={16} className="kb-link-icon" />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Collaborator, Duration, Visit Date, Visit Time */}
               <div className="form-row mt-4">

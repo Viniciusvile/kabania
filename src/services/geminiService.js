@@ -133,3 +133,77 @@ export async function detectBottlenecks(kanbanData) {
     return `Erro na detecção: ${error.message}`;
   }
 }
+
+export async function analyzeServiceRequest(description, companyId) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const authorizedTags = await getAuthorizedTags(companyId);
+
+    const prompt = `Você é um assistente de triagem inteligente para uma plataforma de gestão de serviços.
+    Analise a descrição da solicitação de serviço abaixo e retorne um objeto JSON com sugestões de preenchimento.
+
+    DESCRIÇÃO DA SOLICITAÇÃO:
+    "${description}"
+
+    ${authorizedTags}
+
+    REGRAS DE RETORNO:
+    1. Retorne APENAS um objeto JSON puro, sem markdown, sem explicações.
+    2. Campos do JSON:
+       - "type": Escolha o mais adequado entre: "Manutenção Preventiva", "Manutenção Corretiva", "Instalação", "Vistoria".
+       - "duration": Estimativa em minutos (número inteiro).
+       - "priority": "Baixa", "Média", "Alta" ou "Urgente".
+       - "kb_suggested_tag": Se a descrição se relacionar com alguma das TAGS AUTORIZADAS, retorne o nome da TAG. Caso contrário, null.
+       - "short_summary": Um resumo de no máximo 10 palavras.
+
+    FORMATO DE RESPOSTA EXEMPLO:
+    {"type": "Manutenção Corretiva", "duration": 60, "priority": "Alta", "kb_suggested_tag": "Inadimplência", "short_summary": "Reparo urgente de vazamento no salão."}
+
+    RESPOSTA JSON:`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    // Clean potential markdown from response
+    const cleanJson = text.replace(/```json|```/gi, '').trim();
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("Erro ao analisar solicitação:", error);
+    return null;
+  }
+}
+
+export async function checkActivityDuplicates(description, existingActivities) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    
+    // Send only relevant data to minimize tokens
+    const context = existingActivities.slice(0, 10).map(a => ({
+      location: a.location,
+      desc: a.description || a.title,
+      status: a.status
+    }));
+
+    const prompt = `Analise se a nova solicitação abaixo é uma duplicata de alguma já existente.
+    
+    NOVA SOLICITAÇÃO: "${description}"
+    
+    SOLICITAÇÕES ACTIVAS: ${JSON.stringify(context)}
+    
+    Retorne um objeto JSON:
+    {
+      "isDuplicate": boolean,
+      "similarityScore": number (0-100),
+      "duplicateId": string (se houver),
+      "reason": string (curta em português)
+    }
+    
+    Responda apenas o JSON:`;
+
+    const result = await model.generateContent(prompt);
+    const cleanJson = result.response.text().replace(/```json|```/gi, '').trim();
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("Erro ao verificar duplicidade:", error);
+    return { isDuplicate: false };
+  }
+}

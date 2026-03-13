@@ -369,6 +369,8 @@ export default function ActivityList({ currentUser, currentCompany }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
+        currentCompany={currentCompany}
+        existingActivities={activities}
       />
 
       {/* Detail / Edit modal */}

@@ -1,12 +1,26 @@
 import React, { useState } from 'react';
-import { X, MapPin, Trash2, Edit2, CheckCircle, XCircle, Clock, User, Star } from 'lucide-react';
+import { X, MapPin, Trash2, Edit2, CheckCircle, XCircle, Clock, User, Star, AlertTriangle, Sparkles, ExternalLink } from 'lucide-react';
 import './ActivityDetailModal.css';
 
 const STATUS_OPTIONS = ['Pendente', 'Agendada', 'Concluída', 'Cancelada'];
 
-export default function ActivityDetailModal({ activity, onClose, onSave, onDelete }) {
+export default function ActivityDetailModal({ activity, onClose, onSave, onDelete, existingActivities }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...activity });
+
+  const getRecurrenceCount = () => {
+    if (!existingActivities || !activity.location) return 0;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    return existingActivities.filter(a => 
+      a.location === activity.location && 
+      a.id !== activity.id &&
+      new Date(a.created) > thirtyDaysAgo
+    ).length;
+  };
+
+  const recurrenceCount = getRecurrenceCount();
 
   const handleChange = (field) => (e) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
@@ -52,6 +66,30 @@ export default function ActivityDetailModal({ activity, onClose, onSave, onDelet
 
         {/* Body */}
         <div className="detail-body">
+          {/* AI Insights and Warnings */}
+          <div className="detail-ai-alerts">
+            {recurrenceCount > 1 && (
+              <div className="recurrence-warning">
+                <AlertTriangle size={18} />
+                <div className="alert-text">
+                  <strong>Alerta de Recorrência</strong>
+                  <span>Esta localização teve {recurrenceCount} solicitações nos últimos 30 dias. Verifique se há um problema persistente.</span>
+                </div>
+              </div>
+            )}
+            
+            {activity.kb_suggested_tag && (
+              <div className="kb-detail-suggestion">
+                <Sparkles size={18} color="#0d9488" />
+                <div className="alert-text">
+                  <strong>Procedimento sugerido: {activity.kb_suggested_tag}</strong>
+                  <span>Consulte o manual na Base de Conhecimento para este tipo de reparo.</span>
+                </div>
+                <ExternalLink size={16} />
+              </div>
+            )}
+          </div>
+
           <div className="detail-section">
             <h3 className="detail-section-title">Informações Gerais</h3>
             <div className="detail-grid">
