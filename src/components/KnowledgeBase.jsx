@@ -16,7 +16,11 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [newDesc, setNewDesc] = useState('');
   const [newTags, setNewTags] = useState('');
   const [editingItem, setEditingItem] = useState(null);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
+
+  const showFeedback = (title, message, type = 'info', onConfirm = null) => {
+    setFeedback({ isOpen: true, title, message, type, onConfirm });
+  };
 
   // Fetch from Supabase
   useEffect(() => {
@@ -97,23 +101,27 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
 
   const handleLoadTemplates = () => {
     if (!isAdmin || !currentCompany?.sector || !SECTOR_TEMPLATES[currentCompany.sector]) return;
-    setIsConfirmOpen(true);
+    
+    showFeedback(
+      'Confirmar Restauração',
+      `Deseja carregar a lista presetada de sugestões para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`,
+      'confirm',
+      confirmLoadTemplates
+    );
   };
 
   const confirmLoadTemplates = async () => {
-    setIsConfirmOpen(false);
+    setFeedback(prev => ({ ...prev, isOpen: false }));
     setLoading(true);
     try {
       const template = SECTOR_TEMPLATES[currentCompany.sector];
       
-      // 1. Define global defaults
       const globalDefaults = [
         { title: 'Histórico da Empresa', desc: 'Dados sobre fundação, valores e cultura corporativa.', type: 'document', tag: 'Histórico' },
         { title: 'Políticas e Regras', desc: 'Regimento interno, normas de conduta e horários.', type: 'file', tag: 'Regras' },
         { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
       ];
 
-      // 2. Prepare items, but FILTER OUT those that already exist by title
       const existingTitles = new Set(knowledgeItems.map(it => it.title));
       const timestamp = Date.now();
       
@@ -141,7 +149,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       const itemsToInsert = potentialItems.filter(item => !existingTitles.has(item.title));
 
       if (itemsToInsert.length === 0) {
-        alert('Todos os temas deste preset já estão presentes na sua base.');
+        showFeedback('Atenção', 'Todos os temas deste preset já estão presentes na sua base.', 'info');
         setLoading(false);
         return;
       }
@@ -151,13 +159,14 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       if (!error) {
         setKnowledgeItems(prev => [...(data || itemsToInsert), ...prev]);
         logEvent(currentCompany.id, currentUser, 'LOAD_KB_TEMPLATES', `Carregada lista presetada de ${itemsToInsert.length} temas para o setor ${template.label}.`);
+        showFeedback('Sucesso', 'Presets carregados com sucesso!', 'info');
       } else {
         console.error('Supabase error detail:', error);
-        alert(`Erro ao salvar no banco: ${error.message || 'Verifique sua conexão ou permissões.'}`);
+        showFeedback('Erro', `Erro ao salvar no banco: ${error.message || 'Verifique sua conexão.'}`, 'info');
       }
     } catch (err) {
       console.error('Crash in handleLoadTemplates:', err);
-      alert('Ocorreu um erro inesperado ao processar os temas.');
+      showFeedback('Erro', 'Ocorreu um erro inesperado ao processar os temas.', 'info');
     } finally {
       setLoading(false);
     }
@@ -382,30 +391,39 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         </div>
       )}
 
-      {/* Custom Confirmation Modal for Presets */}
-      {isConfirmOpen && (
-        <div className="kb-modal-overlay" onClick={() => setIsConfirmOpen(false)}>
+      {/* Unified Feedback Modal */}
+      {feedback.isOpen && (
+        <div className="kb-modal-overlay" onClick={() => setFeedback(prev => ({ ...prev, isOpen: false }))}>
           <div className="kb-modal confirm-modal" onClick={e => e.stopPropagation()}>
             <div className="kb-modal-header">
               <h2>
-                <Sparkles size={20} color="var(--accent-cyan)" /> Confirmar Restauração
+                <Sparkles size={20} color="var(--accent-cyan)" /> {feedback.title}
               </h2>
-              <button className="kb-modal-close" onClick={() => setIsConfirmOpen(false)}>
+              <button className="kb-modal-close" onClick={() => setFeedback(prev => ({ ...prev, isOpen: false }))}>
                 <X size={20} />
               </button>
             </div>
-            <div className="kb-modal-body py-8 text-center">
-              <p className="text-lg mb-2">Deseja carregar a lista presetada de sugestões?</p>
-              <p className="text-sm text-muted">Ação para o setor: <strong className="text-cyan-400">{SECTOR_TEMPLATES[currentCompany.sector]?.label}</strong></p>
-              <p className="text-xs mt-4 opacity-50 italic">Isso adicionará novos temas de autorização à sua base atual.</p>
+            <div className="kb-modal-body py-8 text-center px-6">
+              <p className="text-lg mb-2">{feedback.message}</p>
+              {feedback.type === 'confirm' && currentCompany?.sector && (
+                <p className="text-sm text-muted">Ação para o setor: <strong className="text-cyan-400">{SECTOR_TEMPLATES[currentCompany.sector]?.label}</strong></p>
+              )}
             </div>
             <div className="kb-modal-footer justify-center gap-4">
-              <button className="kb-btn-cancel px-8" onClick={() => setIsConfirmOpen(false)}>
-                Agora não
-              </button>
-              <button className="kb-btn-submit px-8" onClick={confirmLoadTemplates}>
-                Sim, carregar temas
-              </button>
+              {feedback.type === 'confirm' ? (
+                <>
+                  <button className="kb-btn-cancel px-8" onClick={() => setFeedback(prev => ({ ...prev, isOpen: false }))}>
+                    Agora não
+                  </button>
+                  <button className="kb-btn-submit px-8" onClick={feedback.onConfirm}>
+                    Sim, confirmar
+                  </button>
+                </>
+              ) : (
+                <button className="kb-btn-submit px-12" onClick={() => setFeedback(prev => ({ ...prev, isOpen: false }))}>
+                  Entendi
+                </button>
+              )}
             </div>
           </div>
         </div>
