@@ -113,9 +113,11 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
       ];
 
-      // 2. Prepare all items (Global + Sector Specific tags as separate subjects)
+      // 2. Prepare items, but FILTER OUT those that already exist by title
+      const existingTitles = new Set(knowledgeItems.map(it => it.title));
       const timestamp = Date.now();
-      const itemsToInsert = [
+      
+      const potentialItems = [
         ...globalDefaults.map((d, i) => ({
           id: `kb-def-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
           company_id: currentCompany.id,
@@ -135,6 +137,14 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
           tags: [tag]
         }))
       ];
+
+      const itemsToInsert = potentialItems.filter(item => !existingTitles.has(item.title));
+
+      if (itemsToInsert.length === 0) {
+        alert('Todos os temas deste preset já estão presentes na sua base.');
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase.from('knowledge_base').insert(itemsToInsert).select();
       
