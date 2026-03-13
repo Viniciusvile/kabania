@@ -252,7 +252,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
           <div className="kb-empty">
             {knowledgeItems.length === 0
               ? (
-                <div className="flex flex-col items-center gap-4">
+                <div className="kb-empty-content">
                   <p>Nenhum tema cadastrado. {isAdmin ? 'Clique em "Conectar Nova Fonte" para começar.' : 'Aguarde o administrador configurar a base.'}</p>
                   {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector]?.tags.length > 0 && (
                     <button className="kb-btn-template" onClick={handleLoadTemplates}>

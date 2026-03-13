@@ -216,9 +216,54 @@
 
 .kb-empty {
   grid-column: 1 / -1;
-  text-align: center;
-  padding: 3rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5rem 0;
   color: var(--text-muted);
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-color);
+  border-radius: 16px;
+  margin: 1rem 0;
+}
+
+.kb-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 450px;
+}
+
+.kb-empty-content p {
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.kb-btn-template {
+  background: linear-gradient(135deg, var(--accent-cyan), #00b3cc);
+  color: var(--bg-app);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+}
+
+.kb-btn-template:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.3);
+  filter: brightness(1.1);
+}
+
+.kb-btn-template:active {
+  transform: translateY(0);
 }
 
 /* Modal Styles */
