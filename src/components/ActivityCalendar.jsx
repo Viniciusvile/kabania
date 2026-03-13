@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Filter, RefreshCw, X, Eye } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import './ActivityCalendar.css';
 
 const STORAGE_KEY = 'synapseActivities_v2';
@@ -15,12 +16,7 @@ const WEEKDAYS_SHORT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const WEEKDAYS_LONG  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-function getActivities() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
+
 
 // Extracts a date string 'YYYY-MM-DD' from activity fields
 function activityDate(a) {
