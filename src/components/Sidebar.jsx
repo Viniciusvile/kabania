@@ -63,18 +63,14 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
               onClick={() => onViewChange('reports')}
             >Dashboard Geral</div>
             
-            {userRole === 'admin' && (
-              <>
-                <div
-                  className={`submenu-item ${currentView === 'business_history' ? 'active' : ''}`}
-                  onClick={() => onViewChange('business_history')}
-                >Histórico de Atividades</div>
-                <div
-                  className={`submenu-item ${currentView === 'business_export' ? 'active' : ''}`}
-                  onClick={() => onViewChange('business_export')}
-                >Exportar Relatórios</div>
-              </>
-            )}
+            <div
+              className={`submenu-item ${currentView === 'business_history' ? 'active' : ''}`}
+              onClick={() => onViewChange('business_history')}
+            >Histórico de Atividades</div>
+            <div
+              className={`submenu-item ${currentView === 'business_export' ? 'active' : ''}`}
+              onClick={() => onViewChange('business_export')}
+            >Exportar Relatórios</div>
           </div>
         </div>
 
