@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { History, Download, FileSpreadsheet, FileJson, Clock, User, Activity, ShieldAlert, CheckCircle2, XCircle } from 'lucide-react';
+import { History, Download, FileSpreadsheet, FileJson, Clock, User, Activity, ShieldAlert, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { getHistory, logEvent } from '../services/historyService';
+import { supabase } from '../supabaseClient';
 import './BusinessManagement.css';
 
 export default function BusinessManagement({ currentUser, currentCompany, userRole, initialTab = 'history' }) {
@@ -198,7 +199,7 @@ export default function BusinessManagement({ currentUser, currentCompany, userRo
             </tr>
           </thead>
           <tbody>
-            {activities.map(a => (
+            {(activities || []).map(a => (
               <tr key={a.id}>
                 <td>{a.id}</td>
                 <td>{a.location}</td>
