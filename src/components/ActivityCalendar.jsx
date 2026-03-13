@@ -20,10 +20,17 @@ const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','A
 
 // Extracts a date string 'YYYY-MM-DD' from activity fields
 function activityDate(a) {
-  // visitDate preferred, fallback created
-  if (a.visitDate && /^\d{4}-\d{2}-\d{2}$/.test(a.visitDate)) return a.visitDate;
+  // 1. Check last_appointment (Supabase field) or visitDate (Legacy/Modal field)
+  const dateVal = a.last_appointment || a.visitDate;
+  if (dateVal && /^\d{4}-\d{2}-\d{2}$/.test(dateVal)) return dateVal;
+
+  // 2. Check created (ISO string from Supabase or Localized string)
   if (a.created) {
-    // created is like "12/03/2026, 16:24"
+    // If it's an ISO string (starts with YYYY-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}/.test(a.created)) {
+      return a.created.split('T')[0];
+    }
+    // Fallback for localized string "12/03/2026, 16:24"
     const match = a.created.match(/(\d{2})\/(\d{2})\/(\d{4})/);
     if (match) return `${match[3]}-${match[2]}-${match[1]}`;
   }
@@ -33,6 +40,11 @@ function activityDate(a) {
 function activityTime(a) {
   if (a.visitTime) return a.visitTime;
   if (a.created) {
+    // If ISO string
+    if (a.created.includes('T')) {
+      const timePart = a.created.split('T')[1];
+      if (timePart) return timePart.substring(0, 5);
+    }
     const match = a.created.match(/(\d{2}:\d{2})/);
     if (match) return match[1];
   }
@@ -75,7 +87,9 @@ function ActivityPopover({ activity, onClose }) {
         <div className="cal-popover-body">
           <div className="cal-popover-row"><strong>ID:</strong> #{activity.id}</div>
           {activity.type     && <div className="cal-popover-row"><strong>Tipo:</strong> {activity.type}</div>}
-          {activity.visitDate&& <div className="cal-popover-row"><strong>Data:</strong> {activity.visitDate}</div>}
+          {(activity.last_appointment || activity.visitDate) && (
+            <div className="cal-popover-row"><strong>Data:</strong> {activity.last_appointment || activity.visitDate}</div>
+          )}
           {activity.visitTime&& <div className="cal-popover-row"><strong>Hora:</strong> {activity.visitTime}</div>}
           {activity.collaborator && <div className="cal-popover-row"><strong>Colaborador:</strong> {activity.collaborator}</div>}
           {activity.address  && <div className="cal-popover-row"><strong>Endereço:</strong> {activity.address}</div>}
