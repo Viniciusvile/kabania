@@ -215,6 +215,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [newTaskCol, setNewTaskCol] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
+  const [dragStartColumn, setDragStartColumn] = useState(null);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
@@ -429,7 +430,11 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragStart = ({ active }) => setActiveTask(tasks.find(t => t.id === active.id));
+  const handleDragStart = ({ active }) => {
+    const task = tasks.find(t => t.id === active.id);
+    setDragStartColumn(task?.columnId || null);
+    setActiveTask(task);
+  };
 
   const handleDragOver = ({ active, over }) => {
     if (!over || active.id === over.id) return;
@@ -468,34 +473,36 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   const handleDragEnd = async ({ active, over }) => {
     setActiveTask(null);
-    if (!over || active.id === over.id) return;
-    const movedTask = tasks.find(t => t.id === active.id);
-    if (movedTask) {
-      const newColId = over.data.current?.type === 'Task'
-        ? tasks.find(t => t.id === over.id)?.columnId
-        : over.id;
-      
-      if (newColId && newColId !== movedTask.columnId) {
-        // Persist column change to Supabase
-        const payload = { 
-          column_id: newColId, 
-          // Clear response if moving to AI to force re-analysis, or clear if moving out
-          ai_response: null 
-        };
-        
-        const { error } = await supabase
-          .from('tasks')
-          .update(payload)
-          .eq('id', movedTask.id);
+    if (!over) {
+      setDragStartColumn(null);
+      return;
+    }
 
-        if (!error) {
-          setTasks(prev => prev.map(t => t.id === movedTask.id ? { ...t, columnId: newColId, aiResponse: null } : t));
-          notifyTaskMoved({ ...movedTask, columnId: newColId, aiResponse: null }, COLUMN_LABELS[newColId] || newColId, currentUser);
-        } else {
-          console.error('Error persisting drag and drop:', error);
-        }
+    const currentTask = tasks.find(t => t.id === active.id);
+    const newColId = over.data.current?.type === 'Task'
+      ? tasks.find(t => t.id === over.id)?.columnId
+      : over.id;
+
+    if (currentTask && newColId && newColId !== dragStartColumn) {
+      // Persist column change to Supabase
+      const payload = { 
+        column_id: newColId, 
+        ai_response: null 
+      };
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update(payload)
+        .eq('id', currentTask.id);
+
+      if (!error) {
+        // notify about move
+        notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+      } else {
+        console.error('Error persisting drag and drop:', error);
       }
     }
+    setDragStartColumn(null);
   };
 
   const closeModal = () => { setIsAddingTask(false); setEditingTask(null); };
