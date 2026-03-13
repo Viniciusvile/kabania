@@ -470,10 +470,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           const oldColId = tasks[ai].columnId;
           t[ai] = { ...t[ai], columnId: newColId };
           
-          // Only clear AI response if moving INTO the AI column from somewhere else
-          if (newColId === 'ai' && oldColId !== 'ai') {
-            t[ai].aiResponse = null;
-          } else if (newColId !== 'ai') {
+          if (newColId !== 'ai') {
             // Stop loading state if moving out of AI
             t[ai].isAiLoading = false;
           }
@@ -493,10 +490,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
             const t = [...tasks];
             t[ai] = { ...t[ai], columnId: over.id };
             
-            // Only clear AI response if moving INTO the AI column from somewhere else
-            if (over.id === 'ai' && oldColId !== 'ai') {
-              t[ai].aiResponse = null;
-            } else if (over.id !== 'ai') {
+            if (over.id !== 'ai') {
               // Stop loading state if moving out of AI
               t[ai].isAiLoading = false;
             }
@@ -510,8 +504,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   };
 
   const handleDragEnd = async ({ active, over }) => {
-    setActiveTask(null);
     if (!over) {
+      setActiveTask(null);
       setDragStartColumn(null);
       return;
     }
@@ -521,13 +515,20 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       ? tasks.find(t => t.id === over.id)?.columnId
       : over.id;
 
+    // 1. Sync local tasks state immediately to the final drop target to prevent AI watcher race conditions
+    if (currentTask && newColId) {
+      setTasks(prev => prev.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t));
+    }
+
+    // 2. Clear active task AFTER the column is corrected in local state
+    setActiveTask(null);
+
+    // 3. Persist to DB if the column actually changed from the start of the drag
     if (currentTask && newColId && newColId !== dragStartColumn) {
-      // Persist column change to Supabase
       const payload = { 
         column_id: newColId
       };
 
-      // Only clear AI response if moving INTO the AI column to force a new analysis
       if (newColId === 'ai') {
         payload.ai_response = null;
       }
@@ -538,7 +539,6 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         .eq('id', currentTask.id);
 
       if (!error) {
-        // notify about move
         notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
       } else {
         console.error('Error persisting drag and drop:', error);
