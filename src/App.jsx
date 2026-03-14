@@ -178,15 +178,23 @@ function App() {
       .single();
 
     if (!profError && profile) {
-      if (profile.companies) {
-        const company = profile.companies;
+      let company = null;
+      if (Array.isArray(profile.companies)) {
+        company = profile.companies[0];
+      } else if (profile.companies) {
+        company = profile.companies;
+      }
+
+      if (company) {
         const cwr = { ...company, role: profile.role || 'member' };
         setCurrentCompany(cwr);
         setUserRole(profile.role || 'member');
       } else {
+        console.log("No company joined. Profile state:", profile);
         setCurrentCompany(null);
       }
     } else {
+      console.log("Profile not found or error:", profError);
       setCurrentCompany(null);
     }
     
