@@ -41,7 +41,7 @@ async function getAuthorizedTags(companyId) {
 
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const authorizedTags = await getAuthorizedTags(companyId);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
@@ -86,7 +86,7 @@ Resposta curta:`;
 
 export async function analyzeProductivity(data, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Você é um consultor executivo de performance para a empresa ${companyName}.
     Analise estes dados de produtividade (Kanban e Atividades):
     ${JSON.stringify(data)}
@@ -108,7 +108,7 @@ export async function analyzeProductivity(data, companyName = "Empresa") {
 
 export async function generateWeeklySummary(data, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Gere um Resumo Executivo Semanal personalizado para ${companyName} baseado nestas atividades:
     ${JSON.stringify(data)}
     
@@ -126,7 +126,7 @@ export async function generateWeeklySummary(data, companyName = "Empresa") {
 
 export async function suggestPrioritization(tasks, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Como consultor da ${companyName}, qual deve ser a prioridade #1 deste usuário hoje?
     Dados: ${JSON.stringify(tasks)}
     
@@ -141,7 +141,7 @@ export async function suggestPrioritization(tasks, companyName = "Empresa") {
 
 export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Identifique 2 gargalos críticos no Kanban da ${companyName} e sugira a solução imediata:
     ${JSON.stringify(kanbanData)}
     
@@ -160,7 +160,7 @@ export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
 
 export async function analyzeServiceRequest(description, companyId) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const authorizedTags = await getAuthorizedTags(companyId);
 
     const prompt = `Você é um assistente de triagem inteligente para uma plataforma de gestão de serviços.
@@ -213,7 +213,7 @@ export async function analyzeServiceRequest(description, companyId) {
 
 export async function checkActivityDuplicates(description, existingActivities) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     // Send only relevant data to minimize tokens
     const context = existingActivities.slice(0, 10).map(a => ({
