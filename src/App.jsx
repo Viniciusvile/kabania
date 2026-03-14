@@ -257,7 +257,7 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <GoogleOAuthProvider clientId="505677501484-akagu47q7uvb7mlat2csaavj1gau4ses.apps.googleusercontent.com">
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
         <Login onLogin={handleLogin} />
       </GoogleOAuthProvider>
     );
@@ -268,71 +268,73 @@ function App() {
   }
 
   return (
-    <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
-        onLogout={handleLogout}
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        userRole={userRole}
-      />
-      <div className="main-content">
-        <TopBar
-          onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          searchQuery={searchQuery}
-          onSearchChange={(e) => setSearchQuery(e.target.value)}
-          currentUser={currentUser}
-          currentCompany={currentCompany}
-          userRole={userRole}
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
+      <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
           onLogout={handleLogout}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          onProjectChange={(id) => {
-            setSelectedProjectId(id);
-            setCurrentView('kanban');
-          }}
-          onAddProject={handleAddProject}
-          onRemoveProject={handleRemoveProject}
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          userRole={userRole}
         />
-        <div className="content-scroll">
-          {currentView === 'kanban' ? (
-            <>
-              <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />
-              <KanbanBoard
-                searchQuery={searchQuery}
+        <div className="main-content">
+          <TopBar
+            onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            searchQuery={searchQuery}
+            onSearchChange={(e) => setSearchQuery(e.target.value)}
+            currentUser={currentUser}
+            currentCompany={currentCompany}
+            userRole={userRole}
+            onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+            projects={projects}
+            selectedProjectId={selectedProjectId}
+            onProjectChange={(id) => {
+              setSelectedProjectId(id);
+              setCurrentView('kanban');
+            }}
+            onAddProject={handleAddProject}
+            onRemoveProject={handleRemoveProject}
+          />
+          <div className="content-scroll">
+            {currentView === 'kanban' ? (
+              <>
+                <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />
+                <KanbanBoard
+                  searchQuery={searchQuery}
+                  currentUser={currentUser}
+                  currentCompany={currentCompany}
+                  projectId={selectedProjectId}
+                />
+              </>
+            ) : currentView === 'knowledge' ? (
+              <KnowledgeBase currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+            ) : currentView === 'activities' ? (
+              <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
+            ) : currentView === 'calendar' ? (
+              <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
+            ) : currentView === 'company' ? (
+              <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+            ) : currentView === 'reports' ? (
+              <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />
+            ) : currentView === 'business_history' || currentView === 'business_export' ? (
+              <BusinessManagement
                 currentUser={currentUser}
                 currentCompany={currentCompany}
-                projectId={selectedProjectId}
+                userRole={userRole}
+                initialTab={currentView === 'business_history' ? 'history' : 'export'}
               />
-            </>
-          ) : currentView === 'knowledge' ? (
-            <KnowledgeBase currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
-          ) : currentView === 'activities' ? (
-            <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
-          ) : currentView === 'calendar' ? (
-            <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
-          ) : currentView === 'company' ? (
-            <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
-          ) : currentView === 'reports' ? (
-            <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />
-          ) : currentView === 'business_history' || currentView === 'business_export' ? (
-            <BusinessManagement
-              currentUser={currentUser}
-              currentCompany={currentCompany}
-              userRole={userRole}
-              initialTab={currentView === 'business_history' ? 'history' : 'export'}
-            />
-          ) : currentView === 'ai_insights' ? (
-            <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
-          ) : (
-            <div className="p-8 text-center text-muted">View em desenvolvimento</div>
-          )}
+            ) : currentView === 'ai_insights' ? (
+              <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+            ) : (
+              <div className="p-8 text-center text-muted">View em desenvolvimento</div>
+            )}
+          </div>
         </div>
+        <AIChatFab currentCompany={currentCompany} />
       </div>
-      <AIChatFab currentCompany={currentCompany} />
-    </div>
+    </GoogleOAuthProvider>
   );
 }
 

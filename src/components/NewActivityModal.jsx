@@ -259,16 +259,22 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                 </div>
               </div>
 
-              {/* Contract */}
-              <div className="form-group mt-4">
-                <label>Contrato de prazo</label>
-                <input
-                  type="text"
-                  className="input-underlined"
-                  placeholder="Nome ou número do contrato"
-                  value={form.contract}
-                  onChange={handleChange('contract')}
-                />
+              {/* Google Calendar Toggle */}
+              <div className="calendar-sync-options mt-4">
+                <label className="sync-toggle">
+                  <input 
+                    type="checkbox" 
+                    checked={form.syncCalendar} 
+                    onChange={handleChange('syncCalendar')} 
+                  />
+                  <span className="toggle-label">Sincronizar com Google Agenda</span>
+                </label>
+                {form.syncCalendar && (
+                  <div className="sync-note animate-fade-in">
+                    <Info size={14} /> 
+                    <span>Ative para enviar o prazo direto para o Google Agenda.</span>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -380,25 +386,6 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                   rows={2}
                 ></textarea>
                 <div className="char-count">{form.observation.length} / 2000</div>
-              </div>
-
-              {/* Google Calendar Toggle */}
-              <div className="calendar-sync-options mt-4">
-                <label className="sync-toggle">
-                  <input 
-                    type="checkbox" 
-                    checked={form.syncCalendar} 
-                    onChange={handleChange('syncCalendar')} 
-                  />
-                  <span className="toggle-label">Sincronizar com Google Agenda</span>
-                </label>
-                {form.syncCalendar && (
-                  <div className="sync-note animate-fade-in">
-                    <Info size={14} /> 
-                    <span>Você precisará autorizar o acesso no primeiro uso. 
-                    Certifique-se de que o administrador executou o <code>calendar_setup.sql</code>.</span>
-                  </div>
-                )}
               </div>
 
               <div className="modal-actions-center mt-4">
