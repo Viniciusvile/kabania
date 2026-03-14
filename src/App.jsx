@@ -294,13 +294,33 @@ function App() {
       <div style={{ 
         height: '100vh', 
         display: 'flex', 
+        flexDirection: 'column',
         alignItems: 'center', 
         justifyContent: 'center', 
-        background: '#0f172a' 
+        background: '#0f172a',
+        gap: '20px'
       }}>
-        <div style={{ color: '#0052cc', fontSize: '1.2rem', fontWeight: 'bold' }}>
+        <div style={{ color: '#60a5fa', fontSize: '1.2rem', fontWeight: 'bold' }}>
           Restaurando sessão...
         </div>
+        <div className="spinner-new"></div>
+        
+        {/* Emergency Bypass if stuck */}
+        <button 
+          onClick={() => setIsSessionLoading(false)}
+          style={{
+            marginTop: '20px',
+            padding: '8px 16px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#94a3b8',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          Demorando muito? Entrar manualmente
+        </button>
       </div>
     );
   }
