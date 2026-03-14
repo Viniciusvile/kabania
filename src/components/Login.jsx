@@ -5,7 +5,9 @@ import { supabase } from '../supabaseClient';
 import './Login.css';
 
 const errorMap = {
-  '23505': 'Este email já está cadastrado.'
+  '23505': 'Este email já está cadastrado.',
+  'email_rate_limit_exceeded': 'Limite de envios de email atingido. Por favor, tente novamente em uma hora ou use o login com Google.',
+  'Error sending confirmation email': 'Erro ao enviar email de confirmação. O servidor de emails do Supabase atingiu o limite. Tente usar o Login com Google.'
 };
 
 export default function Login({ onLogin }) {
@@ -30,7 +32,7 @@ export default function Login({ onLogin }) {
         });
         
         if (authError) {
-          setErrorMsg(authError.message);
+          setErrorMsg(errorMap[authError.code] || authError.message);
           setIsLoading(false);
           return;
         }
@@ -53,7 +55,7 @@ export default function Login({ onLogin }) {
         });
 
         if (error) {
-          setErrorMsg('Email ou senha incorretos.');
+          setErrorMsg(errorMap[error.code] || 'Email ou senha incorretos.');
         } else {
           onLogin(email);
         }
