@@ -94,8 +94,9 @@ export default function Login({ onLogin }) {
         .select('*')
         .eq('email', googleEmail);
 
-      if (!profError && existingProfiles.length === 0) {
-        await supabase.from('profiles').insert([
+      if (!profError && existingProfiles && existingProfiles.length === 0) {
+        // Try Inserting with user_id first
+        const { error: insError } = await supabase.from('profiles').insert([
           { 
             email: googleEmail, 
             name: googleName,
@@ -103,6 +104,16 @@ export default function Login({ onLogin }) {
             role: 'member' 
           }
         ]);
+
+        if (insError) {
+          console.warn("Retrying profile insert without user_id column...");
+          // Fallback: If user_id column is missing in DB, try without it
+          await supabase.from('profiles').insert([
+            { email: googleEmail, name: googleName, role: 'member' }
+          ]);
+        }
+      } else if (profError) {
+        console.error("Profile check error during Google Login:", profError);
       }
       
       onLogin(googleEmail);

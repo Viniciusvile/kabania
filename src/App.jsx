@@ -51,9 +51,8 @@ function App() {
     );
   }
 
-  const [isAuthenticated, setIsAuthenticated] = useState(() =>
-    localStorage.getItem('synapseAuth') === 'true'
-  );
+  // Changed: Start as false to prevent "skipping" login UI before session is verified
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(() =>
     localStorage.getItem('synapseCurrentUser') || ''
   );

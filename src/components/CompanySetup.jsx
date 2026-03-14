@@ -68,40 +68,21 @@ export default function CompanySetup({ currentUser, onComplete }) {
     const { error: coError } = await supabase.from('companies').insert([newCompany]);
 
     if (!coError) {
-      // 2. Initialize knowledge base with templates if any
+      // 2. Initialize knowledge base
       if (selectedSector && SECTOR_TEMPLATES[selectedSector]?.tags.length > 0) {
         const template = SECTOR_TEMPLATES[selectedSector];
-        
-        // Define global defaults
-        const globalDefaults = [
-          { title: 'Histórico da Empresa', desc: 'Dados sobre fundação, valores e cultura corporativa.', type: 'document', tag: 'Histórico' },
-          { title: 'Políticas e Regras', desc: 'Regimento interno, normas de conduta e horários.', type: 'file', tag: 'Regras' },
-          { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
-        ];
-
-        // Prepare items (Global + Sector Specific tags as separate subjects)
         const timestamp = Date.now();
         const itemsToInsert = [
-          ...globalDefaults.map((d, i) => ({
-            id: `kb-def-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
-            company_id: companyId,
-            title: d.title,
-            description: d.desc,
-            enabled: true,
-            type: d.type,
-            tags: [d.tag]
-          })),
           ...template.tags.map((tag, idx) => ({
             id: `kb-sec-${timestamp}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
             company_id: companyId,
             title: tag,
-            description: `Assunto autorizado: ${tag} (${template.label})`,
+            description: `Assunto autorizado: ${tag}`,
             enabled: true,
             type: 'document',
             tags: [tag]
           }))
         ];
-
         await supabase.from('knowledge_base').insert(itemsToInsert);
       }
 
@@ -112,13 +93,14 @@ export default function CompanySetup({ currentUser, onComplete }) {
         .eq('email', currentUser);
 
       if (!profError) {
-        // Pre-load logic (keep as reminder but ideally this would be server-side or handled differently)
         onComplete({ company: newCompany, role: 'admin' });
       } else {
-        setError('Erro ao vincular administrador.');
+        console.error('Perfil Update Error:', profError);
+        setError(`Erro ao vincular administrador: ${profError.message}`);
       }
     } else {
-      setError('Erro ao criar empresa no banco de dados.');
+      console.error('Company Insert Error:', coError);
+      setError(`Erro ao criar empresa no banco: ${coError.message}`);
     }
     setIsLoading(false);
   };
