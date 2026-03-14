@@ -70,6 +70,7 @@ function App() {
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
   
   // Multi-project state
   const [projects, setProjects] = useState([]);
@@ -166,40 +167,6 @@ function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-
-  // Load session on mount
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        handleLogin(session.user.email);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        handleLogin(session.user.email);
-      } else {
-        handleLogoutLocal();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Persist local auth only for "session" persistence
-  useEffect(() => {
-    localStorage.setItem('synapseAuth', isAuthenticated);
-    if (!isAuthenticated) {
-      localStorage.removeItem('synapseCurrentUser');
-      localStorage.removeItem('synapseCurrentCompany');
-      localStorage.removeItem('synapseUserRole');
-    } else {
-      localStorage.setItem('synapseCurrentUser', currentUser);
-      if (currentCompany) localStorage.setItem('synapseCurrentCompany', JSON.stringify(currentCompany));
-      localStorage.setItem('synapseUserRole', userRole);
-    }
-  }, [isAuthenticated, currentUser, currentCompany, userRole]);
-
   const handleLogin = async (email) => {
     setCurrentUser(email);
     
@@ -246,6 +213,65 @@ function App() {
     await supabase.auth.signOut();
     handleLogoutLocal();
   };
+
+  // Load session on mount
+  useEffect(() => {
+    const initSession = async () => {
+      setIsSessionLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await handleLogin(session.user.email);
+      }
+      setIsSessionLoading(false);
+    };
+
+    initSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await handleLogin(session.user.email);
+        setIsSessionLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        handleLogoutLocal();
+        setIsSessionLoading(false);
+      } else if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        // Just ensure we're not stuck in loading if these fire
+        setIsSessionLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Persist local auth only for "session" persistence
+  useEffect(() => {
+    localStorage.setItem('synapseAuth', isAuthenticated);
+    if (!isAuthenticated) {
+      localStorage.removeItem('synapseCurrentUser');
+      localStorage.removeItem('synapseCurrentCompany');
+      localStorage.removeItem('synapseUserRole');
+    } else {
+      localStorage.setItem('synapseCurrentUser', currentUser);
+      if (currentCompany) localStorage.setItem('synapseCurrentCompany', JSON.stringify(currentCompany));
+      localStorage.setItem('synapseUserRole', userRole);
+    }
+  }, [isAuthenticated, currentUser, currentCompany, userRole]);
+
+  if (isSessionLoading) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#0f172a' 
+      }}>
+        <div style={{ color: '#0052cc', fontSize: '1.2rem', fontWeight: 'bold' }}>
+          Restaurando sessão...
+        </div>
+      </div>
+    );
+  }
 
   const handleCompanySetupComplete = ({ company, role }) => {
     const cwr = { ...company, role };
