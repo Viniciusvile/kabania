@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ChevronDown, MapPin, MessageSquare, Phone, Mail, Star, Home, Info, Plus, Sparkles, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
 import { analyzeServiceRequest, checkActivityDuplicates } from '../services/geminiService';
 import { supabase } from '../supabaseClient';
+import { sendNotification } from '../services/webhookService';
 import './NewActivityModal.css';
 
 const ACTIVITY_TYPES = [
@@ -129,6 +130,18 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
       address: form.address,
     };
     onSave(newActivity);
+    
+    // Notify via Webhook
+    sendNotification(`🚩 **Novo Chamado!**\nUm novo serviço foi registrado por **${newActivity.collaborator || 'Sistema'}**`, {
+      type: 'info',
+      details: {
+        'Empresa': currentCompany?.name,
+        'Cliente': newActivity.location,
+        'Tipo': newActivity.type,
+        'Descrição': newActivity.description
+      }
+    });
+
     setForm(emptyForm);
     onClose();
   };
