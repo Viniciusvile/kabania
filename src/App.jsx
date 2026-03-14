@@ -20,6 +20,37 @@ import './App.css';
 import './components/AIChatFab.css';
 
 function App() {
+  if (!supabase) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        background: '#0f172a', 
+        color: 'white',
+        fontFamily: 'sans-serif',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <h1 style={{ color: '#ef4444' }}>⚠️ Configuração Pendente</h1>
+        <p style={{ maxWidth: '500px', fontSize: '18px', lineHeight: '1.6' }}>
+          O site foi carregado, mas as <b>Variáveis de Ambiente (VITE_SUPABASE_URL)</b> não foram configuradas no Vercel.
+        </p>
+        <div style={{ background: '#1e293b', padding: '20px', borderRadius: '8px', marginTop: '20px', textAlign: 'left' }}>
+          <p>Para resolver:</p>
+          <ol>
+            <li>Vá ao painel do Vercel</li>
+            <li>Settings &gt; Environment Variables</li>
+            <li>Adicione as chaves do seu arquivo <code>.env</code></li>
+            <li>Faça um novo Deployment</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     localStorage.getItem('synapseAuth') === 'true'
   );
