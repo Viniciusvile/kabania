@@ -167,37 +167,60 @@ function App() {
   };
 
   const handleLogin = async (email) => {
-    setCurrentUser(email);
-    
-    // Optimized: Fetch profile and company in a single parallel-friendly query using Joins
-    const { data: profile, error: profError } = await supabase
-      .from('profiles')
-      .select('*, companies(*)')
-      .eq('email', email)
-      .single();
+    try {
+      setCurrentUser(email);
+      
+      // Added timeout safety to prevent infinite hanging
+      const fetchWithTimeout = async () => {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Tempo limite de conexão com o banco atingido.')), 10000)
+        );
 
-    if (!profError && profile) {
-      let company = null;
-      if (Array.isArray(profile.companies)) {
-        company = profile.companies[0];
-      } else if (profile.companies) {
-        company = profile.companies;
+        const fetchPromise = supabase
+          .from('profiles')
+          .select('*, companies(*)')
+          .eq('email', email)
+          .single();
+
+        return await Promise.race([fetchPromise, timeoutPromise]);
+      };
+
+      const { data: profile, error: profError } = await fetchWithTimeout();
+
+      if (profError) {
+        // Specifically handle "JSON object expected" if the single() fails
+        if (profError.code === 'PGRST116') {
+          console.log("No profile found for new user:", email);
+          setCurrentCompany(null);
+          setIsAuthenticated(true);
+          return;
+        }
+        throw new Error(profError.message);
       }
 
-      if (company) {
-        const cwr = { ...company, role: profile.role || 'member' };
-        setCurrentCompany(cwr);
-        setUserRole(profile.role || 'member');
-      } else {
-        console.log("No company joined. Profile state:", profile);
-        setCurrentCompany(null);
+      if (profile) {
+        let company = null;
+        if (Array.isArray(profile.companies)) {
+          company = profile.companies[0];
+        } else if (profile.companies) {
+          company = profile.companies;
+        }
+
+        if (company) {
+          const cwr = { ...company, role: profile.role || 'member' };
+          setCurrentCompany(cwr);
+          setUserRole(profile.role || 'member');
+        } else {
+          setCurrentCompany(null);
+        }
       }
-    } else {
-      console.log("Profile not found or error:", profError);
-      setCurrentCompany(null);
+      
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error("Critical handleLogin error:", err);
+      // Re-throw to be caught by the Login component
+      throw err;
     }
-    
-    setIsAuthenticated(true);
   };
 
   const handleLogoutLocal = () => {

@@ -79,6 +79,8 @@ export default function Login({ onLogin }) {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true); // Show loading even for Google
+    setErrorMsg('');
     try {
       // Sign in to Supabase with the Google ID Token
       const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
@@ -88,15 +90,18 @@ export default function Login({ onLogin }) {
 
       if (authError) {
         console.error("Supabase Google Auth Error:", authError);
-        setErrorMsg('Falha ao sincronizar login com o servidor.');
+        // Show actual message to help debugging (likely "Provider google not enabled")
+        setErrorMsg(`Falha na sincronização: ${authError.message}`);
+        setIsLoading(false);
         return;
       }
 
       const googleEmail = authData.user?.email;
-      const googleName = authData.user?.user_metadata?.full_name || authData.user?.user_metadata?.name;
+      const googleName = authData.user?.user_metadata?.full_name || 'Usuário Google';
 
       if (!googleEmail) {
         setErrorMsg('Email não retornado pelo Google.');
+        setIsLoading(false);
         return;
       }
 
@@ -128,10 +133,13 @@ export default function Login({ onLogin }) {
         console.error("Profile check error during Google Login:", profError);
       }
       
-      onLogin(googleEmail);
+      await onLogin(googleEmail);
     } catch (err) {
       console.error("Google Auth Exception:", err);
-      setErrorMsg('Falha ao autenticar com o Google.');
+      // Detailed message for timeout or other re-thrown errors
+      setErrorMsg(err.message || 'Falha ao autenticar com o Google.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
