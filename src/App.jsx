@@ -216,31 +216,63 @@ function App() {
 
   // Load session on mount
   useEffect(() => {
-    const initSession = async () => {
-      setIsSessionLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await handleLogin(session.user.email);
+    let isMounted = true;
+    
+    // Safety fallback: if session takes more than 5s, stop loading
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        console.warn("Session loading timeout reached.");
+        setIsSessionLoading(false);
       }
-      setIsSessionLoading(false);
+    }, 5000);
+
+    const initSession = async () => {
+      try {
+        setIsSessionLoading(true);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (isMounted) {
+          if (session) {
+            await handleLogin(session.user.email);
+          } else {
+            console.log("No active session found.");
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (err) {
+        console.error("Error during session init:", err);
+      } finally {
+        if (isMounted) {
+          setIsSessionLoading(false);
+          clearTimeout(timer);
+        }
+      }
     };
 
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await handleLogin(session.user.email);
-        setIsSessionLoading(false);
-      } else if (event === 'SIGNED_OUT') {
-        handleLogoutLocal();
-        setIsSessionLoading(false);
-      } else if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-        // Just ensure we're not stuck in loading if these fire
-        setIsSessionLoading(false);
+      console.log("Auth event:", event);
+      if (isMounted) {
+        if (event === 'SIGNED_IN' && session) {
+          await handleLogin(session.user.email);
+          setIsSessionLoading(false);
+        } else if (event === 'SIGNED_OUT') {
+          handleLogoutLocal();
+          setIsSessionLoading(false);
+        } else if (event === 'INITIAL_SESSION') {
+          if (!session) setIsSessionLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          setIsSessionLoading(false);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Persist local auth only for "session" persistence
