@@ -62,7 +62,8 @@ export default function CompanySetup({ currentUser, onComplete }) {
       id: companyId,
       name: companyName.trim(),
       sector: selectedSector,
-      code: generateCode(companyId)
+      code: generateCode(companyId),
+      createdAt: new Date().toISOString()
     };
 
     const { error: coError } = await supabase.from('companies').insert([newCompany]);

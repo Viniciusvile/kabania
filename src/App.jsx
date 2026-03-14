@@ -51,8 +51,10 @@ function App() {
     );
   }
 
-  // Changed: Start as false to prevent "skipping" login UI before session is verified
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Changed: Initial state based on localStorage for "Optimistic" UI
+  const [isAuthenticated, setIsAuthenticated] = useState(() => 
+    localStorage.getItem('synapseAuth') === 'true'
+  );
   const [currentUser, setCurrentUser] = useState(() =>
     localStorage.getItem('synapseCurrentUser') || ''
   );
@@ -69,7 +71,11 @@ function App() {
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
-  const [isSessionLoading, setIsSessionLoading] = useState(true);
+
+  // Changed: isSessionLoading starts as false if we have local info, skipping the flicker
+  const [isSessionLoading, setIsSessionLoading] = useState(() => {
+    return localStorage.getItem('synapseAuth') !== 'true';
+  });
   
   // Multi-project state
   const [projects, setProjects] = useState([]);
@@ -207,15 +213,24 @@ function App() {
         }
 
         if (company) {
-          const cwr = { ...company, role: profile.role || 'member' };
+          // Map snake_case to camelCase for the frontend
+          const cwr = { 
+            ...company, 
+            createdAt: company.created_at || company.createdAt,
+            role: profile.role || 'member' 
+          };
           setCurrentCompany(cwr);
           setUserRole(profile.role || 'member');
+          localStorage.setItem('synapseCurrentCompany', JSON.stringify(cwr));
+          localStorage.setItem('synapseUserRole', profile.role || 'member');
         } else {
           setCurrentCompany(null);
         }
       }
       
       setIsAuthenticated(true);
+      localStorage.setItem('synapseAuth', 'true');
+      localStorage.setItem('synapseCurrentUser', email);
     } catch (err) {
       console.error("Critical handleLogin error:", err);
       // Re-throw to be caught by the Login component
@@ -228,6 +243,10 @@ function App() {
     setCurrentCompany(null);
     setUserRole('member');
     setCurrentUser('');
+    localStorage.removeItem('synapseAuth');
+    localStorage.removeItem('synapseCurrentUser');
+    localStorage.removeItem('synapseCurrentCompany');
+    localStorage.removeItem('synapseUserRole');
   };
 
   const handleLogout = async () => {
@@ -249,7 +268,7 @@ function App() {
 
     const initSession = async () => {
       try {
-        setIsSessionLoading(true);
+        // Removed: setIsSessionLoading(true) to prevent flicker on refresh
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (isMounted) {

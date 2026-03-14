@@ -116,8 +116,8 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             <div className="cp-info-row">
               <span>Criada em</span>
               <strong>
-                {currentCompany.createdAt
-                  ? new Date(currentCompany.createdAt).toLocaleDateString('pt-BR')
+                {(currentCompany.createdAt || currentCompany.created_at)
+                  ? new Date(currentCompany.createdAt || currentCompany.created_at).toLocaleDateString('pt-BR')
                   : '—'}
               </strong>
             </div>
