@@ -8,6 +8,7 @@ import {
   BarChart2, TrendingUp, Zap, Users, Clock, CheckCircle, 
   AlertCircle, Layout, ArrowRight 
 } from 'lucide-react';
+import './ReportsDashboard.css';
 
 const COLUMN_COLORS = {
   backlog: '#94a3b8',
