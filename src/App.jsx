@@ -233,9 +233,11 @@ function App() {
         
         if (isMounted) {
           if (session) {
+            console.log("Session found for:", session.user.email);
             await handleLogin(session.user.email);
           } else {
             console.log("No active session found.");
+            // If Supabase says no session, we trust it over localStorage
             setIsAuthenticated(false);
           }
         }

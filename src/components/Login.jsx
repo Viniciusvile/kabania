@@ -68,23 +68,46 @@ export default function Login({ onLogin }) {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-      const googleEmail = payload.email;
-      const googleName  = payload.name;
+      // Sign in to Supabase with the Google ID Token
+      const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: credentialResponse.credential,
+      });
 
-      // Upsert profile
-      const { data, error } = await supabase
+      if (authError) {
+        console.error("Supabase Google Auth Error:", authError);
+        setErrorMsg('Falha ao sincronizar login com o servidor.');
+        return;
+      }
+
+      const googleEmail = authData.user?.email;
+      const googleName = authData.user?.user_metadata?.full_name || authData.user?.user_metadata?.name;
+
+      if (!googleEmail) {
+        setErrorMsg('Email não retornado pelo Google.');
+        return;
+      }
+
+      // Ensure profile exists
+      const { data: existingProfiles, error: profError } = await supabase
         .from('profiles')
         .select('*')
         .eq('email', googleEmail);
 
-      if (!error && (data.length === 0)) {
+      if (!profError && existingProfiles.length === 0) {
         await supabase.from('profiles').insert([
-          { email: googleEmail, password: 'google-oauth', name: googleName }
+          { 
+            email: googleEmail, 
+            name: googleName,
+            user_id: authData.user?.id,
+            role: 'member' 
+          }
         ]);
       }
+      
       onLogin(googleEmail);
     } catch (err) {
+      console.error("Google Auth Exception:", err);
       setErrorMsg('Falha ao autenticar com o Google.');
     }
   };
