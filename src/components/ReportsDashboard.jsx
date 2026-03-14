@@ -61,16 +61,16 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
       setLoading(true);
       
       try {
-        // Fetch All Tasks
+        // Fetch Only Necessary Columns for Tasks
         const { data: tData, error: tError } = await supabase
           .from('tasks')
-          .select('*')
+          .select('id, title, column_id, tag_color, deadline, updated_at, created_at, assignees')
           .eq('company_id', currentCompany.id);
 
-        // Fetch All Activities
+        // Fetch Only Necessary Columns for Activities
         const { data: aData, error: aError } = await supabase
           .from('activities')
-          .select('*')
+          .select('id, type, status, created')
           .eq('company_id', currentCompany.id);
 
         if (!tError && tData) {

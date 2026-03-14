@@ -170,32 +170,23 @@ function App() {
   const handleLogin = async (email) => {
     setCurrentUser(email);
     
+    // Optimized: Fetch profile and company in a single parallel-friendly query using Joins
     const { data: profile, error: profError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, companies(*)')
       .eq('email', email)
       .single();
 
     if (!profError && profile) {
-      if (profile.company_id) {
-        const { data: company, error: coError } = await supabase
-          .from('companies')
-          .select('*')
-          .eq('id', profile.company_id)
-          .single();
-
-        if (!coError && company) {
-          const cwr = { ...company, role: profile.role || 'member' };
-          setCurrentCompany(cwr);
-          setUserRole(profile.role || 'member');
-        } else {
-          setCurrentCompany(null);
-        }
+      if (profile.companies) {
+        const company = profile.companies;
+        const cwr = { ...company, role: profile.role || 'member' };
+        setCurrentCompany(cwr);
+        setUserRole(profile.role || 'member');
       } else {
         setCurrentCompany(null);
       }
     } else {
-      // User has no profile yet or error (shouldn't happen on login)
       setCurrentCompany(null);
     }
     

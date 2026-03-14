@@ -159,7 +159,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
       setLoading(true);
       const { data, error } = await supabase
         .from('activities')
-        .select('*')
+        .select('id, location, type, status, rating, created, updated, last_appointment, collaborator, google_event_id, company_id, created_by')
         .eq('company_id', currentCompany.id)
         .order('created', { ascending: false });
 
