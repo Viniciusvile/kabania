@@ -51,12 +51,19 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
     status: 'Pendente',
   };
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({
+    ...emptyForm,
+    syncCalendar: localStorage.getItem('kabania_sync_calendar') === 'true'
+  });
 
   if (!isOpen) return null;
 
   const handleChange = (field) => (e) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
+    const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    if (field === 'syncCalendar') {
+      localStorage.setItem('kabania_sync_calendar', val);
+    }
+    setForm(prev => ({ ...prev, [field]: val }));
     if (field === 'description') {
       handleDuplicateCheck(e.target.value);
     }
@@ -127,6 +134,7 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
       observation: form.observation,
       collaborator: form.collaborator,
       address: form.address,
+      syncCalendar: form.syncCalendar,
     };
     onSave(newActivity);
     setForm(emptyForm);
@@ -372,6 +380,25 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                   rows={2}
                 ></textarea>
                 <div className="char-count">{form.observation.length} / 2000</div>
+              </div>
+
+              {/* Google Calendar Toggle */}
+              <div className="calendar-sync-options mt-4">
+                <label className="sync-toggle">
+                  <input 
+                    type="checkbox" 
+                    checked={form.syncCalendar} 
+                    onChange={handleChange('syncCalendar')} 
+                  />
+                  <span className="toggle-label">Sincronizar com Google Agenda</span>
+                </label>
+                {form.syncCalendar && (
+                  <div className="sync-note animate-fade-in">
+                    <Info size={14} /> 
+                    <span>Você precisará autorizar o acesso no primeiro uso. 
+                    Certifique-se de que o administrador executou o <code>calendar_setup.sql</code>.</span>
+                  </div>
+                )}
               </div>
 
               <div className="modal-actions-center mt-4">

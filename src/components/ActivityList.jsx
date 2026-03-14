@@ -106,9 +106,40 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
   );
 }
 
+import { useGoogleLogin } from '@react-oauth/google';
+import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
+
 export default function ActivityList({ currentUser, currentCompany }) {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [googleToken, setGoogleToken] = useState(null);
+
+  // Google Login for Calendar scope
+  const loginCalendar = useGoogleLogin({
+    onSuccess: tokenResponse => {
+      setGoogleToken(tokenResponse.access_token);
+      // We don't have a reliable way to "resume" the save here easily without complex state,
+      // so we tell the user to click save again.
+      alert("Google Agenda autorizado! Clique em 'CRIAR' ou 'SALVAR' novamente para sincronizar.");
+    },
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+  });
+
+  const checkAndSync = async (activity, token) => {
+    if (!token) {
+      loginCalendar();
+      return null;
+    }
+    try {
+      const event = await syncActivityToCalendar(activity, token);
+      return event.id;
+    } catch (err) {
+      console.error("Erro na sincronização:", err);
+      // If token expired, clear it
+      setGoogleToken(null);
+      return null;
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailActivity, setDetailActivity] = useState(null);
@@ -171,8 +202,20 @@ export default function ActivityList({ currentUser, currentCompany }) {
       description: activity.description,
       observation: activity.observation,
       company_id: currentCompany?.id,
-      created_by: currentUser // email of who created it
+      created_by: currentUser,
+      google_event_id: null
     };
+
+    // If sync is requested, handle it
+    if (activity.syncCalendar) {
+      const eventId = await checkAndSync(activity, googleToken);
+      if (eventId) {
+        supabasePayload.google_event_id = eventId;
+      } else {
+        // User needs to authorize or click save again
+        return; 
+      }
+    }
 
     const { error } = await supabase.from('activities').insert([supabasePayload]);
 
@@ -210,8 +253,14 @@ export default function ActivityList({ currentUser, currentCompany }) {
       address: updatedActivity.address,
       description: updatedActivity.description,
       observation: updatedActivity.observation,
-      updated: nowIso
+      updated: nowIso,
+      google_event_id: updatedActivity.google_event_id
     };
+
+    // Update Calendar if exists
+    if (updatedActivity.google_event_id && googleToken) {
+      await checkAndSync(updatedActivity, googleToken);
+    }
 
     const { error } = await supabase
       .from('activities')
@@ -233,6 +282,12 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
   const confirmDelete = async (id) => {
     const act = activities.find(a => a.id === id);
+    
+    // Delete from Calendar if exists
+    if (act?.google_event_id && googleToken) {
+      await deleteCalendarEvent(act.google_event_id, googleToken);
+    }
+
     const { error } = await supabase.from('activities').delete().eq('id', id);
 
     if (!error) {
