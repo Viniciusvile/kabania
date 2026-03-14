@@ -1,7 +1,49 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { 
+  BarChart2, TrendingUp, Zap, Users, Clock, CheckCircle, 
+  AlertCircle, Layout, ArrowRight 
+} from 'lucide-react';
+
+const COLUMN_COLORS = {
+  backlog: '#94a3b8',
+  todo: '#60a5fa',
+  progress: '#fcd34d',
+  ai: '#a78bfa',
+  done: '#34d399'
+};
+
+const COLUMN_LABELS = {
+  backlog: 'Backlog',
+  todo: 'To Do',
+  progress: 'Em Progresso',
+  ai: 'Análise IA',
+  done: 'Concluído'
+};
+
+// ---- Helpers ----
+function getInitials(email) { return email ? email.substring(0, 2).toUpperCase() : '?'; }
+function getAvatarColor(email) {
+  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
+  let h = 0;
+  for (let i = 0; i < email.length; i++) h = email.charCodeAt(i) + ((h << 5) - h);
+  return colors[Math.abs(h) % colors.length];
+}
+function formatDate(isoDate) {
+  if (!isoDate) return '';
+  return new Date(isoDate).toLocaleDateString('pt-BR');
+}
+function getDeadlineStatus(deadline) {
+  if (!deadline) return null;
+  const days = Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24));
+  if (days < 0) return { label: 'Atrasado', color: 'red', icon: '🚨', days };
+  if (days <= 2) return { label: 'Urgente', color: 'orange', icon: '⏰', days };
+  return { label: 'No prazo', color: 'green', icon: '📅', days };
+}
 
 export default function ReportsDashboard({ currentUser, currentCompany }) {
   const [tasks, setTasks] = useState([]);
@@ -177,7 +219,15 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
                 <Tooltip 
                   contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                 />
-                <Area type="monotone" dataKey="entregas" stroke="#00e5ff" fillOpacity={1} fill="url(#rdColorProd)" strokeWidth={2} />
+                <Area 
+                  key={`area-${chartData.productivity.length}`}
+                  type="monotone" 
+                  dataKey="entregas" 
+                  stroke="#00e5ff" 
+                  fillOpacity={1} 
+                  fill="url(#rdColorProd)" 
+                  strokeWidth={2} 
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -192,6 +242,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
+                  key={`pie-${chartData.sectors.length}`}
                   data={chartData.sectors}
                   innerRadius={65}
                   outerRadius={85}
