@@ -77,6 +77,51 @@
 
 @media (max-width: 720px) { .rd-grid { grid-template-columns: 1fr; } }
 
+/* NEW: Visuals Grid */
+.rd-visuals-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.rd-chart-box {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rd-chart-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.rd-chart-title h3 {
+  margin: 0 !important;
+  color: #f8fafc !important;
+  font-size: 1rem !important;
+}
+
+.rd-chart-title span {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.rd-chart-body {
+  flex: 1;
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .rd-visuals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .rd-card {
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.07);

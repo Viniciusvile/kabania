@@ -1,66 +1,89 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
-import { BarChart2, Clock, Users, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
-import { getDeadlineStatus } from '../services/notificationService';
-import './ReportsDashboard.css';
-
-const COLUMN_LABELS = {
-  backlog: 'Backlog',
-  todo: 'To Do',
-  progress: 'Em Progresso',
-  ai: 'AI Analysis',
-  done: 'Concluído'
-};
-
-const COLUMN_COLORS = {
-  backlog: '#64748b',
-  todo: '#60a5fa',
-  progress: '#fbbf24',
-  ai: '#00e5ff',
-  done: '#34d399'
-};
-
-function getInitials(email) {
-  return email ? email.substring(0, 2).toUpperCase() : '??';
-}
-function getAvatarColor(email) {
-  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
-  let hash = 0;
-  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
-function formatDate(isoDate) {
-  if (!isoDate) return '';
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-}
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 export default function ReportsDashboard({ currentUser, currentCompany }) {
   const [tasks, setTasks] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({
+    productivity: [],
+    sectors: []
+  });
 
   useEffect(() => {
-    const fetchAllCompanyTasks = async () => {
+    const fetchData = async () => {
       if (!currentCompany?.id) return;
       setLoading(true);
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('company_id', currentCompany.id);
+      
+      try {
+        // Fetch All Tasks
+        const { data: tData, error: tError } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('company_id', currentCompany.id);
 
-      if (!error && data) {
-        const mapped = data.map(t => ({
-          ...t,
-          columnId: t.column_id,
-          tagColor: t.tag_color
-        }));
-        setTasks(mapped);
+        // Fetch All Activities
+        const { data: aData, error: aError } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('company_id', currentCompany.id);
+
+        if (!tError && tData) {
+          const mappedTasks = tData.map(t => ({
+            ...t,
+            columnId: t.column_id,
+            tagColor: t.tag_color
+          }));
+          setTasks(mappedTasks);
+          setActivities(aData || []);
+          processChartConfigs(mappedTasks, aData || []);
+        }
+      } catch (err) {
+        console.error("Erro no dashboard:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchAllCompanyTasks();
+    fetchData();
   }, [currentCompany]);
-  // Tasks by column
+
+  const processChartConfigs = (allTasks, allActivities) => {
+    // 1. Productivity (Last 7 Days)
+    const today = new Date();
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(today.getDate() - (6 - i));
+      return d.toISOString().split('T')[0];
+    });
+
+    const prodMap = allTasks
+      .filter(t => t.columnId === 'done')
+      .reduce((acc, t) => {
+        const date = t.updated_at?.split('T')[0] || t.created_at?.split('T')[0];
+        if (date) acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
+    const productivityData = last7Days.map(date => ({
+      name: date.split('-').reverse().slice(0, 2).join('/'),
+      entregas: prodMap[date] || 0
+    }));
+
+    // 2. Sectors (Distribution)
+    const sectorMap = allActivities.reduce((acc, a) => {
+      const type = a.type || 'Geral';
+      const cleanType = type.split('-')[0].trim();
+      acc[cleanType] = (acc[cleanType] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sectorData = Object.entries(sectorMap).map(([name, value]) => ({ name, value }));
+    setChartData({ productivity: productivityData, sectors: sectorData });
+  };
+
   const tasksByColumn = useMemo(() => {
     const counts = { backlog: 0, todo: 0, progress: 0, ai: 0, done: 0 };
     if (!Array.isArray(tasks)) return counts;
@@ -73,7 +96,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const maxCount = Math.max(...Object.values(tasksByColumn), 1);
 
-  // Tasks by assignee
   const tasksByAssignee = useMemo(() => {
     const map = {};
     if (!Array.isArray(tasks)) return [];
@@ -87,7 +109,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [tasks]);
 
-  // Deadline alerts
   const deadlineAlerts = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
     return tasks
@@ -98,27 +119,23 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
       .slice(0, 8);
   }, [tasks]);
 
-  // Recent tasks (last 8 added)
   const recentTasks = useMemo(() => {
     if (!Array.isArray(tasks)) return [];
     return [...tasks]
-      .filter(t => t && t.id && typeof t.id === 'string')
-      .sort((a, b) => {
-        const aTime = parseInt(a.id.replace('t_', '')) || 0;
-        const bTime = parseInt(b.id.replace('t_', '')) || 0;
-        return bTime - aTime;
-      })
+      .filter(t => t && t.id)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 8);
   }, [tasks]);
+
+  const PIE_COLORS = ['#00e5ff', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
 
   return (
     <div className="rd-container animate-fade-in">
       <header className="rd-header">
         <h1><BarChart2 size={24} /> Relatórios e Dashboard</h1>
-        <p>Visão geral de produtividade e acompanhamento de tarefas</p>
+        <p>Visão geral de produtividade e acompanhamento de tarefas para {currentCompany?.name}</p>
       </header>
 
-      {/* Summary KPI cards */}
       <div className="rd-kpi-row">
         <div className="rd-kpi">
           <div className="rd-kpi-value">{totalTasks}</div>
@@ -138,8 +155,64 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
         </div>
       </div>
 
+      {/* NEW: Visual Charts Section */}
+      <div className="rd-visuals-grid">
+        <div className="rd-card rd-chart-box">
+          <div className="rd-chart-title">
+            <h3><TrendingUp size={16} /> Fluxo de Produtividade</h3>
+            <span>Últimos 7 dias</span>
+          </div>
+          <div className="rd-chart-body">
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={chartData.productivity}>
+                <defs>
+                  <linearGradient id="rdColorProd" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Area type="monotone" dataKey="entregas" stroke="#00e5ff" fillOpacity={1} fill="url(#rdColorProd)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rd-card rd-chart-box">
+          <div className="rd-chart-title">
+            <h3><Zap size={16} /> Volume por Atividade</h3>
+            <span>Mix de serviços</span>
+          </div>
+          <div className="rd-chart-body">
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={chartData.sectors}
+                  innerRadius={65}
+                  outerRadius={85}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {chartData.sectors.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                />
+                <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
       <div className="rd-grid">
-        {/* Column Chart */}
         <div className="rd-card rd-chart-card">
           <h3><BarChart2 size={16} /> Tarefas por Coluna</h3>
           <div className="rd-bar-chart">
@@ -160,7 +233,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
             ))}
           </div>
 
-          {/* Completion arc */}
           <div className="rd-completion-arc">
             <svg viewBox="0 0 120 70" width="140" height="84">
               <path d="M 10 65 A 55 55 0 0 1 110 65" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" strokeLinecap="round" />
@@ -180,7 +252,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
           </div>
         </div>
 
-        {/* Assignee workload */}
         <div className="rd-card">
           <h3><Users size={16} /> Carga por Membro</h3>
           {tasksByAssignee.length === 0 && (
@@ -207,7 +278,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
           </div>
         </div>
 
-        {/* Deadline Alerts */}
         <div className="rd-card">
           <h3><Clock size={16} /> Alertas de Prazo</h3>
           {deadlineAlerts.length === 0 ? (
@@ -231,7 +301,6 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
           )}
         </div>
 
-        {/* Recent Activity */}
         <div className="rd-card">
           <h3><TrendingUp size={16} /> Tarefas Recentes</h3>
           {recentTasks.length === 0 && (
