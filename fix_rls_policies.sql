@@ -1,8 +1,22 @@
--- SCRIPT DE CORREÇÃO DEFINITIVA (V2)
+-- SCRIPT DE CORREÇÃO DEFINITIVA (V3)
 -- Execute no SQL Editor do Supabase (https://app.supabase.com/project/_/sql)
 
--- 1. CORREÇÃO DA TABELA DE PERFIS (Profiles)
--- Adiciona a coluna user_id se ela não existir (necessário para políticas de segurança)
+-- 1. LIMPEZA TOTAL DE POLÍTICAS ANTIGAS (Garante que não haverá erro de "Already Exists")
+-- Empresas
+DROP POLICY IF EXISTS "Usuarios podem criar empresas" ON companies;
+DROP POLICY IF EXISTS "Usuarios podem ver sua propria empresa" ON companies;
+DROP POLICY IF EXISTS "Permitir criar empresa" ON companies;
+DROP POLICY IF EXISTS "Permitir ver empresa vinculada" ON companies;
+
+-- Perfis
+DROP POLICY IF EXISTS "Usuarios podem ver proprio perfil" ON profiles;
+DROP POLICY IF EXISTS "Usuarios podem atualizar proprio perfil" ON profiles;
+DROP POLICY IF EXISTS "Permitir inserção de perfil no login" ON profiles;
+DROP POLICY IF EXISTS "Ver próprio perfil" ON profiles;
+DROP POLICY IF EXISTS "Atualizar próprio perfil" ON profiles;
+DROP POLICY IF EXISTS "Inserir perfil inicial" ON profiles;
+
+-- 2. AJUSTE DE COLUNA
 DO $$ 
 BEGIN 
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='user_id') THEN
@@ -10,16 +24,12 @@ BEGIN
   END IF;
 END $$;
 
--- 2. RESET DE POLÍTICAS (Para evitar conflitos)
-DROP POLICY IF EXISTS "Usuarios podem criar empresas" ON companies;
-DROP POLICY IF EXISTS "Usuarios podem ver sua propria empresa" ON companies;
-DROP POLICY IF EXISTS "Usuarios podem ver proprio perfil" ON profiles;
-DROP POLICY IF EXISTS "Usuarios podem atualizar proprio perfil" ON profiles;
-DROP POLICY IF EXISTS "Permitir inserção de perfil no login" ON profiles;
-
--- 3. NOVAS POLÍTICAS PARA EMPRESAS (Companies)
+-- 3. HABILITAR SEGURANÇA (RLS)
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
+-- 4. NOVAS POLÍTICAS (Nomes Unificados)
+-- Empresas
 CREATE POLICY "Permitir criar empresa" 
 ON companies FOR INSERT 
 TO authenticated 
@@ -28,15 +38,13 @@ WITH CHECK (true);
 CREATE POLICY "Permitir ver empresa vinculada" 
 ON companies FOR SELECT 
 TO authenticated 
-USING (true); -- Permitir ver para poder ingressar e validar códigos
+USING (true);
 
--- 4. NOVAS POLÍTICAS PARA PERFIS (Profiles)
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-
+-- Perfis
 CREATE POLICY "Ver próprio perfil" 
 ON profiles FOR SELECT 
 TO authenticated 
-USING (true); -- Essencial para o login funcionar e verificar existência
+USING (true);
 
 CREATE POLICY "Atualizar próprio perfil" 
 ON profiles FOR UPDATE 
@@ -48,6 +56,3 @@ CREATE POLICY "Inserir perfil inicial"
 ON profiles FOR INSERT 
 TO authenticated 
 WITH CHECK (true);
-
--- INFO: Este script garante que o sistema consiga salvar a empresa e 
--- atualizar o seu usuário com o ID da nova empresa criada.

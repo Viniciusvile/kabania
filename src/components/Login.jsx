@@ -24,43 +24,55 @@ export default function Login({ onLogin }) {
     setErrorMsg('');
 
     const performAuth = async () => {
-      if (isRegistering) {
-        // Sign up with Supabase Auth (hashes password automatically)
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        
-        if (authError) {
-          setErrorMsg(errorMap[authError.code] || authError.message);
-          setIsLoading(false);
-          return;
-        }
+      try {
+        if (isRegistering) {
+          // Sign up with Supabase Auth
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+          });
+          
+          if (authError) {
+            setErrorMsg(errorMap[authError.code] || authError.message);
+            return;
+          }
 
-        // Insert into profiles if needed (Supabase usually handles this via triggers, but we'll do it manually for now to sync)
-        const { error: profError } = await supabase.from('profiles').insert([
-          { email, role: 'member', user_id: authData.user?.id }
-        ]);
-        
-        if (profError && profError.code !== '23505') {
-          console.error("Erro ao criar perfil:", profError);
-        }
+          // Insert into profiles (Resilient approach)
+          const profileData = { email, role: 'member' };
+          if (authData.user?.id) {
+            // Try with user_id first
+            const { error: insError } = await supabase.from('profiles').insert([
+              { ...profileData, user_id: authData.user.id }
+            ]);
+            
+            if (insError) {
+              // Fallback if user_id column is missing
+              await supabase.from('profiles').insert([profileData]);
+            }
+          } else {
+            await supabase.from('profiles').insert([profileData]);
+          }
 
-        onLogin(email);
-      } else {
-        // Sign in with Supabase Auth
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          setErrorMsg(errorMap[error.code] || 'Email ou senha incorretos.');
+          await onLogin(email);
         } else {
-          onLogin(email);
+          // Sign in with Supabase Auth
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) {
+            setErrorMsg(errorMap[error.code] || 'Email ou senha incorretos.');
+          } else {
+            await onLogin(email);
+          }
         }
+      } catch (err) {
+        console.error("Auth Exception:", err);
+        setErrorMsg('Ocorreu um erro inesperado durante a autenticação.');
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     performAuth();
