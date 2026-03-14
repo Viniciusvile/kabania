@@ -136,6 +136,24 @@ function App() {
   };
 
 
+  // Load session on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        handleLogin(session.user.email);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        handleLogin(session.user.email);
+      } else {
+        handleLogoutLocal();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Persist local auth only for "session" persistence
   useEffect(() => {
@@ -186,11 +204,16 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
+  const handleLogoutLocal = () => {
     setIsAuthenticated(false);
     setCurrentCompany(null);
     setUserRole('member');
     setCurrentUser('');
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    handleLogoutLocal();
   };
 
   const handleCompanySetupComplete = ({ company, role }) => {

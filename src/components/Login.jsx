@@ -23,25 +23,36 @@ export default function Login({ onLogin }) {
 
     const performAuth = async () => {
       if (isRegistering) {
-        const { error } = await supabase.from('profiles').insert([
-          { email, password, role: 'member' }
-        ]);
+        // Sign up with Supabase Auth (hashes password automatically)
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
         
-        if (error) {
-          setErrorMsg(errorMap[error.code] || 'Erro ao cadastrar: ' + error.message);
+        if (authError) {
+          setErrorMsg(authError.message);
           setIsLoading(false);
           return;
         }
+
+        // Insert into profiles if needed (Supabase usually handles this via triggers, but we'll do it manually for now to sync)
+        const { error: profError } = await supabase.from('profiles').insert([
+          { email, role: 'member', user_id: authData.user?.id }
+        ]);
+        
+        if (profError && profError.code !== '23505') {
+          console.error("Erro ao criar perfil:", profError);
+        }
+
         onLogin(email);
       } else {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', email)
-          .eq('password', password)
-          .single();
+        // Sign in with Supabase Auth
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-        if (error || !data) {
+        if (error) {
           setErrorMsg('Email ou senha incorretos.');
         } else {
           onLogin(email);
