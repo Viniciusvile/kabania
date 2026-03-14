@@ -67,10 +67,17 @@ function App() {
   );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState('kanban');
+  const [currentView, setCurrentView] = useState(() => 
+    localStorage.getItem('synapseCurrentView') || 'kanban'
+  );
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
+
+  // Persist currentView whenever it changes
+  useEffect(() => {
+    localStorage.setItem('synapseCurrentView', currentView);
+  }, [currentView]);
 
   // Changed: isSessionLoading starts as false if we have local info, skipping the flicker
   const [isSessionLoading, setIsSessionLoading] = useState(() => {
