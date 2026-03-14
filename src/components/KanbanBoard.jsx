@@ -22,7 +22,6 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import CardDetailModal from './CardDetailModal';
-import { sendNotification } from '../services/webhookService';
 import './Kanban.css';
 
 const COLUMNS = [
@@ -540,20 +539,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         .eq('id', currentTask.id);
 
       if (!error) {
-        const movedTask = { ...currentTask, columnId: newColId };
-        notifyTaskMoved(movedTask, COLUMN_LABELS[newColId] || newColId, currentUser);
-        
-        // Notify via Webhook if moved to DONE
-        if (newColId === 'done') {
-          sendNotification(`🎯 **Tarefa Concluída!**\nO colaborador **${currentUser}** finalizou a tarefa: *${currentTask.title}*`, {
-            type: 'success',
-            details: {
-              'Empresa': currentCompany?.name,
-              'Tarefa': currentTask.title,
-              'Finalizado por': currentUser
-            }
-          });
-        }
+        notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
       } else {
         console.error('Error persisting drag and drop:', error);
       }
