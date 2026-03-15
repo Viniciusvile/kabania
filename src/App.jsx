@@ -183,7 +183,6 @@ function App() {
     try {
       setCurrentUser(email);
       
-      // Added timeout safety to prevent infinite hanging
       const fetchWithTimeout = async () => {
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Tempo limite de conexão com o banco atingido.')), 10000)
@@ -201,37 +200,51 @@ function App() {
       const { data: profile, error: profError } = await fetchWithTimeout();
 
       if (profError) {
-        // Specifically handle "JSON object expected" if the single() fails
         if (profError.code === 'PGRST116') {
           console.log("No profile found for new user:", email);
+          // Only clear if confirmed no profile
           setCurrentCompany(null);
           setIsAuthenticated(true);
+          localStorage.setItem('synapseAuth', 'true');
+          localStorage.setItem('synapseCurrentUser', email);
           return;
         }
         throw new Error(profError.message);
       }
 
       if (profile) {
-        let company = null;
+        let companyData = null;
         if (Array.isArray(profile.companies)) {
-          company = profile.companies[0];
+          companyData = profile.companies[0];
         } else if (profile.companies) {
-          company = profile.companies;
+          companyData = profile.companies;
         }
 
-        if (company) {
-          // Map snake_case to camelCase for the frontend
+        // STICKY LOGIC: Only wipe currentCompany if we are SURE they don't have one
+        if (companyData) {
           const cwr = { 
-            ...company, 
-            createdAt: company.created_at || company.createdAt,
+            ...companyData, 
+            createdAt: companyData.created_at || companyData.createdAt,
             role: profile.role || 'member' 
           };
           setCurrentCompany(cwr);
           setUserRole(profile.role || 'member');
           localStorage.setItem('synapseCurrentCompany', JSON.stringify(cwr));
           localStorage.setItem('synapseUserRole', profile.role || 'member');
-        } else {
-          setCurrentCompany(null);
+        } else if (!profile.company_id) {
+          // Explicitly no company ID on profile
+          console.log("User confirmed to have no company ID.");
+          
+          // CRITICAL: Only clear state if we aren't already happily in a company
+          // This prevents a late background sync from wiping out a company just created
+          setCurrentCompany(prev => {
+            if (prev) {
+              console.warn("Background sync tried to clear company, but we already have one. Ignoring.");
+              return prev;
+            }
+            localStorage.removeItem('synapseCurrentCompany');
+            return null;
+          });
         }
       }
       
@@ -240,7 +253,6 @@ function App() {
       localStorage.setItem('synapseCurrentUser', email);
     } catch (err) {
       console.error("Critical handleLogin error:", err);
-      // Re-throw to be caught by the Login component
       throw err;
     }
   };
