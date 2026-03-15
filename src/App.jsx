@@ -390,8 +390,23 @@ function App() {
     );
   }
 
-  if (!currentCompany) {
+  // Changed: Don't show CompanySetup if we're still loading the session background info, 
+  // unless we're sure they don't have one after loading.
+  if (!currentCompany && !isSessionLoading) {
     return <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} />;
+  }
+
+  // If we're authenticated but still loading and have no company info yet, 
+  // show a minimal loading state instead of flickering the setup screen.
+  if (!currentCompany && isSessionLoading) {
+    return (
+      <div className="restoring-session-backdrop">
+        <div className="restoring-session-content">
+          <div className="loading-spinner" />
+          <p>Carregando informações da empresa...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
