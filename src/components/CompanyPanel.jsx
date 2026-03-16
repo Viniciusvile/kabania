@@ -16,7 +16,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [showCustModal, setShowCustModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   
   // Collaborators
@@ -409,7 +409,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             </div>
             <button 
               className="cp-btn-new-customer"
-              onClick={() => { setEditingCustomer(null); setIsCustomerModalOpen(true); }}
+              onClick={() => { setEditingCustomer(null); setShowCustModal(true); }}
             >
               <Plus size={18} /> Novo Cliente
             </button>
@@ -420,7 +420,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
               <CustomerCard 
                 key={customer.id} 
                 customer={customer} 
-                onEdit={() => { setEditingCustomer(customer); setIsCustomerModalOpen(true); }}
+                onEdit={() => { setEditingCustomer(customer); setShowCustModal(true); }}
                 onDelete={async () => {
                   if (window.confirm(`Excluir cliente ${customer.name}?`)) {
                     const { error } = await supabase.from('customers').delete().eq('id', customer.id);
@@ -437,7 +437,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                 <p>Sua base de clientes está vazia.</p>
                 <button 
                   className="kb-btn-template mt-2"
-                  onClick={() => setIsCustomerModalOpen(true)}
+                  onClick={() => setShowCustModal(true)}
                 >
                   <Plus size={16} /> Cadastrar Primeiro Cliente
                 </button>
@@ -448,19 +448,19 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
         </div>
       )}
 
-      {isCustomerModalOpen && (
+      {showCustModal && (
         <CustomerFormModal 
-          isOpen={isCustomerModalOpen}
+          isOpen={showCustModal}
           editingCustomer={editingCustomer}
           currentCompanyId={currentCompany.id}
-          onClose={() => setIsCustomerModalOpen(false)}
+          onClose={() => setShowCustModal(false)}
           onSave={(newCustomer) => {
             if (editingCustomer) {
               setCustomers(prev => prev.map(c => c.id === newCustomer.id ? newCustomer : c));
             } else {
               setCustomers(prev => [newCustomer, ...prev]);
             }
-            setIsCustomerModalOpen(false);
+            setShowCustModal(false);
           }}
         />
       )}
