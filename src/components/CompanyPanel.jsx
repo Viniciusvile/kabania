@@ -234,9 +234,9 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       ) : (
         <div className="cp-crm-section animate-slide-up">
           <div className="cp-crm-header">
-            <div>
+            <div className="cp-crm-title-area">
               <h2 className="cp-crm-title">Gestão de Clientes</h2>
-              <p className="cp-sector-tag">Total: {customers.length} clientes cadastrados</p>
+              <span className="cp-sector-tag">Total: {customers.length} clientes</span>
             </div>
             <button 
               className="cp-btn-new-customer"

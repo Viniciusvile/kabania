@@ -3,8 +3,8 @@
    ============================================ */
 
 .company-panel {
-  padding: 2rem;
-  max-width: 900px;
+  padding: 1.5rem;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -102,7 +102,7 @@
 .cp-tabs {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   background: rgba(255, 255, 255, 0.03);
   padding: 0.4rem;
   border-radius: 12px;
@@ -291,7 +291,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .cp-refresh-btn {
