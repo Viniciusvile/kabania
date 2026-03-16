@@ -7,6 +7,7 @@ import {
 import {
   getNotifications, markAllRead, getUnreadCount, formatNotifTime
 } from '../services/notificationService';
+import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 
 const NOTIF_ICONS = {
@@ -24,10 +25,50 @@ export default function TopBar({
   onViewChange
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [profileData, setProfileData] = useState({ name: '', avatar_url: null });
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!currentUser) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, avatar_url')
+        .eq('email', currentUser)
+        .single();
+      
+      if (!error && data) {
+        setProfileData({
+          name: data.name || currentUser.split('@')[0],
+          avatar_url: data.avatar_url
+        });
+      }
+    };
+    fetchProfile();
+    
+    // Set up real-time subscription for profile changes
+    const channel = supabase
+      .channel(`profile-${currentUser}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'profiles',
+        filter: `email=eq.${currentUser}`
+      }, (payload) => {
+        setProfileData({
+          name: payload.new.name || currentUser.split('@')[0],
+          avatar_url: payload.new.avatar_url
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUser]);
+
+  const userInitials = profileData.name ? profileData.name.substring(0, 2).toUpperCase() : 'UP';
   const topbarRef = useRef(null);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];
@@ -91,7 +132,6 @@ export default function TopBar({
     loadNotifications();
   };
 
-  const userInitials = currentUser ? currentUser.substring(0, 2).toUpperCase() : 'UP';
 
   return (
     <header className="topbar" ref={topbarRef}>
@@ -233,9 +273,15 @@ export default function TopBar({
 
         {/* Profile */}
         <div className="user-profile" onClick={() => toggleDropdown('profile')}>
-          <div className="avatar-circle">{userInitials}</div>
+          <div className="avatar-circle">
+            {profileData.avatar_url ? (
+              <img src={profileData.avatar_url} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              userInitials
+            )}
+          </div>
           <div className="user-profile-info">
-            <span className="user-display-name">{currentUser ? currentUser.split('@')[0] : 'Usuário'}</span>
+            <span className="user-display-name">{profileData.name || 'Usuário'}</span>
             {currentCompany && <span className="user-company-name">{currentCompany.name}</span>}
           </div>
           <ChevronDown size={14} className={`text-muted dropdown-arrow ${activeDropdown === 'profile' ? 'open' : ''}`} />

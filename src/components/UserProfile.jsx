@@ -1,17 +1,103 @@
-import React, { useState } from 'react';
-import { User, Mail, Shield, Camera, Save, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, Shield, Camera, Save, CheckCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 import './AccountViews.css';
 
 export default function UserProfile({ currentUser, currentCompany, userRole }) {
-  const [name, setName] = useState(currentUser ? currentUser.split('@')[0] : '');
+  const [name, setName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const fileInputRef = useRef(null);
 
-  const handleSave = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!currentUser) return;
+      setIsFetching(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, avatar_url')
+        .eq('email', currentUser)
+        .single();
+      
+      if (!error && data) {
+        setName(data.name || currentUser.split('@')[0]);
+        setAvatarUrl(data.avatar_url);
+      }
+      setIsFetching(false);
+    };
+    fetchProfile();
+  }, [currentUser]);
+
+  const handleSave = async () => {
+    if (!currentUser) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ name })
+      .eq('email', currentUser);
+
+    if (!error) {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } else {
+      console.error("Error updating profile:", error);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.replace(/[^a-zA-Z0-9]/g, '_')}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      // 1. Upload to Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // 3. Update Profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('email', currentUser);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      alert("Erro ao fazer upload da imagem. Certifique-se de ter rodado o script SQL e que o bucket 'avatars' exista.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const userInitials = name ? name.substring(0, 2).toUpperCase() : 'UP';
+
+  if (isFetching) {
+    return (
+      <div className="account-view-container flex items-center justify-center min-h-[400px]">
+        <Loader2 className="animate-spin text-accent" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="account-view-container">
@@ -25,12 +111,23 @@ export default function UserProfile({ currentUser, currentCompany, userRole }) {
       <div className="account-card">
         <div className="profile-cover">
           <div className="profile-avatar-wrapper">
-            <div className="profile-avatar">
-              {userInitials}
+            <div className="profile-avatar" onClick={handleAvatarClick}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover rounded-2xl" />
+              ) : (
+                userInitials
+              )}
               <div className="profile-avatar-overlay">
-                <Camera size={20} className="text-white" />
+                {isUploading ? <Loader2 className="animate-spin text-white" size={20} /> : <Camera size={20} className="text-white" />}
               </div>
             </div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+            />
           </div>
         </div>
 
