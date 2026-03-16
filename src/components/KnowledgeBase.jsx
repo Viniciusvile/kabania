@@ -5,6 +5,12 @@ import { SECTOR_TEMPLATES } from './CompanySetup';
 import { logEvent } from '../services/historyService';
 import './KnowledgeBase.css';
 
+const KB_SECTIONS = [
+  { id: 'company_data', label: 'Dados da Empresa', icon: '🏢' },
+  { id: 'troubleshooting', label: 'Resolução de Problemas', icon: '🛠️' },
+  { id: 'general', label: 'Geral / Outros', icon: '📚' }
+];
+
 export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
   const isAdmin = userRole === 'admin';
 
@@ -15,6 +21,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newTags, setNewTags] = useState('');
+  const [newSection, setNewSection] = useState('general');
   const [editingItem, setEditingItem] = useState(null);
   const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
 
@@ -102,6 +109,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setNewTitle(item.title);
     setNewDesc(item.description);
     setNewTags(item.tags.join(', '));
+    setNewSection(item.section || 'general');
     setIsModalOpen(true);
   };
 
@@ -137,9 +145,17 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       const template = SECTOR_TEMPLATES[currentCompany.sector];
       
       const globalDefaults = [
-        { title: 'Histórico da Empresa', desc: 'Dados sobre fundação, valores e cultura corporativa.', type: 'document', tag: 'Histórico' },
-        { title: 'Políticas e Regras', desc: 'Regimento interno, normas de conduta e horários.', type: 'file', tag: 'Regras' },
-        { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte e FAQ do time.', type: 'database', tag: 'Geral' }
+        // DADOS DA EMPRESA
+        { title: 'Fundação e Visão', desc: 'Dados sobre a fundação da empresa, missão, visão e valores corporativos.', type: 'document', tag: 'Empresa', section: 'company_data' },
+        { title: 'Estrutura Organizacional', desc: 'Informações sobre departamentos, hierarquia e contatos chave.', type: 'file', tag: 'Estrutura', section: 'company_data' },
+        { title: 'Políticas Internas', desc: 'Regimento interno, normas de conduta, horários e benefícios.', type: 'file', tag: 'Regras', section: 'company_data' },
+        
+        // RESOLUÇÃO DE PROBLEMAS
+        { title: 'Guia de Problemas Comuns', desc: 'Passo a passo para resolver os erros mais frequentes reportados pelo time.', type: 'database', tag: 'Suporte', section: 'troubleshooting' },
+        { title: 'Protocolo de Emergência', desc: 'O que fazer em caso de incidentes críticos ou paradas de sistema.', type: 'document', tag: 'Crítico', section: 'troubleshooting' },
+        
+        // GERAL
+        { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte, manuais e FAQ do time.', type: 'database', tag: 'Geral', section: 'general' }
       ];
 
       const existingTitles = new Set(knowledgeItems.map(it => it.title));
@@ -153,7 +169,8 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
           description: d.desc,
           enabled: true,
           type: d.type,
-          tags: [d.tag]
+          tags: [d.tag],
+          section: d.section
         })),
         ...template.tags.map((tag, idx) => ({
           id: `kb-sec-${timestamp}-${idx}-${Math.random().toString(36).substr(2, 5)}`,
@@ -162,7 +179,8 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
           description: `Assunto autorizado: ${tag} (${template.label})`,
           enabled: true,
           type: 'document',
-          tags: [tag]
+          tags: [tag],
+          section: 'general'
         }))
       ];
 
@@ -202,7 +220,8 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       const payload = {
         title: newTitle.trim(),
         description: newDesc.trim(),
-        tags: parsedTags.length > 0 ? parsedTags : editingItem.tags
+        tags: parsedTags.length > 0 ? parsedTags : editingItem.tags,
+        section: newSection
       };
 
       // OPTIMISTIC
@@ -227,6 +246,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         enabled: true,
         type: 'document',
         tags: parsedTags.length > 0 ? parsedTags : ['Adicionado Manualmente'],
+        section: newSection,
         company_id: currentCompany?.id,
         created_at: new Date().toISOString()
       };
@@ -293,51 +313,75 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         </div>
       </div>
 
-      <div className="kb-grid">
-        {filteredItems.map(item => (
-          <div key={item.id} className={`kb-card ${item.enabled ? 'enabled' : 'disabled'}`}>
-            <div className="kb-card-header">
-              <div className="kb-icon-wrapper">{getIconForType(item.type)}</div>
-              <div className="flex items-center gap-2">
-                {isAdmin && (
-                  <>
-                    <button onClick={() => handleEdit(item)} className="kb-delete-btn" title="Editar" style={{ color: 'var(--text-muted)' }}>
-                      <Edit2 size={16} />
-                    </button>
-                    <button onClick={() => deleteItem(item.id)} className="kb-delete-btn" title="Excluir">
-                      <Trash2 size={16} />
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => toggleItem(item.id)}
-                  className={`kb-toggle-btn ${item.enabled ? 'active' : 'inactive'} ${!isAdmin ? 'disabled-toggle' : ''}`}
-                  title={isAdmin ? (item.enabled ? 'Desativar' : 'Ativar') : 'Apenas administradores podem alterar'}
-                  disabled={!isAdmin}
-                >
-                  {item.enabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
-                </button>
+      <div className="kb-sections-container">
+        {KB_SECTIONS.map(section => {
+          const sectionItems = filteredItems.filter(item => (item.section || 'general') === section.id);
+          if (sectionItems.length === 0 && searchTerm) return null; // Hide empty sections when searching
+
+          return (
+            <div key={section.id} className="kb-section-group">
+              <div className="kb-section-header">
+                <span className="kb-section-icon">{section.icon}</span>
+                <h2 className="kb-section-title">{section.label}</h2>
+                <span className="kb-section-count">{sectionItems.length} temas</span>
               </div>
-            </div>
+              
+              <div className="kb-grid">
+                {sectionItems.map(item => (
+                  <div key={item.id} className={`kb-card ${item.enabled ? 'enabled' : 'disabled'}`}>
+                    <div className="kb-card-header">
+                      <div className="kb-icon-wrapper">{getIconForType(item.type)}</div>
+                      <div className="flex items-center gap-2">
+                        {isAdmin && (
+                          <>
+                            <button onClick={() => handleEdit(item)} className="kb-delete-btn" title="Editar" style={{ color: 'var(--text-muted)' }}>
+                              <Edit2 size={16} />
+                            </button>
+                            <button onClick={() => deleteItem(item.id)} className="kb-delete-btn" title="Excluir">
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => toggleItem(item.id)}
+                          className={`kb-toggle-btn ${item.enabled ? 'active' : 'inactive'} ${!isAdmin ? 'disabled-toggle' : ''}`}
+                          title={isAdmin ? (item.enabled ? 'Desativar' : 'Ativar') : 'Apenas administradores podem alterar'}
+                          disabled={!isAdmin}
+                        >
+                          {item.enabled ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+                        </button>
+                      </div>
+                    </div>
 
-            <h3 className="kb-card-title">{item.title}</h3>
-            <p className="kb-card-desc">{item.description}</p>
+                    <h3 className="kb-card-title">{item.title}</h3>
+                    <p className="kb-card-desc">{item.description}</p>
 
-            <div className="kb-card-footer">
-              <div className="kb-tags">
-                {item.tags.map(tag => (
-                  <span key={tag} className="kb-tag">{tag}</span>
+                    <div className="kb-card-footer">
+                      <div className="kb-tags">
+                        {item.tags.map(tag => (
+                          <span key={tag} className="kb-tag">{tag}</span>
+                        ))}
+                      </div>
+                      <div className="kb-status-wrapper">
+                        {item.enabled
+                          ? <span className="kb-status active"><CheckCircle size={14} /> Ativo no Contexto</span>
+                          : <span className="kb-status inactive">Inativo</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-              <div className="kb-status-wrapper">
-                {item.enabled
-                  ? <span className="kb-status active"><CheckCircle size={14} /> Ativo no Contexto</span>
-                  : <span className="kb-status inactive">Inativo</span>
-                }
+                
+                {sectionItems.length === 0 && !searchTerm && (
+                  <div className="kb-card kb-card-empty-slot" onClick={() => { setNewSection(section.id); setIsModalOpen(true); }}>
+                    <Plus size={24} />
+                    <span>Adicionar em {section.label}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filteredItems.length === 0 && (
           <div className="kb-empty">
@@ -395,6 +439,20 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
                     onChange={(e) => setNewDesc(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="kb-form-group">
+                  <label htmlFor="kb-section">Seção / Categoria</label>
+                  <select
+                    id="kb-section"
+                    className="kb-form-input"
+                    value={newSection}
+                    onChange={(e) => setNewSection(e.target.value)}
+                  >
+                    {KB_SECTIONS.map(sec => (
+                      <option key={sec.id} value={sec.id}>{sec.icon} {sec.label}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="kb-form-group">
