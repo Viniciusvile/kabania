@@ -3,7 +3,7 @@ import { User, Mail, Shield, Camera, Save, CheckCircle, Loader2 } from 'lucide-r
 import { supabase } from '../supabaseClient';
 import './AccountViews.css';
 
-export default function UserProfile({ currentUser, currentCompany, userRole }) {
+export default function UserProfile({ currentUser, currentCompany, userRole, onProfileUpdate }) {
   const [name, setName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -24,6 +24,13 @@ export default function UserProfile({ currentUser, currentCompany, userRole }) {
       if (!error && data) {
         setName(data.name || currentUser.split('@')[0]);
         setAvatarUrl(data.avatar_url);
+        // Important: sync cache if it was empty or different
+        if (onProfileUpdate) {
+            onProfileUpdate({ 
+                name: data.name || currentUser.split('@')[0], 
+                avatar_url: data.avatar_url 
+            });
+        }
       }
       setIsFetching(false);
     };
@@ -40,6 +47,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole }) {
 
     if (!error) {
       setIsSaved(true);
+      if (onProfileUpdate) onProfileUpdate({ name });
       setTimeout(() => setIsSaved(false), 3000);
     } else {
       console.error("Error updating profile:", error);
@@ -122,6 +130,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole }) {
       if (updateError) throw updateError;
 
       setAvatarUrl(publicUrl);
+      if (onProfileUpdate) onProfileUpdate({ avatar_url: publicUrl });
     } catch (err) {
       console.error("Avatar upload error:", err);
       alert("Erro ao fazer upload da imagem. Certifique-se de ter rodado o script SQL e que o bucket 'avatars' exista.");

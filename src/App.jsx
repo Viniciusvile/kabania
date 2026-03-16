@@ -76,6 +76,10 @@ function App() {
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
+  const [profileData, setProfileData] = useState(() => {
+    const saved = localStorage.getItem('synapseProfileData');
+    return saved ? JSON.parse(saved) : { name: '', avatar_url: null };
+  });
 
   // Persist currentView whenever it changes
   useEffect(() => {
@@ -217,6 +221,7 @@ function App() {
         if (profError.code === 'PGRST116') {
           console.log("No profile found for new user:", email);
           setCurrentCompany(null);
+          setProfileData({ name: email.split('@')[0], avatar_url: null });
           setIsAuthenticated(true);
           localStorage.setItem('synapseAuth', 'true');
           localStorage.setItem('synapseCurrentUser', email);
@@ -226,6 +231,10 @@ function App() {
       }
 
       if (profile) {
+        setProfileData({
+          name: profile.name || email.split('@')[0],
+          avatar_url: profile.avatar_url
+        });
         let companyData = null;
         if (Array.isArray(profile.companies)) {
           companyData = profile.companies[0];
@@ -394,8 +403,13 @@ function App() {
       localStorage.setItem('synapseCurrentUser', currentUser);
       if (currentCompany) localStorage.setItem('synapseCurrentCompany', JSON.stringify(currentCompany));
       localStorage.setItem('synapseUserRole', userRole);
+      localStorage.setItem('synapseProfileData', JSON.stringify(profileData));
     }
-  }, [isAuthenticated, currentUser, currentCompany, userRole]);
+  }, [isAuthenticated, currentUser, currentCompany, userRole, profileData]);
+
+  const handleProfileUpdate = (newData) => {
+    setProfileData(prev => ({ ...prev, ...newData }));
+  };
 
   if (isSessionLoading) {
     return (

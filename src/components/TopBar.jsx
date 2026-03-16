@@ -22,36 +22,29 @@ export default function TopBar({
   currentUser, currentCompany, userRole, onLogout, 
   theme, onToggleTheme,
   projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject,
-  onViewChange
+  onViewChange,
+  profileData: initialProfileData
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [profileData, setProfileData] = useState({ name: '', avatar_url: null });
+  const [profileData, setProfileData] = useState(initialProfileData || { name: '', avatar_url: null });
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
+  // Sync with prop when it changes (caching update from App)
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!currentUser) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('name, avatar_url')
-        .eq('email', currentUser)
-        .single();
-      
-      if (!error && data) {
-        setProfileData({
-          name: data.name || currentUser.split('@')[0],
-          avatar_url: data.avatar_url
-        });
-      }
-    };
-    fetchProfile();
+    if (initialProfileData) {
+      setProfileData(initialProfileData);
+    }
+  }, [initialProfileData]);
+
+  useEffect(() => {
+    if (!currentUser) return;
     
-    // Set up real-time subscription for profile changes
+    // Still set up real-time subscription for profile changes to keep synced across tabs/devices
     const channel = supabase
-      .channel(`profile-${currentUser}`)
+      .channel(`profile-top-${currentUser}`)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
