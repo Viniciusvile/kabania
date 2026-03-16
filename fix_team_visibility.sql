@@ -1,25 +1,21 @@
 -- fix_team_visibility.sql
--- Permite que usuários vejam outros membros da mesma empresa
+-- Permite que usuários vejam outros membros da mesma empresa sem erro de recursão
 
--- 1. Remover a política antiga restritiva
+-- 1. Criar função auxiliar para buscar a empresa do usuário atual
+-- SECURITY DEFINER faz a função rodar com permissões de dono, ignorando o RLS recursivo
+CREATE OR REPLACE FUNCTION public.get_auth_company_id() 
+RETURNS TEXT AS $$
+  SELECT company_id FROM public.profiles WHERE user_id = auth.uid() LIMIT 1;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+-- 2. Remover a política antiga causava recursão
+DROP POLICY IF EXISTS "Visualização de perfis da empresa" ON profiles;
 DROP POLICY IF EXISTS "Usuários podem ver o próprio perfil" ON profiles;
 
--- 2. Criar nova política que permite ver membros da mesma empresa
--- OU ver o próprio perfil (independente de empresa)
--- OU ver perfis sem empresa (opcional, mas útil para convites)
-CREATE POLICY "Visualização de perfis da empresa" ON public.profiles
+-- 3. Criar nova política segura e sem recursão
+CREATE POLICY "Visualização simplificada da equipe" ON public.profiles
 FOR SELECT USING (
-    auth.uid() = user_id -- Ver o próprio
+    user_id = auth.uid() -- Sempre pode ver a si mesmo
     OR 
-    company_id IS NOT NULL AND company_id IN (
-        SELECT p.company_id FROM public.profiles p WHERE p.user_id = auth.uid()
-    )
+    (company_id IS NOT NULL AND company_id = public.get_auth_company_id()) -- Pode ver quem for da mesma empresa
 );
-
--- Nota: Se houver erro de recursão infinita, use esta versão simplificada:
--- CREATE POLICY "Visualização de perfis da empresa" ON public.profiles
--- FOR SELECT USING (
---     auth.jwt()->>'email' = email 
---     OR 
---     company_id = (SELECT company_id FROM profiles WHERE email = auth.jwt()->>'email' LIMIT 1)
--- );
