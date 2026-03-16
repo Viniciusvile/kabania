@@ -42,7 +42,7 @@ export const SECTOR_TEMPLATES = {
   }
 };
 
-export default function CompanySetup({ currentUser, onComplete }) {
+export default function CompanySetup({ currentUser, onComplete, onLogout }) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState(null); // 'create' or 'join'
   const [companyName, setCompanyName] = useState('');
