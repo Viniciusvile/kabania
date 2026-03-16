@@ -232,6 +232,15 @@ function App() {
       }
 
       if (profile) {
+        // PROACTIVE FIX: Link user_id if missing (for legacy accounts)
+        if (!profile.user_id) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.id) {
+            console.log("[AUTO-REPAIR] Linking user_id to legacy profile:", email);
+            await supabase.from('profiles').update({ user_id: session.user.id }).eq('email', email);
+          }
+        }
+
         setProfileData({
           name: profile.name || email.split('@')[0],
           avatar_url: profile.avatar_url
