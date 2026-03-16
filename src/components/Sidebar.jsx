@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown } from 'lucide-react';
+import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChange, userRole }) {
@@ -88,6 +88,14 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
         >
           <BookOpen size={20} />
           <span>Base de Conhecimento</span>
+        </div>
+
+        <div
+          className={`nav-item ${currentView === 'support' ? 'active' : ''}`}
+          onClick={() => onViewChange('support')}
+        >
+          <LifeBuoy size={20} className="text-accent" />
+          <span>Central de Suporte</span>
         </div>
 
         {/* Admin Settings */}

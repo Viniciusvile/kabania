@@ -15,6 +15,7 @@ import ReportsDashboard from './components/ReportsDashboard';
 import BusinessManagement from './components/BusinessManagement';
 import AIInsights from './components/AIInsights';
 import UserProfile from './components/UserProfile';
+import SupportPortal from './components/SupportPortal';
 import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import { logEvent } from './services/historyService';
