@@ -97,7 +97,7 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
             onClick={() => onViewChange('company')}
           >
             <Building2 size={20} />
-            <span>Configurações da Empresa</span>
+            <span>Dados da Empresa</span>
             {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
           </div>
         )}

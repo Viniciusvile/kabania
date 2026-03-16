@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw } from 'lucide-react';
+import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, MapPin, Mail, Phone, Trash2, Edit2, X, Calendar, UserPlus } from 'lucide-react';
+import CustomerCard from './CustomerCard';
+import CustomerFormModal from './CustomerFormModal';
 import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { supabase } from '../supabaseClient';
@@ -7,7 +9,12 @@ import './CompanyPanel.css';
 
 export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
   const [members, setMembers] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [activeTab, setActiveTab] = useState('members'); // 'members' or 'customers'
   const [copied, setCopied] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
 
   const loadMembers = async () => {
     if (!currentCompany?.id) return;
@@ -28,8 +35,26 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     }
   };
 
+  const loadCustomers = async () => {
+    if (!currentCompany?.id) return;
+    setLoadingCustomers(true);
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('company_id', currentCompany.id)
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setCustomers(data);
+    } else if (error) {
+      console.error('Error loading customers:', error);
+    }
+    setLoadingCustomers(false);
+  };
+
   useEffect(() => {
     loadMembers();
+    loadCustomers();
   }, [currentCompany]);
 
   const handleCopyCode = () => {
@@ -96,97 +121,180 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
         </span>
       </header>
 
+      <div className="cp-tabs">
+        <button
+          className={`cp-tab ${activeTab === 'members' ? 'active' : ''}`}
+          onClick={() => setActiveTab('members')}
+        >
+          <Users size={18} /> Equipe
+        </button>
+        <button
+          className={`cp-tab ${activeTab === 'customers' ? 'active' : ''}`}
+          onClick={() => setActiveTab('customers')}
+        >
+          <Building2 size={18} /> Clientes (CRM)
+        </button>
+      </div>
+
       <div className="cp-grid">
-        {/* Info Card */}
-        <div className="cp-card">
-          <h3 className="cp-card-title"><Building2 size={18} /> Informações da Empresa</h3>
-          <div className="cp-info-list">
-            <div className="cp-info-row">
-              <span>Nome</span>
-              <strong>{currentCompany.name}</strong>
+
+      {activeTab === 'members' ? (
+        <div className="cp-grid">
+          {/* Info Card */}
+          <div className="cp-card">
+            <h3 className="cp-card-title"><Building2 size={18} /> Informações da Empresa</h3>
+            <div className="cp-info-list">
+              <div className="cp-info-row">
+                <span>Nome</span>
+                <strong>{currentCompany.name}</strong>
+              </div>
+              <div className="cp-info-row">
+                <span>Setor</span>
+                <strong>{sectorInfo?.emoji} {sectorInfo?.label}</strong>
+              </div>
+              <div className="cp-info-row">
+                <span>Membros</span>
+                <strong>{members.length}</strong>
+              </div>
+              <div className="cp-info-row">
+                <span>Criada em</span>
+                <strong>
+                  {(currentCompany.createdAt || currentCompany.created_at)
+                    ? new Date(currentCompany.createdAt || currentCompany.created_at).toLocaleDateString('pt-BR')
+                    : '—'}
+                </strong>
+              </div>
             </div>
-            <div className="cp-info-row">
-              <span>Setor</span>
-              <strong>{sectorInfo?.emoji} {sectorInfo?.label}</strong>
-            </div>
-            <div className="cp-info-row">
-              <span>Membros</span>
-              <strong>{members.length}</strong>
-            </div>
-            <div className="cp-info-row">
-              <span>Criada em</span>
-              <strong>
-                {(currentCompany.createdAt || currentCompany.created_at)
-                  ? new Date(currentCompany.createdAt || currentCompany.created_at).toLocaleDateString('pt-BR')
-                  : '—'}
-              </strong>
+
+            <div className="cp-divider" />
+
+            <div className="cp-invite-section">
+              <label>
+                Código de convite
+                <span className="cp-hint"> — compartilhe para convidar membros</span>
+              </label>
+              <div className="cp-code-box">
+                <code>{currentCompany.code || '------'}</code>
+                <button className={`cp-copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopyCode}>
+                  {copied ? <><Check size={14} /> Copiado!</> : <><Copy size={14} /> Copiar</>}
+                </button>
+              </div>
+              <p className="cp-invite-hint">O membro usa este código na tela de cadastro para entrar na sua empresa.</p>
             </div>
           </div>
 
-          <div className="cp-divider" />
-
-          <div className="cp-invite-section">
-            <label>
-              Código de convite
-              <span className="cp-hint"> — compartilhe para convidar membros</span>
-            </label>
-            <div className="cp-code-box">
-              <code>{currentCompany.code || '------'}</code>
-              <button className={`cp-copy-btn ${copied ? 'copied' : ''}`} onClick={handleCopyCode}>
-                {copied ? <><Check size={14} /> Copiado!</> : <><Copy size={14} /> Copiar</>}
+          {/* Members Card */}
+          <div className="cp-card">
+            <div className="cp-members-header">
+              <h3 className="cp-card-title"><Users size={18} /> Membros da Equipe</h3>
+              <button className="cp-refresh-btn" onClick={loadMembers} title="Atualizar">
+                <RefreshCcw size={14} />
               </button>
             </div>
-            <p className="cp-invite-hint">O membro usa este código na tela de cadastro para entrar na sua empresa.</p>
+
+            <div className="cp-members-list">
+              {members.map(member => (
+                <div key={member.email} className="cp-member-row">
+                  <div className="cp-member-avatar">
+                    {member.email.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="cp-member-info">
+                    <span className="cp-member-email">{member.email}</span>
+                    <span className={`cp-member-role ${member.role}`}>
+                      {member.role === 'admin' ? '👑 Admin' : '🔹 Membro'}
+                      {member.email === currentUser && ' · você'}
+                    </span>
+                  </div>
+                  {userRole === 'admin' && member.email !== currentUser && (
+                    <div className="cp-member-actions">
+                      <button
+                        className="cp-action-btn"
+                        title={member.role === 'admin' ? 'Rebaixar para Membro' : 'Promover a Admin'}
+                        onClick={() => handleToggleRole(member.email)}
+                      >
+                        <UserCheck2 size={15} />
+                      </button>
+                      <button
+                        className="cp-action-btn danger"
+                        title="Remover da empresa"
+                        onClick={() => handleRemoveMember(member.email)}
+                      >
+                        <UserX size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {members.length === 0 && (
+                <div className="cp-empty">Nenhum membro encontrado. Compartilhe o código de convite!</div>
+              )}
+            </div>
           </div>
         </div>
-
-        {/* Members Card */}
-        <div className="cp-card">
-          <div className="cp-members-header">
-            <h3 className="cp-card-title"><Users size={18} /> Membros da Equipe</h3>
-            <button className="cp-refresh-btn" onClick={loadMembers} title="Atualizar">
-              <RefreshCcw size={14} />
+      ) : (
+        <div className="cp-crm-section animate-slide-up">
+          <div className="cp-crm-header">
+            <div>
+              <h2 className="cp-crm-title">Gestão de Clientes</h2>
+              <p className="cp-sector-tag">Total: {customers.length} clientes cadastrados</p>
+            </div>
+            <button 
+              className="cp-btn-new-customer"
+              onClick={() => { setEditingCustomer(null); setIsCustomerModalOpen(true); }}
+            >
+              <Plus size={18} /> Novo Cliente
             </button>
           </div>
 
-          <div className="cp-members-list">
-            {members.map(member => (
-              <div key={member.email} className="cp-member-row">
-                <div className="cp-member-avatar">
-                  {member.email.substring(0, 2).toUpperCase()}
-                </div>
-                <div className="cp-member-info">
-                  <span className="cp-member-email">{member.email}</span>
-                  <span className={`cp-member-role ${member.role}`}>
-                    {member.role === 'admin' ? '👑 Admin' : '🔹 Membro'}
-                    {member.email === currentUser && ' · você'}
-                  </span>
-                </div>
-                {userRole === 'admin' && member.email !== currentUser && (
-                  <div className="cp-member-actions">
-                    <button
-                      className="cp-action-btn"
-                      title={member.role === 'admin' ? 'Rebaixar para Membro' : 'Promover a Admin'}
-                      onClick={() => handleToggleRole(member.email)}
-                    >
-                      <UserCheck2 size={15} />
-                    </button>
-                    <button
-                      className="cp-action-btn danger"
-                      title="Remover da empresa"
-                      onClick={() => handleRemoveMember(member.email)}
-                    >
-                      <UserX size={15} />
-                    </button>
-                  </div>
-                )}
-              </div>
+          <div className="cp-customers-grid">
+            {customers.map(customer => (
+              <CustomerCard 
+                key={customer.id} 
+                customer={customer} 
+                onEdit={() => { setEditingCustomer(customer); setIsCustomerModalOpen(true); }}
+                onDelete={async () => {
+                  if (window.confirm(`Excluir cliente ${customer.name}?`)) {
+                    const { error } = await supabase.from('customers').delete().eq('id', customer.id);
+                    if (!error) {
+                      setCustomers(prev => prev.filter(c => c.id !== customer.id));
+                      logEvent(currentCompany.id, currentUser, 'CUSTOMER_DELETED', `Cliente ${customer.name} removido.`);
+                    }
+                  }
+                }}
+              />
             ))}
-            {members.length === 0 && (
-              <div className="cp-empty">Nenhum membro encontrado. Compartilhe o código de convite!</div>
+            {customers.length === 0 && !loadingCustomers && (
+              <div className="cp-empty-crm">
+                <p>Sua base de clientes está vazia.</p>
+                <button 
+                  className="kb-btn-template mt-2"
+                  onClick={() => setIsCustomerModalOpen(true)}
+                >
+                  <Plus size={16} /> Cadastrar Primeiro Cliente
+                </button>
+              </div>
             )}
+            {loadingCustomers && <div className="cp-empty">Carregando clientes...</div>}
           </div>
         </div>
+      )}
+
+      {isCustomerModalOpen && (
+        <CustomerFormModal 
+          isOpen={isCustomerModalOpen}
+          editingCustomer={editingCustomer}
+          currentCompanyId={currentCompany.id}
+          onClose={() => setIsCustomerModalOpen(false)}
+          onSave={(newCustomer) => {
+            if (editingCustomer) {
+              setCustomers(prev => prev.map(c => c.id === newCustomer.id ? newCustomer : c));
+            } else {
+              setCustomers(prev => [newCustomer, ...prev]);
+            }
+            setIsCustomerModalOpen(false);
+          }}
+        />
+      )}
       </div>
     </div>
   );
