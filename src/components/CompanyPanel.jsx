@@ -16,6 +16,8 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
   
   // Collaborators
   const [collaborators, setCollaborators] = useState([]);
