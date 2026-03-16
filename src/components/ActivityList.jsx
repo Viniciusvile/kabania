@@ -157,36 +157,35 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const [openMenu, setOpenMenu] = useState(null); // { id: rowKey, rect: DOMRect }
   const [pendingDeleteId, setPendingDeleteId] = useState(null); // inline confirm
 
-  // Fetch activities from Supabase on load and whenever company changes
-  useEffect(() => {
-    const fetchActivities = async () => {
-      if (!currentCompany?.id) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('activities')
-        .select('id, location, type, status, rating, created, updated, last_appointment, collaborator, google_event_id, company_id, created_by')
-        .eq('company_id', currentCompany.id)
-        .order('created', { ascending: false });
-
-      if (!error && data) {
-        // Map back consistent with the UI (snake_case to camelCase)
-        const mapped = data.map(item => ({
-          ...item,
-          companyId: item.company_id,
-          createdBy: item.created_by,
-          lastAppointment: item.last_appointment
-        }));
-        setActivities(mapped);
-        localStorage.setItem(getCacheKey(), JSON.stringify(mapped));
-      } else if (error) {
-        console.error('Error fetching activities:', error);
-      }
+  const fetchActivities = async () => {
+    if (!currentCompany?.id) {
       setLoading(false);
-    };
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('activities')
+      .select('id, location, type, status, rating, created, updated, last_appointment, collaborator, google_event_id, company_id, created_by')
+      .eq('company_id', currentCompany.id)
+      .order('created', { ascending: false });
 
+    if (!error && data) {
+      // Map back consistent with the UI (snake_case to camelCase)
+      const mapped = data.map(item => ({
+        ...item,
+        companyId: item.company_id,
+        createdBy: item.created_by,
+        lastAppointment: item.last_appointment
+      }));
+      setActivities(mapped);
+      localStorage.setItem(getCacheKey(), JSON.stringify(mapped));
+    } else if (error) {
+      console.error('Error fetching activities:', error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchActivities();
   }, [currentCompany]);
 
