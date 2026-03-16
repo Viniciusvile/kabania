@@ -118,22 +118,34 @@ export default function SupportPortal({ currentUser, currentCompany }) {
   return (
     <div className="account-view-container animate-fade-in">
       <header className="account-header">
-        <h1 className="account-title">
-          <LifeBuoy size={28} className="text-accent" /> Central de Atendimento
-        </h1>
-        <p className="account-subtitle">Abra um chamado e receba ajuda imediata da nossa Inteligência Artificial.</p>
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent shadow-lg shadow-accent/5">
+            <LifeBuoy size={30} />
+          </div>
+          <div>
+            <h1 className="account-title support-header-gradient text-3xl">
+              Central de Atendimento
+            </h1>
+            <p className="account-subtitle">Suporte Inteligente & Resposta Imediata</p>
+          </div>
+        </div>
       </header>
 
-      <div className="account-card max-w-3xl mx-auto overflow-hidden">
+      <div className="support-glass-card max-w-3xl mx-auto overflow-hidden support-form-animate">
         {step === 1 ? (
-          <form onSubmit={handleSubmit} className="p-8">
-            <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/5">
-              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
-                <MessageSquare size={20} />
+          <form onSubmit={handleSubmit} className="p-8 md:p-10">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/70">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white tracking-tight">Novo Chamado</h2>
+                  <p className="text-xs text-muted/80">IA treinada com sua base de conhecimento</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Novo Chamado</h2>
-                <p className="text-sm text-muted">Preencha os dados abaixo para começar.</p>
+              <div className="hidden sm:block support-badge-ai">
+                <Sparkles size={12} /> IA Triage Ativo
               </div>
             </div>
 
@@ -147,7 +159,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     name="name"
                     value={ticketData.name}
                     onChange={handleInputChange}
-                    className="form-input"
+                    className="form-input support-input-premium"
                     placeholder="Como devemos te chamar?"
                     required
                   />
@@ -162,7 +174,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     name="email"
                     value={ticketData.email}
                     onChange={handleInputChange}
-                    className="form-input"
+                    className="form-input support-input-premium"
                     placeholder="seu@email.com"
                     required
                   />
@@ -171,7 +183,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
             </div>
 
             <div className="form-group mb-6">
-              <label className="form-label">Assunto</label>
+              <label className="form-label">Assunto do Chamado</label>
               <div className="form-input-wrapper">
                 <AlertCircle className="form-icon" size={16} />
                 <input 
@@ -179,8 +191,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                   name="subject"
                   value={ticketData.subject}
                   onChange={handleInputChange}
-                  className="form-input"
-                  placeholder="Resuma o seu problema"
+                  className="form-input support-input-premium"
+                  placeholder="Ex: Não consigo acessar os relatórios"
                   required
                 />
               </div>
@@ -192,56 +204,63 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                 name="description"
                 value={ticketData.description}
                 onChange={handleInputChange}
-                className="form-textarea min-h-[150px]"
-                placeholder="Conte-nos o que está acontecendo..."
+                className="form-textarea support-input-premium min-h-[160px] p-4 pt-10"
+                placeholder="Explique o que está acontecendo em detalhes..."
                 required
               />
+              <MessageSquare className="absolute left-4 top-10 text-muted/30" size={18} />
             </div>
 
             <button 
               type="submit" 
-              className="btn-premium btn-premium-primary w-full py-4 text-lg font-bold"
+              className="btn-premium btn-premium-primary w-full py-4 text-lg font-bold group"
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="animate-spin" size={20} /> Analisando...</>
+                <><Loader2 className="animate-spin" size={20} /> Consultando Base de Conhecimento...</>
               ) : (
-                <><Send size={20} /> Enviar Chamado</>
+                <><Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Enviar para Análise</>
               )}
             </button>
           </form>
         ) : (
-          <div className="p-0">
-            <div className="bg-accent/5 p-8 border-b border-white/5">
-              <div className="flex items-center gap-2 text-accent mb-4 font-bold text-sm uppercase tracking-wider">
-                <Sparkles size={16} /> Sugestão da IA Instante
+          <div className="support-form-animate">
+            <div className="bg-accent/10 p-8 md:p-10 border-b border-white/5 support-ai-glow">
+              <div className="flex items-center justify-between mb-6">
+                <div className="support-badge-ai">
+                  <Sparkles size={14} /> Sugestão da IA Synapse
+                </div>
+                <div className="text-xs text-muted/60">Análise concluída em segundos</div>
               </div>
-              <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-white leading-relaxed text-lg">
+              <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl p-8 border border-accent/20 text-slate-100 leading-relaxed text-lg shadow-inner">
                 {aiResponse}
               </div>
             </div>
 
-            <div className="p-8">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="text-muted text-sm max-w-md">
-                  A solução acima resolveu o seu problema? Se sim, você pode encerrar o chamado agora.
+            <div className="p-8 md:p-10 bg-slate-900/40">
+              <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                <div>
+                  <h4 className="text-white font-bold mb-1">A solução funcionou?</h4>
+                  <p className="text-muted text-sm max-w-sm">
+                    Nossa IA tenta resolver seu problema usando a documentação da empresa.
+                  </p>
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
+                <div className="flex gap-4 w-full md:w-auto">
                   <button 
                     onClick={() => {
                         setStep(1);
                         setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
                     }}
-                    className="btn-premium border-green-500/30 text-green-400 hover:bg-green-500/10 flex-1 md:flex-initial"
+                    className="btn-premium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 flex-1 md:flex-initial"
                   >
                     <CheckCircle size={18} /> Resolvido
                   </button>
                   <button 
                     onClick={handleEscalate}
-                    className="btn-premium btn-premium-primary flex-1 md:flex-initial"
+                    className="btn-premium btn-premium-primary flex-1 md:flex-initial shadow-lg shadow-accent/20"
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Falar com Atendente</>}
+                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Chamar Especialista</>}
                   </button>
                 </div>
               </div>
@@ -250,8 +269,10 @@ export default function SupportPortal({ currentUser, currentCompany }) {
         )}
       </div>
 
-      <footer className="mt-8 text-center text-muted text-xs">
-        © {new Date().getFullYear()} Suporte Inteligente — Sistema integrado à Base de Conhecimento Corporativa.
+      <div className="support-divider-fancy" />
+
+      <footer className="footer-links text-center text-muted/40 text-[10px] uppercase tracking-widest pb-8">
+        PLATAFORMA KABANIA — NÚCLEO DE SUPORTE AUTOMATIZADO
       </footer>
     </div>
   );

@@ -308,3 +308,85 @@
   background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-color);
 }
+
+/* --- Support Portal Premium Extensions --- */
+.support-glass-card {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.support-ai-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.support-ai-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.05) 0%, transparent 70%);
+  animation: ai-pulse 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.support-header-gradient {
+  background: linear-gradient(135deg, #00e5ff 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+
+.support-input-premium {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.support-input-premium:focus {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.support-form-animate {
+  animation: support-slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes support-slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.support-badge-ai {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: #00e5ff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.support-divider-fancy {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+  margin: 2rem 0;
+}
