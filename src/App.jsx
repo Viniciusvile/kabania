@@ -449,7 +449,7 @@ function App() {
   // Changed: Don't show CompanySetup if we're still loading the session background info, 
   // unless we're sure they don't have one after loading.
   if (!currentCompany && !isSessionLoading) {
-    return <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} />;
+    return <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} onLogout={handleLogout} />;
   }
 
   // If we're authenticated but still loading and have no company info yet, 

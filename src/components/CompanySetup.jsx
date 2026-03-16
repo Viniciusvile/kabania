@@ -172,9 +172,14 @@ export default function CompanySetup({ currentUser, onComplete }) {
                   <span>Use o código compartilhado pelo administrador</span>
                 </button>
               </div>
-              <button className="cs-btn-primary" disabled={!mode} onClick={() => setStep(2)}>
-                Continuar <ChevronRight size={16} />
-              </button>
+              <div className="cs-btn-row">
+                <button className="cs-btn-secondary" onClick={onLogout}>
+                  Sair / Voltar ao Login
+                </button>
+                <button className="cs-btn-primary" disabled={!mode} onClick={() => setStep(2)}>
+                  Continuar <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
           )}
 
