@@ -227,8 +227,13 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
   const [view, setView]       = useState('month'); // 'month' | 'week' | 'day'
   const [cursor, setCursor]   = useState(new Date());
   const [selected, setSelected] = useState(null); // activity detail popover
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
+
+  const [activities, setActivities] = useState(() => {
+    const cached = localStorage.getItem(getCacheKey());
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(false);
 
   const fetchActivities = async () => {
     if (!currentCompany?.id) {
@@ -242,8 +247,8 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
       .eq('company_id', currentCompany.id);
 
     if (!error && data) {
-      // Map keys if necessary to match the UI expectations (though here they seem OK)
       setActivities(data);
+      localStorage.setItem(getCacheKey(), JSON.stringify(data));
     } else if (error) {
       console.error('Error fetching calendar activities:', error);
     }
@@ -317,7 +322,7 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
       </div>
 
       {/* Calendar body */}
-      <div className="cal-body">
+      <div className={`cal-body ${loading && activities.length === 0 ? 'cal-loading-skeleton' : ''}`}>
         {view === 'month' && (
           <MonthView
             year={cursor.getFullYear()}
