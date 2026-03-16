@@ -257,9 +257,23 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         return;
       }
 
-      // If we don't have tasks yet (not even from cache), show loading
-      if (tasks.length === 0) setLoading(true);
+      // 1. RE-HYDRATION: Try loading from cache for THIS SPECIFIC projectId immediately
+      const cacheKey = `kanban_tasks_${projectId}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          console.log(`Re-hydrating tasks for project ${projectId} from cache...`);
+          setTasks(parsed);
+          setLoading(false); // No spinner if we have data
+        } catch (e) {
+          console.error("Cache parse error during re-hydration:", e);
+        }
+      } else {
+        setLoading(true);
+      }
 
+      // 2. BACKGROUND SYNC
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -277,7 +291,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         }));
         
         setTasks(mapped);
-        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(mapped));
+        localStorage.setItem(cacheKey, JSON.stringify(mapped));
       } else if (error) {
         console.error('Error fetching tasks:', error);
       }

@@ -271,14 +271,14 @@ function App() {
     localStorage.removeItem('synapseUserRole');
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error("SignOut error:", err);
-    } finally {
-      handleLogoutLocal();
-    }
+  const handleLogout = () => {
+    // Clear local state immediately for instant feedback
+    handleLogoutLocal();
+    
+    // Trigger Supabase signOut in background
+    supabase.auth.signOut().catch(err => {
+      console.error("SignOut background error:", err);
+    });
   };
 
   // Load session on mount
