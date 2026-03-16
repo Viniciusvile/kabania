@@ -435,6 +435,25 @@
   border-color: rgba(34, 197, 94, 0.2);
 }
 
+.cp-grid-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+  gap: 1rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cp-grid-loading .animate-spin {
+  color: #00e5ff;
+}
+
 .cp-add-btn-dash {
   width: 100%;
   background: rgba(255, 255, 255, 0.03);

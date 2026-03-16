@@ -15,6 +15,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   // Collaborators
   const [collaborators, setCollaborators] = useState([]);
@@ -22,22 +23,43 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
 
-  const loadMembers = async () => {
+  const loadAllData = async () => {
     if (!currentCompany?.id) return;
+    
+    // For initial load, we don't want to show empty cards
+    if (members.length === 0) setIsInitialLoading(true);
+    
+    try {
+      const [membersResult, collaboratorsResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('company_id', currentCompany.id),
+        supabase.from('collaborators').select('*').eq('company_id', currentCompany.id).order('name', { ascending: true })
+      ]);
+
+      if (!membersResult.error && membersResult.data) {
+        setMembers(membersResult.data.map(u => ({ ...u, companyId: u.company_id })));
+      }
+      
+      if (!collaboratorsResult.error && collaboratorsResult.data) {
+        setCollaborators(collaboratorsResult.data);
+      }
+
+      // Customers can be loaded slightly after or in parallel, choosing parallel for speed
+      loadCustomers();
+      
+    } catch (err) {
+      console.error('Error loading company data:', err);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
+  const loadMembers = async () => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('company_id', currentCompany.id);
-
     if (!error && data) {
-      // Map back to handle potential camelCase/snake_case differences
-      const mapped = data.map(u => ({
-        ...u,
-        companyId: u.company_id
-      }));
-      setMembers(mapped);
-    } else if (error) {
-      console.error('Error loading members:', error);
+      setMembers(data.map(u => ({ ...u, companyId: u.company_id })));
     }
   };
 
@@ -52,8 +74,6 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
     if (!error && data) {
       setCustomers(data);
-    } else if (error) {
-      console.error('Error loading customers:', error);
     }
     setLoadingCustomers(false);
   };
@@ -69,17 +89,13 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
     if (!error && data) {
       setCollaborators(data);
-    } else if (error) {
-      console.error('Error loading collaborators:', error);
     }
     setIsLoadingCollabs(false);
   };
 
   useEffect(() => {
-    loadMembers();
-    loadCustomers();
-    loadCollaborators();
-  }, [currentCompany]);
+    loadAllData();
+  }, [currentCompany?.id]); // Only refetch when the company actually changes
 
   const handleCopyCode = () => {
     if (!currentCompany?.code) return;
@@ -204,8 +220,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       </div>
 
       <div className="cp-grid">
-
-      {activeTab === 'members' ? (
+        {isInitialLoading ? (
+          <div className="cp-grid-loading">
+            <RefreshCcw size={24} className="animate-spin" />
+            <span>Carregando dados da empresa...</span>
+          </div>
+        ) : activeTab === 'members' ? (
         <div className="cp-grid">
           {/* Info Card */}
           <div className="cp-card">
