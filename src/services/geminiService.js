@@ -7,8 +7,21 @@ if (!API_KEY) {
 }
 const genAI = new GoogleGenerativeAI(API_KEY);
 
+// Basic in-memory cache for authorized tags to speed up IA requests
+const tagsCache = {
+  data: {}, // companyId -> { tags: string, timestamp: number }
+  TTL: 1000 * 60 * 5 // 5 minutes
+};
+
 async function getAuthorizedTags(companyId) {
   if (!companyId) return 'NENHUMA TAG AUTORIZADA';
+
+  // Check cache first
+  const cached = tagsCache.data[companyId];
+  if (cached && (Date.now() - cached.timestamp < tagsCache.TTL)) {
+    console.log("Using cached tags for IA triage");
+    return cached.tags;
+  }
 
   try {
     const { data: items, error } = await supabase
@@ -31,6 +44,13 @@ async function getAuthorizedTags(companyId) {
     allTags.forEach(tag => {
       tagsString += `[TAG: ${tag}]\n`;
     });
+
+    // Update cache
+    tagsCache.data[companyId] = {
+      tags: tagsString,
+      timestamp: Date.now()
+    };
+
     return tagsString;
   } catch (e) {
     console.error('Error fetching company knowledge from Supabase:', e);

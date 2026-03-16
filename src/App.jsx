@@ -232,21 +232,35 @@ function App() {
 
         // FALLBACK: If join failed but we have a company_id, try a direct fetch
         if (!companyData && profile.company_id) {
-          console.log("Join failed, attempting direct company fetch for:", profile.company_id);
-          const { data: directCo, error: directCoError } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('id', profile.company_id)
-            .single();
+          console.warn("[AUTO-RECOVERY] Join failed for profile:", profile.id, "Attempting direct company fetch for ID:", profile.company_id);
           
-          if (!directCoError && directCo) {
-            companyData = directCo;
-          } else {
-            console.error("Direct company fetch failed:", directCoError);
-          }
+          const fetchCompany = async (retryCount = 0) => {
+            const { data: directCo, error: directCoError } = await supabase
+              .from('companies')
+              .select('*')
+              .eq('id', profile.company_id)
+              .single();
+            
+            if (!directCoError && directCo) {
+              console.log("[AUTO-RECOVERY] Company fetch SUCCESS on attempt:", retryCount + 1);
+              return directCo;
+            }
+            
+            if (retryCount < 1) { // One extra retry after delay
+              console.warn("[AUTO-RECOVERY] Fetch failed, retrying in 1s...");
+              await new Promise(r => setTimeout(r, 1000));
+              return fetchCompany(retryCount + 1);
+            }
+            
+            console.error("[AUTO-RECOVERY] All company fetch attempts FAILED:", directCoError);
+            return null;
+          };
+
+          companyData = await fetchCompany();
         }
 
         if (companyData) {
+          console.log("Applying Company Data:", companyData.name);
           const cwr = { 
             ...companyData, 
             createdAt: companyData.created_at || companyData.createdAt,
@@ -256,7 +270,13 @@ function App() {
           setUserRole(profile.role || 'member');
           localStorage.setItem('synapseCurrentCompany', JSON.stringify(cwr));
           localStorage.setItem('synapseUserRole', profile.role || 'member');
-        } else if (!profile.company_id) {
+        } else if (profile.company_id) {
+          // CRITICAL FIX: If we have a company_id but failed to fetch, 
+          // do NOT let the app settle into 'null' company (which triggers Setup)
+          console.error("User MUST have a company but we couldn't load it. Blocking setup screen.");
+          setCurrentCompany({ id: profile.company_id, name: 'Carregando...', isPlaceholder: true });
+        } else {
+          console.log("User has NO company_id in profile. Setting to null.");
           setCurrentCompany(prev => {
             if (prev) return prev;
             localStorage.removeItem('synapseCurrentCompany');

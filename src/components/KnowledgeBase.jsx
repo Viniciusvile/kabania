@@ -22,14 +22,21 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setFeedback({ isOpen: true, title, message, type, onConfirm });
   };
 
-  // Fetch from Supabase
+  // Fetch from Supabase with Caching
   useEffect(() => {
     const fetchKnowledge = async () => {
       if (!currentCompany?.id) {
         setLoading(false);
         return;
       }
-      setLoading(true);
+
+      // Check cache first for instant hydration
+      const cached = localStorage.getItem(`kb_cache_${currentCompany.id}`);
+      if (cached) {
+        setKnowledgeItems(JSON.parse(cached));
+        setLoading(false); // Immediate data, no spinner needed
+      }
+
       const { data, error } = await supabase
         .from('knowledge_base')
         .select('*')
@@ -38,6 +45,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
 
       if (!error && data) {
         setKnowledgeItems(data);
+        localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify(data));
       } else if (error) {
         console.error('Error fetching knowledge:', error);
       }
@@ -52,15 +60,27 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     const item = knowledgeItems.find(it => it.id === id);
     if (!item) return;
 
+    // OPTIMISTIC UPDATE
+    const newStatus = !item.enabled;
+    setKnowledgeItems(prev => prev.map(it =>
+      it.id === id ? { ...it, enabled: newStatus } : it
+    ));
+
     const { error } = await supabase
       .from('knowledge_base')
-      .update({ enabled: !item.enabled })
+      .update({ enabled: newStatus })
       .eq('id', id);
 
-    if (!error) {
+    if (error) {
+      console.error('Error toggling item:', error);
+      // Rollback
       setKnowledgeItems(prev => prev.map(it =>
-        it.id === id ? { ...it, enabled: !item.enabled } : it
+        it.id === id ? { ...it, enabled: !newStatus } : it
       ));
+    } else {
+      // Update cache
+      const updated = knowledgeItems.map(it => it.id === id ? { ...it, enabled: newStatus } : it);
+      localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify(updated));
     }
   };
 
@@ -185,15 +205,19 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         tags: parsedTags.length > 0 ? parsedTags : editingItem.tags
       };
 
+      // OPTIMISTIC
+      setKnowledgeItems(prev => prev.map(item =>
+        item.id === editingItem.id ? { ...item, ...payload } : item
+      ));
+
       const { error } = await supabase
         .from('knowledge_base')
         .update(payload)
         .eq('id', editingItem.id);
 
-      if (!error) {
-        setKnowledgeItems(prev => prev.map(item =>
-          item.id === editingItem.id ? { ...item, ...payload } : item
-        ));
+      if (error) {
+        console.error("Update error:", error);
+        // Rollback would need previous state copy
       }
     } else {
       const newItem = {
@@ -203,15 +227,23 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
         enabled: true,
         type: 'document',
         tags: parsedTags.length > 0 ? parsedTags : ['Adicionado Manualmente'],
-        company_id: currentCompany?.id
+        company_id: currentCompany?.id,
+        created_at: new Date().toISOString()
       };
+
+      // OPTIMISTIC
+      setKnowledgeItems(prev => [newItem, ...prev]);
 
       const { error } = await supabase
         .from('knowledge_base')
         .insert([newItem]);
 
-      if (!error) {
-        setKnowledgeItems(prev => [newItem, ...prev]);
+      if (error) {
+        console.error("Insert error:", error);
+        setKnowledgeItems(prev => prev.filter(it => it.id !== newItem.id));
+      } else {
+        // Refresh cache
+        localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify([newItem, ...knowledgeItems]));
       }
     }
 
