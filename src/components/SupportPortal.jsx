@@ -3,7 +3,7 @@ import { LifeBuoy, Send, Sparkles, User, Mail, MessageSquare, ChevronRight, Chec
 import { supabase } from '../supabaseClient';
 import { processTaskWithAI } from '../services/geminiService';
 import { logEvent } from '../services/historyService';
-import './AccountViews.css'; // Reuse premium card styles
+import './SupportPortal.css'; // New ultra-premium styles
 
 export default function SupportPortal({ currentUser, currentCompany }) {
   const [step, setStep] = useState(1); // 1: Form, 2: AI Response
@@ -30,7 +30,6 @@ export default function SupportPortal({ currentUser, currentCompany }) {
     try {
       const newId = `tk-${Date.now()}`;
       
-      // 1. Save ticket to Supabase
       const { error } = await supabase.from('support_tickets').insert([{
         id: newId,
         company_id: currentCompany?.id,
@@ -44,7 +43,6 @@ export default function SupportPortal({ currentUser, currentCompany }) {
       if (error) throw error;
       setTicketId(newId);
 
-      // 2. Get AI Response based on Knowledge Base
       const aiSugestion = await processTaskWithAI(
         `ASSUNTO: ${ticketData.subject}\nDESCRIÇÃO: ${ticketData.description}`,
         currentCompany?.id
@@ -52,7 +50,6 @@ export default function SupportPortal({ currentUser, currentCompany }) {
 
       setAiResponse(aiSugestion);
       
-      // Update ticket with AI response
       await supabase.from('support_tickets').update({
         ai_response: aiSugestion,
         status: 'ai_replied'
@@ -74,12 +71,10 @@ export default function SupportPortal({ currentUser, currentCompany }) {
     if (!ticketId) return;
     setIsLoading(true);
     try {
-      // 1. Update ticket status
       await supabase.from('support_tickets').update({
         status: 'escalated'
       }).eq('id', ticketId);
 
-      // 2. Create activity for the team
       const actId = String(Math.floor(Math.random() * 90000) + 10000);
       const nowIso = new Date().toISOString();
       
@@ -116,65 +111,65 @@ export default function SupportPortal({ currentUser, currentCompany }) {
   };
 
   return (
-    <div className="account-view-container animate-fade-in">
-      <header className="account-header">
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent shadow-lg shadow-accent/5">
-            <LifeBuoy size={30} />
-          </div>
-          <div>
-            <h1 className="account-title support-header-gradient text-3xl">
-              Central de Atendimento
-            </h1>
-            <p className="account-subtitle">Suporte Inteligente & Resposta Imediata</p>
-          </div>
-        </div>
+    <div className="support-portal-wrapper animate-fade-in">
+      {/* Decorative background blobs */}
+      <div className="support-bg-blobs">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+        <div className="blob blob-3"></div>
+      </div>
+
+      <header className="text-center mb-12 relative z-10">
+        <h1 className="support-title-hero">Central de Atendimento</h1>
+        <p className="support-subtitle-hero">
+          Abra um chamado e receba uma solução inteligente instantaneamente usando nossa Base de Conhecimento.
+        </p>
       </header>
 
-      <div className="support-glass-card max-w-3xl mx-auto overflow-hidden support-form-animate">
+      <div className="support-ultra-card relative z-10 support-form-animate">
         {step === 1 ? (
-          <form onSubmit={handleSubmit} className="p-8 md:p-10">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/70">
-                  <MessageSquare size={20} />
+          <form onSubmit={handleSubmit} className="p-10 md:p-14">
+            <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-accent shadow-lg border border-white/5">
+                  <MessageSquare size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white tracking-tight">Novo Chamado</h2>
-                  <p className="text-xs text-muted/80">IA treinada com sua base de conhecimento</p>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Novo Chamado</h2>
+                  <p className="text-sm text-muted">Inteligência Artificial Ativa</p>
                 </div>
               </div>
-              <div className="hidden sm:block support-badge-ai">
-                <Sparkles size={12} /> IA Triage Ativo
+              <div className="hidden sm:flex support-badge-ai">
+                <Sparkles size={14} /> AI Triage System
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="form-group">
-                <label className="form-label">Seu Nome</label>
-                <div className="form-input-wrapper">
-                  <User className="form-icon" size={16} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+              <div className="premium-input-group">
+                <label className="premium-label">Seu Nome</label>
+                <div className="premium-input-container">
+                  <User className="premium-input-icon" size={18} />
                   <input 
                     type="text" 
                     name="name"
                     value={ticketData.name}
                     onChange={handleInputChange}
-                    className="form-input support-input-premium"
+                    className="premium-input-field"
                     placeholder="Como devemos te chamar?"
                     required
                   />
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">E-mail de Contato</label>
-                <div className="form-input-wrapper">
-                  <Mail className="form-icon" size={16} />
+              <div className="premium-input-group">
+                <label className="premium-label">E-mail de Contato</label>
+                <div className="premium-input-container">
+                  <Mail className="premium-input-icon" size={18} />
                   <input 
                     type="email" 
                     name="email"
                     value={ticketData.email}
                     onChange={handleInputChange}
-                    className="form-input support-input-premium"
+                    className="premium-input-field"
                     placeholder="seu@email.com"
                     required
                   />
@@ -182,86 +177,91 @@ export default function SupportPortal({ currentUser, currentCompany }) {
               </div>
             </div>
 
-            <div className="form-group mb-6">
-              <label className="form-label">Assunto do Chamado</label>
-              <div className="form-input-wrapper">
-                <AlertCircle className="form-icon" size={16} />
+            <div className="premium-input-group mb-8">
+              <label className="premium-label">Assunto do Chamado</label>
+              <div className="premium-input-container">
+                <AlertCircle className="premium-input-icon" size={18} />
                 <input 
                   type="text" 
                   name="subject"
                   value={ticketData.subject}
                   onChange={handleInputChange}
-                  className="form-input support-input-premium"
-                  placeholder="Ex: Não consigo acessar os relatórios"
+                  className="premium-input-field"
+                  placeholder="Resuma o problema de forma clara"
                   required
                 />
               </div>
             </div>
 
-            <div className="form-group mb-8">
-              <label className="form-label">Descrição Detalhada</label>
-              <textarea 
-                name="description"
-                value={ticketData.description}
-                onChange={handleInputChange}
-                className="form-textarea support-input-premium min-h-[160px] p-4 pt-10"
-                placeholder="Explique o que está acontecendo em detalhes..."
-                required
-              />
-              <MessageSquare className="absolute left-4 top-10 text-muted/30" size={18} />
+            <div className="premium-input-group mb-12">
+              <label className="premium-label">Descrição Detalhada</label>
+              <div className="premium-input-container">
+                <MessageSquare className="premium-input-icon" style={{ top: '1.5rem', transform: 'none' }} size={18} />
+                <textarea 
+                  name="description"
+                  value={ticketData.description}
+                  onChange={handleInputChange}
+                  className="premium-input-field premium-textarea"
+                  placeholder="Explique o que está acontecendo... Quanto mais detalhes, melhor será a resposta da IA."
+                  required
+                />
+              </div>
             </div>
 
             <button 
               type="submit" 
-              className="btn-premium btn-premium-primary w-full py-4 text-lg font-bold group"
+              className="btn-ultra-submit group"
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="animate-spin" size={20} /> Consultando Base de Conhecimento...</>
+                <><Loader2 className="animate-spin" size={24} /> Analisando Contexto...</>
               ) : (
-                <><Send size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Enviar para Análise</>
+                <><Send size={24} /> Enviar Chamado</>
               )}
             </button>
           </form>
         ) : (
           <div className="support-form-animate">
-            <div className="bg-accent/10 p-8 md:p-10 border-b border-white/5 support-ai-glow">
-              <div className="flex items-center justify-between mb-6">
+            <div className="ai-response-container support-ai-glow">
+              <div className="flex items-center justify-between mb-8">
                 <div className="support-badge-ai">
-                  <Sparkles size={14} /> Sugestão da IA Synapse
+                  <Sparkles size={16} /> Resposta Inteligente
                 </div>
-                <div className="text-xs text-muted/60">Análise concluída em segundos</div>
+                <div className="text-xs text-slate-500 font-mono">ID: {ticketId}</div>
               </div>
-              <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl p-8 border border-accent/20 text-slate-100 leading-relaxed text-lg shadow-inner">
-                {aiResponse}
+              
+              <div className="ai-suggestion-box mb-10">
+                <div className="ai-text">
+                  {aiResponse}
+                </div>
               </div>
-            </div>
 
-            <div className="p-8 md:p-10 bg-slate-900/40">
-              <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                <div>
-                  <h4 className="text-white font-bold mb-1">A solução funcionou?</h4>
-                  <p className="text-muted text-sm max-w-sm">
-                    Nossa IA tenta resolver seu problema usando a documentação da empresa.
-                  </p>
-                </div>
-                <div className="flex gap-4 w-full md:w-auto">
-                  <button 
-                    onClick={() => {
-                        setStep(1);
-                        setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
-                    }}
-                    className="btn-premium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 flex-1 md:flex-initial"
-                  >
-                    <CheckCircle size={18} /> Resolvido
-                  </button>
-                  <button 
-                    onClick={handleEscalate}
-                    className="btn-premium btn-premium-primary flex-1 md:flex-initial shadow-lg shadow-accent/20"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Chamar Especialista</>}
-                  </button>
+              <div className="bg-white/5 rounded-3xl p-8 border border-white/5">
+                <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
+                  <div>
+                    <h4 className="text-white text-xl font-bold mb-2">Isso ajudou você?</h4>
+                    <p className="text-slate-400 text-sm max-w-sm">
+                      Se a resposta da nossa IA resolveu sua dúvida, você pode encerrar este chamado agora. Caso contrário, fale com nossa equipe técnica.
+                    </p>
+                  </div>
+                  <div className="flex gap-4 w-full md:w-auto">
+                    <button 
+                      onClick={() => {
+                          setStep(1);
+                          setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
+                      }}
+                      className="btn-premium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 px-8 py-4"
+                    >
+                      <CheckCircle size={20} /> Resolvido
+                    </button>
+                    <button 
+                      onClick={handleEscalate}
+                      className="btn-ultra-submit flex-1 md:flex-initial py-4 px-8"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="animate-spin" size={20} /> : <><ArrowRight size={20} /> Escalar p/ Equipe</>}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -269,10 +269,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
         )}
       </div>
 
-      <div className="support-divider-fancy" />
-
-      <footer className="footer-links text-center text-muted/40 text-[10px] uppercase tracking-widest pb-8">
-        PLATAFORMA KABANIA — NÚCLEO DE SUPORTE AUTOMATIZADO
+      <footer className="support-footer-glass relative z-10">
+        © {new Date().getFullYear()} NÚCLEO DE SUPORTE INTELIGENTE — SISTEMA KABANIA
       </footer>
     </div>
   );
