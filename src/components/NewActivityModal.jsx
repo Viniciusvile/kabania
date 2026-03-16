@@ -12,12 +12,6 @@ const ACTIVITY_TYPES = [
   'Vistoria - 30 minutos',
 ];
 
-const COLLABORATORS = [
-  'Miguel Moraes - 1km de distância',
-  'Ana Paula - 3km de distância',
-  'Carlos Lima - 5km de distância',
-];
-
 const STATUS_OPTIONS = ['Pendente', 'Agendada', 'Concluída', 'Cancelada'];
 
 function formatDateTime(dateStr) {
@@ -58,10 +52,13 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
 
   const [customers, setCustomers] = useState([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [collaborators, setCollaborators] = useState([]);
+  const [loadingCollabs, setLoadingCollabs] = useState(false);
 
   React.useEffect(() => {
     if (isOpen && currentCompany?.id) {
       fetchCustomers();
+      fetchCollaborators();
     }
   }, [isOpen, currentCompany?.id]);
 
@@ -81,6 +78,25 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
       console.error("Error fetching customers for modal:", err);
     } finally {
       setLoadingCustomers(false);
+    }
+  };
+
+  const fetchCollaborators = async () => {
+    setLoadingCollabs(true);
+    try {
+      const { data, error } = await supabase
+        .from('collaborators')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('name', { ascending: true });
+      
+      if (!error) {
+        setCollaborators(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching collaborators for modal:", err);
+    } finally {
+      setLoadingCollabs(false);
     }
   };
 
@@ -381,11 +397,24 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                         className="input-underlined select-native"
                         value={form.collaborator}
                         onChange={handleChange('collaborator')}
+                        disabled={loadingCollabs}
                       >
-                        {COLLABORATORS.map(c => <option key={c}>{c}</option>)}
+                        <option value="">Selecione um colaborador...</option>
+                        {collaborators.map(c => (
+                          <option key={c.id} value={c.name}>
+                            {c.name} {c.specialty ? `— ${c.specialty}` : ''}
+                          </option>
+                        ))}
+                        {collaborators.length === 0 && !loadingCollabs && (
+                          <option value="" disabled>Nenhum colaborador cadastrado</option>
+                        )}
                       </select>
                     </div>
-                    <ChevronDown size={18} className="select-arrow" />
+                    {loadingCollabs ? (
+                      <Loader2 size={16} className="select-arrow animate-spin" />
+                    ) : (
+                      <ChevronDown size={18} className="select-arrow" />
+                    )}
                   </div>
                 </div>
                 <div className="form-group flex-1">

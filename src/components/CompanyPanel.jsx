@@ -15,6 +15,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+  
+  // Collaborators
+  const [collaborators, setCollaborators] = useState([]);
+  const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
+  const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
+  const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
 
   const loadMembers = async () => {
     if (!currentCompany?.id) return;
@@ -51,10 +57,28 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     }
     setLoadingCustomers(false);
   };
+  
+  const loadCollaborators = async () => {
+    if (!currentCompany?.id) return;
+    setIsLoadingCollabs(true);
+    const { data, error } = await supabase
+      .from('collaborators')
+      .select('*')
+      .eq('company_id', currentCompany.id)
+      .order('name', { ascending: true });
+
+    if (!error && data) {
+      setCollaborators(data);
+    } else if (error) {
+      console.error('Error loading collaborators:', error);
+    }
+    setIsLoadingCollabs(false);
+  };
 
   useEffect(() => {
     loadMembers();
     loadCustomers();
+    loadCollaborators();
   }, [currentCompany]);
 
   const handleCopyCode = () => {
@@ -99,6 +123,49 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       logEvent(currentCompany.id, currentUser, 'MEMBER_REMOVED', `Membro ${memberEmail} removido da empresa.`);
     } else {
       console.error('Error removing member:', error);
+    }
+  };
+
+  const handleAddCollaborator = async (e) => {
+    e.preventDefault();
+    if (!newCollab.name.trim()) return;
+
+    setIsLoadingCollabs(true);
+    const payload = {
+      ...newCollab,
+      company_id: currentCompany.id
+    };
+
+    const { data, error } = await supabase
+      .from('collaborators')
+      .insert([payload])
+      .select();
+
+    if (!error && data) {
+      setCollaborators(prev => [...prev, data[0]]);
+      setNewCollab({ name: '', specialty: '', phone: '' });
+      setIsAddingCollaborator(false);
+      logEvent(currentCompany.id, currentUser, 'COLLABORATOR_ADDED', `Colaborador ${newCollab.name} adicionado.`);
+    } else {
+      console.error('Error adding collaborator:', error);
+      alert('Erro ao adicionar colaborador. Verifique se a tabela existe no banco.');
+    }
+    setIsLoadingCollabs(false);
+  };
+
+  const handleRemoveCollaborator = async (id, name) => {
+    if (!window.confirm(`Remover colaborador ${name}?`)) return;
+
+    const { error } = await supabase
+      .from('collaborators')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setCollaborators(prev => prev.filter(c => c.id !== id));
+      logEvent(currentCompany.id, currentUser, 'COLLABORATOR_REMOVED', `Colaborador ${name} removido.`);
+    } else {
+      console.error('Error removing collaborator:', error);
     }
   };
 
@@ -227,6 +294,85 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
               ))}
               {members.length === 0 && (
                 <div className="cp-empty">Nenhum membro encontrado. Compartilhe o código de convite!</div>
+              )}
+            </div>
+          </div>
+
+          {/* Collaborators Card */}
+          <div className="cp-card">
+            <div className="cp-members-header">
+              <h3 className="cp-card-title"><UserPlus size={18} /> Colaboradores de Campo</h3>
+              <button className="cp-refresh-btn" onClick={loadCollaborators} title="Atualizar">
+                <RefreshCcw size={14} />
+              </button>
+            </div>
+
+            <div className="cp-members-list">
+              {isAddingCollaborator ? (
+                <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddCollaborator}>
+                  <input 
+                    type="text" 
+                    placeholder="Nome completo *" 
+                    value={newCollab.name} 
+                    onChange={e => setNewCollab({...newCollab, name: e.target.value})}
+                    className="cp-input-small"
+                    required
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Especialidade (ex: Pintor)" 
+                    value={newCollab.specialty} 
+                    onChange={e => setNewCollab({...newCollab, specialty: e.target.value})}
+                    className="cp-input-small"
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Telefone" 
+                    value={newCollab.phone} 
+                    onChange={e => setNewCollab({...newCollab, phone: e.target.value})}
+                    className="cp-input-small"
+                  />
+                  <div className="cp-form-actions">
+                    <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingCollaborator(false)}>Cancelar</button>
+                    <button type="submit" className="cp-btn-save-small" disabled={isLoadingCollabs}>
+                      {isLoadingCollabs ? 'Salvando...' : 'Salvar'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <button className="cp-add-btn-dash" onClick={() => setIsAddingCollaborator(true)}>
+                  <Plus size={16} /> Adicionar Colaborador
+                </button>
+              )}
+
+              {collaborators.map(collab => (
+                <div key={collab.id} className="cp-member-row">
+                  <div className="cp-member-avatar collab">
+                    {collab.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div className="cp-member-info">
+                    <span className="cp-member-email">{collab.name}</span>
+                    <span className="cp-member-role">
+                      <UserCheck2 size={11} style={{ marginRight: '4px' }} />
+                      {collab.specialty || 'Colaborador'}
+                      {collab.phone && ` · ${collab.phone}`}
+                    </span>
+                  </div>
+                  {userRole === 'admin' && (
+                    <div className="cp-member-actions">
+                      <button
+                        className="cp-action-btn danger"
+                        title="Remover colaborador"
+                        onClick={() => handleRemoveCollaborator(collab.id, collab.name)}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {collaborators.length === 0 && !isAddingCollaborator && (
+                <div className="cp-empty">Nenhum colaborador de campo cadastrado.</div>
               )}
             </div>
           </div>

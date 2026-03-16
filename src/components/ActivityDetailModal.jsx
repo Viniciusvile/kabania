@@ -7,6 +7,34 @@ const STATUS_OPTIONS = ['Pendente', 'Agendada', 'Concluída', 'Cancelada'];
 export default function ActivityDetailModal({ activity, onClose, onSave, onDelete, existingActivities }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...activity });
+  const [collaborators, setCollaborators] = useState([]);
+  const [loadingCollabs, setLoadingCollabs] = useState(false);
+
+  React.useEffect(() => {
+    if (editing && activity.company_id) {
+      fetchCollaborators();
+    }
+  }, [editing, activity.company_id]);
+
+  const fetchCollaborators = async () => {
+    const { supabase } = await import('../supabaseClient');
+    setLoadingCollabs(true);
+    try {
+      const { data, error } = await supabase
+        .from('collaborators')
+        .select('*')
+        .eq('company_id', activity.company_id)
+        .order('name', { ascending: true });
+      
+      if (!error) {
+        setCollaborators(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching collaborators for detail modal:", err);
+    } finally {
+      setLoadingCollabs(false);
+    }
+  };
 
   const getRecurrenceCount = () => {
     if (!existingActivities || !activity.location) return 0;
@@ -125,7 +153,19 @@ export default function ActivityDetailModal({ activity, onClose, onSave, onDelet
               <div className="detail-field">
                 <label>Colaborador</label>
                 {editing
-                  ? <input className="detail-input" value={form.collaborator || ''} onChange={handleChange('collaborator')} placeholder="Nome do colaborador" />
+                  ? <select 
+                      className="detail-input" 
+                      value={form.collaborator || ''} 
+                      onChange={handleChange('collaborator')}
+                      disabled={loadingCollabs}
+                    >
+                      <option value="">Selecione um colaborador...</option>
+                      {collaborators.map(c => (
+                        <option key={c.id} value={c.name}>
+                          {c.name} {c.specialty ? `— ${c.specialty}` : ''}
+                        </option>
+                      ))}
+                    </select>
                   : <span>{activity.collaborator || '—'}</span>
                 }
               </div>
