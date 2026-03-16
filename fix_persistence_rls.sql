@@ -45,3 +45,12 @@ CREATE POLICY "Users can only see their own company's knowledge" ON knowledge_ba
 FOR ALL USING (
   company_id IN (SELECT company_id FROM profiles WHERE email = auth.jwt()->>'email')
 );
+
+-- 5. Polícias para COMPANIES (Permitir ver a própria empresa)
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Usuários podem ver a própria empresa" ON companies;
+CREATE POLICY "Usuários podem ver a própria empresa" ON companies 
+FOR SELECT USING (
+  id IN (SELECT company_id FROM profiles WHERE email = auth.jwt()->>'email')
+);

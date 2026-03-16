@@ -230,6 +230,22 @@ function App() {
           companyData = profile.companies;
         }
 
+        // FALLBACK: If join failed but we have a company_id, try a direct fetch
+        if (!companyData && profile.company_id) {
+          console.log("Join failed, attempting direct company fetch for:", profile.company_id);
+          const { data: directCo, error: directCoError } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', profile.company_id)
+            .single();
+          
+          if (!directCoError && directCo) {
+            companyData = directCo;
+          } else {
+            console.error("Direct company fetch failed:", directCoError);
+          }
+        }
+
         if (companyData) {
           const cwr = { 
             ...companyData, 
