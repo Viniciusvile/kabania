@@ -12,54 +12,42 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [customers, setCustomers] = useState([]);
   const [activeTab, setActiveTab] = useState('members'); // 'members' or 'customers'
   const [copied, setCopied] = useState(false);
+  // Loading states
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+  const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState(null);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
   
   // Collaborators
   const [collaborators, setCollaborators] = useState([]);
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
-  const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
 
   const loadAllData = async () => {
     if (!currentCompany?.id) return;
     
-    // For initial load, we don't want to show empty cards
-    if (members.length === 0) setIsInitialLoading(true);
-    
-    try {
-      const [membersResult, collaboratorsResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('company_id', currentCompany.id),
-        supabase.from('collaborators').select('*').eq('company_id', currentCompany.id).order('name', { ascending: true })
-      ]);
-
-      if (!membersResult.error && membersResult.data) {
-        setMembers(membersResult.data.map(u => ({ ...u, companyId: u.company_id })));
-      }
-      
-      if (!collaboratorsResult.error && collaboratorsResult.data) {
-        setCollaborators(collaboratorsResult.data);
-      }
-
-      // Customers can be loaded slightly after or in parallel, choosing parallel for speed
-      loadCustomers();
-      
-    } catch (err) {
-      console.error('Error loading company data:', err);
-    } finally {
-      setIsInitialLoading(false);
-    }
+    // PROGRESSIVE LOADING: We don't block the whole screen anymore.
+    // Each section handle its own loading state.
+    loadMembers();
+    loadCollaborators();
+    loadCustomers();
   };
 
   const loadMembers = async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('company_id', currentCompany.id);
-    if (!error && data) {
-      setMembers(data.map(u => ({ ...u, companyId: u.company_id })));
+    if (!currentCompany?.id) return;
+    setIsLoadingMembers(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('company_id', currentCompany.id);
+      
+      if (!error && data) {
+        setMembers(data.map(u => ({ ...u, companyId: u.company_id })));
+      }
+    } catch (err) {
+      console.error('Error loading members:', err);
+    } finally {
+      setIsLoadingMembers(false);
     }
   };
 
@@ -220,12 +208,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       </div>
 
       <div className="cp-grid">
-        {isInitialLoading ? (
-          <div className="cp-grid-loading">
-            <RefreshCcw size={24} className="animate-spin" />
-            <span>Carregando dados da empresa...</span>
-          </div>
-        ) : activeTab === 'members' ? (
+        {activeTab === 'members' ? (
         <div className="cp-grid">
           {/* Info Card */}
           <div className="cp-card">
@@ -273,47 +256,56 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           {/* Members Card */}
           <div className="cp-card">
             <div className="cp-members-header">
-              <h3 className="cp-card-title"><Users size={18} /> Membros da Equipe</h3>
+              <h3 className="cp-card-title">
+                {isLoadingMembers ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#00e5ff' }} /> : <Users size={18} />} 
+                Membros da Equipe
+              </h3>
               <button className="cp-refresh-btn" onClick={loadMembers} title="Atualizar">
                 <RefreshCcw size={14} />
               </button>
             </div>
 
             <div className="cp-members-list">
-              {members.map(member => (
-                <div key={member.email} className="cp-member-row">
-                  <div className="cp-member-avatar">
-                    {member.email.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="cp-member-info">
-                    <span className="cp-member-email">{member.email}</span>
-                    <span className={`cp-member-role ${member.role}`}>
-                      {member.role === 'admin' ? '👑 Admin' : '🔹 Membro'}
-                      {member.email === currentUser && ' · você'}
-                    </span>
-                  </div>
-                  {userRole === 'admin' && member.email !== currentUser && (
-                    <div className="cp-member-actions">
-                      <button
-                        className="cp-action-btn"
-                        title={member.role === 'admin' ? 'Rebaixar para Membro' : 'Promover a Admin'}
-                        onClick={() => handleToggleRole(member.email)}
-                      >
-                        <UserCheck2 size={15} />
-                      </button>
-                      <button
-                        className="cp-action-btn danger"
-                        title="Remover da empresa"
-                        onClick={() => handleRemoveMember(member.email)}
-                      >
-                        <UserX size={15} />
-                      </button>
+              {isLoadingMembers && members.length === 0 ? (
+                <div className="cp-empty">Buscando membros...</div>
+              ) : (
+                <>
+                  {members.map(member => (
+                    <div key={member.email} className="cp-member-row">
+                      <div className="cp-member-avatar">
+                        {member.email.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="cp-member-info">
+                        <span className="cp-member-email">{member.email}</span>
+                        <span className={`cp-member-role ${member.role}`}>
+                          {member.role === 'admin' ? '👑 Admin' : '🔹 Membro'}
+                          {member.email === currentUser && ' · você'}
+                        </span>
+                      </div>
+                      {userRole === 'admin' && member.email !== currentUser && (
+                        <div className="cp-member-actions">
+                          <button
+                            className="cp-action-btn"
+                            title={member.role === 'admin' ? 'Rebaixar para Membro' : 'Promover a Admin'}
+                            onClick={() => handleToggleRole(member.email)}
+                          >
+                            <UserCheck2 size={15} />
+                          </button>
+                          <button
+                            className="cp-action-btn danger"
+                            title="Remover da empresa"
+                            onClick={() => handleRemoveMember(member.email)}
+                          >
+                            <UserX size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  ))}
+                  {members.length === 0 && !isLoadingMembers && (
+                    <div className="cp-empty">Nenhum membro encontrado. Compartilhe o código de convite!</div>
                   )}
-                </div>
-              ))}
-              {members.length === 0 && (
-                <div className="cp-empty">Nenhum membro encontrado. Compartilhe o código de convite!</div>
+                </>
               )}
             </div>
           </div>
@@ -321,78 +313,87 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           {/* Collaborators Card */}
           <div className="cp-card">
             <div className="cp-members-header">
-              <h3 className="cp-card-title"><UserPlus size={18} /> Colaboradores de Campo</h3>
+              <h3 className="cp-card-title">
+                {isLoadingCollabs ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#22c55e' }} /> : <UserPlus size={18} />} 
+                Colaboradores de Campo
+              </h3>
               <button className="cp-refresh-btn" onClick={loadCollaborators} title="Atualizar">
                 <RefreshCcw size={14} />
               </button>
             </div>
 
             <div className="cp-members-list">
-              {isAddingCollaborator ? (
-                <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddCollaborator}>
-                  <input 
-                    type="text" 
-                    placeholder="Nome completo *" 
-                    value={newCollab.name} 
-                    onChange={e => setNewCollab({...newCollab, name: e.target.value})}
-                    className="cp-input-small"
-                    required
-                  />
-                  <input 
-                    type="text" 
-                    placeholder="Especialidade (ex: Pintor)" 
-                    value={newCollab.specialty} 
-                    onChange={e => setNewCollab({...newCollab, specialty: e.target.value})}
-                    className="cp-input-small"
-                  />
-                  <input 
-                    type="text" 
-                    placeholder="Telefone" 
-                    value={newCollab.phone} 
-                    onChange={e => setNewCollab({...newCollab, phone: e.target.value})}
-                    className="cp-input-small"
-                  />
-                  <div className="cp-form-actions">
-                    <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingCollaborator(false)}>Cancelar</button>
-                    <button type="submit" className="cp-btn-save-small" disabled={isLoadingCollabs}>
-                      {isLoadingCollabs ? 'Salvando...' : 'Salvar'}
-                    </button>
-                  </div>
-                </form>
+              {isLoadingCollabs && collaborators.length === 0 ? (
+                <div className="cp-empty">Buscando colaboradores...</div>
               ) : (
-                <button className="cp-add-btn-dash" onClick={() => setIsAddingCollaborator(true)}>
-                  <Plus size={16} /> Adicionar Colaborador
-                </button>
-              )}
-
-              {collaborators.map(collab => (
-                <div key={collab.id} className="cp-member-row">
-                  <div className="cp-member-avatar collab">
-                    {collab.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="cp-member-info">
-                    <span className="cp-member-email">{collab.name}</span>
-                    <span className="cp-member-role">
-                      <UserCheck2 size={11} style={{ marginRight: '4px' }} />
-                      {collab.specialty || 'Colaborador'}
-                      {collab.phone && ` · ${collab.phone}`}
-                    </span>
-                  </div>
-                  {userRole === 'admin' && (
-                    <div className="cp-member-actions">
-                      <button
-                        className="cp-action-btn danger"
-                        title="Remover colaborador"
-                        onClick={() => handleRemoveCollaborator(collab.id, collab.name)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                <>
+                  {isAddingCollaborator ? (
+                    <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddCollaborator}>
+                      <input 
+                        type="text" 
+                        placeholder="Nome completo *" 
+                        value={newCollab.name} 
+                        onChange={e => setNewCollab({...newCollab, name: e.target.value})}
+                        className="cp-input-small"
+                        required
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Especialidade (ex: Pintor)" 
+                        value={newCollab.specialty} 
+                        onChange={e => setNewCollab({...newCollab, specialty: e.target.value})}
+                        className="cp-input-small"
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Telefone" 
+                        value={newCollab.phone} 
+                        onChange={e => setNewCollab({...newCollab, phone: e.target.value})}
+                        className="cp-input-small"
+                      />
+                      <div className="cp-form-actions">
+                        <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingCollaborator(false)}>Cancelar</button>
+                        <button type="submit" className="cp-btn-save-small" disabled={isLoadingCollabs}>
+                          {isLoadingCollabs ? 'Salvando...' : 'Salvar'}
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <button className="cp-add-btn-dash" onClick={() => setIsAddingCollaborator(true)}>
+                      <Plus size={16} /> Adicionar Colaborador
+                    </button>
                   )}
-                </div>
-              ))}
-              {collaborators.length === 0 && !isAddingCollaborator && (
-                <div className="cp-empty">Nenhum colaborador de campo cadastrado.</div>
+
+                  {collaborators.map(collab => (
+                    <div key={collab.id} className="cp-member-row">
+                      <div className="cp-member-avatar collab">
+                        {collab.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="cp-member-info">
+                        <span className="cp-member-email">{collab.name}</span>
+                        <span className="cp-member-role">
+                          <UserCheck2 size={11} style={{ marginRight: '4px' }} />
+                          {collab.specialty || 'Colaborador'}
+                          {collab.phone && ` · ${collab.phone}`}
+                        </span>
+                      </div>
+                      {userRole === 'admin' && (
+                        <div className="cp-member-actions">
+                          <button
+                            className="cp-action-btn danger"
+                            title="Remover colaborador"
+                            onClick={() => handleRemoveCollaborator(collab.id, collab.name)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {collaborators.length === 0 && !isAddingCollaborator && !isLoadingCollabs && (
+                    <div className="cp-empty">Nenhum colaborador de campo cadastrado.</div>
+                  )}
+                </>
               )}
             </div>
           </div>
