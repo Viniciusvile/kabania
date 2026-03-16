@@ -207,8 +207,13 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 
 // ---- Main Board ----
 export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null }) {
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Instant Hydration from cache
+  const [tasks, setTasks] = useState(() => {
+    if (!projectId) return [];
+    const cached = localStorage.getItem(`kanban_tasks_${projectId}`);
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(!tasks.length && !!projectId);
 
   const [activeTask, setActiveTask] = useState(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -243,7 +248,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     fetchMembers();
   }, [currentCompany]);
 
-  // Fetch tasks from Supabase with Caching for instant load
+  // Fetch tasks from Supabase and sync cache
   useEffect(() => {
     const fetchTasks = async () => {
       if (!projectId) {
@@ -252,21 +257,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         return;
       }
 
-      // Try loading from cache first for instant UI
-      const cacheKey = `kanban_tasks_${projectId}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          console.log("Loading tasks from cache...");
-          setTasks(parsed);
-          setLoading(false); // Stop loading early if we have cache
-        } catch (e) {
-          console.error("Cache parse error:", e);
-        }
-      } else {
-        setLoading(true);
-      }
+      // If we don't have tasks yet (not even from cache), show loading
+      if (tasks.length === 0) setLoading(true);
 
       const { data, error } = await supabase
         .from('tasks')
@@ -283,8 +275,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           aiResponse: t.ai_response,
           tagColor: t.tag_color
         }));
+        
         setTasks(mapped);
-        localStorage.setItem(cacheKey, JSON.stringify(mapped));
+        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(mapped));
       } else if (error) {
         console.error('Error fetching tasks:', error);
       }
@@ -358,6 +351,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
+    
     const newId = `t_${Date.now()}`;
     const newTask = {
       id: newId,
@@ -373,23 +367,34 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       project_id: projectId
     };
 
+    // Optimistic Mapping
+    const mapped = { 
+      ...newTask, 
+      columnId: newTaskCol, 
+      desc: formDesc.trim(), 
+      tagColor: 'green', 
+      projectId, 
+      companyId: currentCompany?.id 
+    };
+
+    // 1. Update State & Cache Immediately
+    const updatedTasks = [...tasks, mapped];
+    setTasks(updatedTasks);
+    localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
+    setIsAddingTask(false);
+
+    // 2. Persist to DB in background
     const { error } = await supabase.from('tasks').insert([newTask]);
 
-    if (!error) {
-      // Map for local state consistency
-      const mapped = { 
-        ...newTask, 
-        columnId: newTaskCol, 
-        desc: formDesc.trim(), 
-        tagColor: 'green', 
-        projectId, 
-        companyId: currentCompany?.id 
-      };
-      setTasks(prev => [...prev, mapped]);
-      if (formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
-      setIsAddingTask(false);
-    } else {
+    if (error) {
       console.error('Error adding task:', error);
+      // Rollback on error
+      const rolledBack = tasks.filter(t => t.id !== newId);
+      setTasks(rolledBack);
+      localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(rolledBack));
+      alert('Erro ao salvar no banco. O card foi removido.');
+    } else {
+      if (formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
     }
   };
 
@@ -531,35 +536,31 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       ? tasks.find(t => t.id === over.id)?.columnId
       : over.id;
 
-    // 1. Sync local tasks state immediately to the final drop target to prevent AI watcher race conditions
     if (currentTask && newColId) {
-      setTasks(prev => prev.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t));
-    }
-
-    // 2. Clear active task AFTER the column is corrected in local state
-    setActiveTask(null);
-
-    // 3. Persist to DB if the column actually changed from the start of the drag
-    if (currentTask && newColId && newColId !== dragStartColumn) {
-      const payload = { 
-        column_id: newColId
-      };
-
-      if (newColId === 'ai') {
-        payload.ai_response = null;
-      }
+      // 1. Sync local tasks state immediately
+      const updatedTasks = tasks.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t);
+      setTasks(updatedTasks);
       
-      const { error } = await supabase
-        .from('tasks')
-        .update(payload)
-        .eq('id', currentTask.id);
+      // 2. Persist to Cache immediately
+      localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
+      
+      // 3. Persist to DB if column changed
+      if (newColId !== dragStartColumn) {
+        const payload = { column_id: newColId };
+        if (newColId === 'ai') payload.ai_response = null;
 
-      if (!error) {
-        notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
-      } else {
-        console.error('Error persisting drag and drop:', error);
+        const { error } = await supabase.from('tasks').update(payload).eq('id', currentTask.id);
+
+        if (!error) {
+          notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+        } else {
+          console.error('Error persisting drag and drop:', error);
+          // Optional: handle rollback if critical
+        }
       }
     }
+
+    setActiveTask(null);
     setDragStartColumn(null);
   };
 
