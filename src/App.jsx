@@ -14,6 +14,9 @@ import CompanyPanel from './components/CompanyPanel';
 import ReportsDashboard from './components/ReportsDashboard';
 import BusinessManagement from './components/BusinessManagement';
 import AIInsights from './components/AIInsights';
+import UserProfile from './components/UserProfile';
+import UserSettings from './components/UserSettings';
+import BillingView from './components/BillingView';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import './App.css';
@@ -478,6 +481,7 @@ function App() {
         <div className="main-content">
           <TopBar
             onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            onViewChange={setCurrentView}
             searchQuery={searchQuery}
             onSearchChange={(e) => setSearchQuery(e.target.value)}
             currentUser={currentUser}
@@ -525,6 +529,12 @@ function App() {
               />
             ) : currentView === 'ai_insights' ? (
               <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+            ) : currentView === 'profile' ? (
+              <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+            ) : currentView === 'settings' ? (
+              <UserSettings theme={theme} onToggleTheme={toggleTheme} />
+            ) : currentView === 'billing' ? (
+              <BillingView currentCompany={currentCompany} />
             ) : (
               <div className="p-8 text-center text-muted">View em desenvolvimento</div>
             )}

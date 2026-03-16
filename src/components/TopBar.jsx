@@ -20,7 +20,8 @@ export default function TopBar({
   onToggleSidebar, searchQuery, onSearchChange, 
   currentUser, currentCompany, userRole, onLogout, 
   theme, onToggleTheme,
-  projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject
+  projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject,
+  onViewChange
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -248,9 +249,9 @@ export default function TopBar({
                   {userRole === 'admin' ? <><Crown size={11} /> Admin</> : <><Shield size={11} /> Membro</>}
                 </span>
               </div>
-              <div className="dropdown-item"><User size={16} /><span>Meu Perfil</span></div>
-              <div className="dropdown-item"><Settings size={16} /><span>Configurações</span></div>
-              <div className="dropdown-item"><FileText size={16} /><span>Faturamento</span></div>
+              <div className="dropdown-item" onClick={() => { onViewChange('profile'); setActiveDropdown(null); }}><User size={16} /><span>Meu Perfil</span></div>
+              <div className="dropdown-item" onClick={() => { onViewChange('settings'); setActiveDropdown(null); }}><Settings size={16} /><span>Configurações</span></div>
+              <div className="dropdown-item" onClick={() => { onViewChange('billing'); setActiveDropdown(null); }}><FileText size={16} /><span>Faturamento</span></div>
               <div className="dropdown-divider"></div>
               <div className="dropdown-item text-red-400 hover:text-red-300" onClick={(e) => { e.stopPropagation(); onLogout(); }}>
                 <LogOut size={16} /><span>Sair</span>
