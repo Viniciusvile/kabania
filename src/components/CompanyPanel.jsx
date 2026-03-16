@@ -8,10 +8,26 @@ import { supabase } from '../supabaseClient';
 import './CompanyPanel.css';
 
 export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
-  const [members, setMembers] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [activeTab, setActiveTab] = useState('members'); // 'members' or 'customers'
   const [copied, setCopied] = useState(false);
+  
+  // Helper for SWR (Stale-While-Revalidate)
+  const getCacheKey = (suffix) => `kabania_cp_${currentCompany?.id}_${suffix}`;
+  
+  const [members, setMembers] = useState(() => {
+    const cached = localStorage.getItem(getCacheKey('members'));
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [customers, setCustomers] = useState(() => {
+    const cached = localStorage.getItem(getCacheKey('customers'));
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [collaborators, setCollaborators] = useState(() => {
+    const cached = localStorage.getItem(getCacheKey('collabs'));
+    return cached ? JSON.parse(cached) : [];
+  });
+  // Loading states
+  const [activeTab, setActiveTab] = useState('members');
+  
   // Loading states
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
@@ -19,8 +35,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const [showCustModal, setShowCustModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   
-  // Collaborators
-  const [collaborators, setCollaborators] = useState([]);
+  // Collaborators form state
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
 
@@ -44,7 +59,9 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
         .eq('company_id', currentCompany.id);
       
       if (!error && data) {
-        setMembers(data.map(u => ({ ...u, companyId: u.company_id })));
+        const mapped = data.map(u => ({ ...u, companyId: u.company_id }));
+        setMembers(mapped);
+        localStorage.setItem(getCacheKey('members'), JSON.stringify(mapped));
       }
     } catch (err) {
       console.error('Error loading members:', err);
@@ -64,6 +81,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
     if (!error && data) {
       setCustomers(data);
+      localStorage.setItem(getCacheKey('customers'), JSON.stringify(data));
     }
     setLoadingCustomers(false);
   };
@@ -79,6 +97,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
     if (!error && data) {
       setCollaborators(data);
+      localStorage.setItem(getCacheKey('collabs'), JSON.stringify(data));
     }
     setIsLoadingCollabs(false);
   };
@@ -269,7 +288,11 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
             <div className="cp-members-list">
               {isLoadingMembers && members.length === 0 ? (
-                <div className="cp-empty">Buscando membros...</div>
+                <>
+                  <div className="cp-skeleton-row" />
+                  <div className="cp-skeleton-row" />
+                  <div className="cp-skeleton-row" />
+                </>
               ) : (
                 <>
                   {members.map(member => (
@@ -326,7 +349,10 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
             <div className="cp-members-list">
               {isLoadingCollabs && collaborators.length === 0 ? (
-                <div className="cp-empty">Buscando colaboradores...</div>
+                <>
+                  <div className="cp-skeleton-row" />
+                  <div className="cp-skeleton-row" />
+                </>
               ) : (
                 <>
                   {isAddingCollaborator ? (
