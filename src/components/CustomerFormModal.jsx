@@ -66,59 +66,63 @@ export default function CustomerFormModal({ isOpen, onClose, onSave, editingCust
 
   return (
     <div className="cfm-overlay" onClick={onClose}>
-      <div className="cfm-modal" onClick={e => e.stopPropagation()}>
+      <div className="cfm-modal animate-slide-up" onClick={e => e.stopPropagation()}>
         <div className="cfm-header">
           <h2>{editingCustomer ? 'Editar Cliente' : 'Novo Cliente'}</h2>
           <button className="cp-refresh-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="cfm-form">
-          <div className="cfm-field full">
-            <label>NOME DO CLIENTE / EMPRESA</label>
-            <input 
-              required
-              placeholder="Ex: ACME Corp"
-              value={formData.name}
-              onChange={e => setFormData({ ...formData, name: e.target.value })}
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <div className="cfm-body">
+            <div className="cfm-form">
+              <div className="cfm-field full">
+                <label>NOME DO CLIENTE / EMPRESA</label>
+                <input 
+                  required
+                  placeholder="Ex: ACME Corp"
+                  value={formData.name}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
 
-          <div className="cfm-field full">
-            <label>ENDEREÇO</label>
-            <input 
-              placeholder="Rua, Número, Bairro, Cidade"
-              value={formData.address}
-              onChange={e => setFormData({ ...formData, address: e.target.value })}
-            />
-          </div>
+              <div className="cfm-field full">
+                <label>ENDEREÇO</label>
+                <input 
+                  placeholder="Rua, Número, Bairro, Cidade"
+                  value={formData.address}
+                  onChange={e => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
 
-          <div className="cfm-field">
-            <label>E-MAIL</label>
-            <input 
-              type="email"
-              placeholder="exemplo@email.com"
-              value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
-            />
-          </div>
+              <div className="cfm-field">
+                <label>E-MAIL</label>
+                <input 
+                  type="email"
+                  placeholder="exemplo@email.com"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
 
-          <div className="cfm-field">
-            <label>TELEFONE</label>
-            <input 
-              placeholder="(00) 00000-0000"
-              value={formData.phone}
-              onChange={e => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </div>
+              <div className="cfm-field">
+                <label>TELEFONE</label>
+                <input 
+                  placeholder="(00) 00000-0000"
+                  value={formData.phone}
+                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
 
-          <div className="cfm-field full">
-            <label>NÚMERO DE FUNCIONÁRIOS</label>
-            <input 
-              type="number"
-              min="0"
-              value={formData.employee_count}
-              onChange={e => setFormData({ ...formData, employee_count: parseInt(e.target.value) || 0 })}
-            />
+              <div className="cfm-field full">
+                <label>NÚMERO DE FUNCIONÁRIOS</label>
+                <input 
+                  type="number"
+                  min="0"
+                  value={formData.employee_count}
+                  onChange={e => setFormData({ ...formData, employee_count: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="cfm-footer">

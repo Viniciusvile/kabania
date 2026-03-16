@@ -56,6 +56,34 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
     syncCalendar: localStorage.getItem('kabania_sync_calendar') === 'true'
   });
 
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen && currentCompany?.id) {
+      fetchCustomers();
+    }
+  }, [isOpen, currentCompany?.id]);
+
+  const fetchCustomers = async () => {
+    setLoadingCustomers(true);
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('name', { ascending: true });
+      
+      if (!error) {
+        setCustomers(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching customers for modal:", err);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleChange = (field) => (e) => {
@@ -63,6 +91,16 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
     if (field === 'syncCalendar') {
       localStorage.setItem('kabania_sync_calendar', val);
     }
+    
+    // Auto-fill address if customer is selected
+    if (field === 'client' && val) {
+      const selected = customers.find(c => c.name === val);
+      if (selected && selected.address) {
+        setForm(prev => ({ ...prev, [field]: val, address: selected.address }));
+        return;
+      }
+    }
+
     setForm(prev => ({ ...prev, [field]: val }));
     if (field === 'description') {
       handleDuplicateCheck(e.target.value);
@@ -213,16 +251,22 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
               {/* Client */}
               <div className="form-group mt-2">
                 <label>Cliente *</label>
-                <div className="input-with-actions">
-                  <input
-                    type="text"
-                    className="input-underlined"
-                    placeholder="Nome do cliente"
+                <div className="select-wrapper">
+                  <select
+                    className="input-underlined select-native"
                     value={form.client}
                     onChange={handleChange('client')}
-                  />
-                  {form.client && (
-                    <X size={18} className="clear-icon" onClick={() => setForm(p => ({ ...p, client: '' }))} />
+                    disabled={loadingCustomers}
+                  >
+                    <option value="">Selecione um cliente...</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                  {loadingCustomers ? (
+                    <Loader2 size={16} className="select-arrow animate-spin" />
+                  ) : (
+                    <ChevronDown size={18} className="select-arrow" />
                   )}
                 </div>
               </div>
