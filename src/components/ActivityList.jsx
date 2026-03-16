@@ -110,8 +110,13 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
 
 export default function ActivityList({ currentUser, currentCompany }) {
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
+
+  const [activities, setActivities] = useState(() => {
+    const cached = localStorage.getItem(getCacheKey());
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [loading, setLoading] = useState(false);
   const [googleToken, setGoogleToken] = useState(null);
 
   // Google Login for Calendar scope
@@ -172,6 +177,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
           lastAppointment: item.last_appointment
         }));
         setActivities(mapped);
+        localStorage.setItem(getCacheKey(), JSON.stringify(mapped));
       } else if (error) {
         console.error('Error fetching activities:', error);
       }
@@ -466,7 +472,15 @@ export default function ActivityList({ currentUser, currentCompany }) {
             </tr>
           </thead>
           <tbody>
-            {paginated.length === 0 ? (
+            {loading && activities.length === 0 ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={`skeleton-${i}`}>
+                  <td colSpan={9} style={{ padding: '0.75rem' }}>
+                    <div className="activity-skeleton-row" />
+                  </td>
+                </tr>
+              ))
+            ) : paginated.length === 0 ? (
               <tr>
                 <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
                   Nenhuma atividade encontrada.
