@@ -1,9 +1,12 @@
--- SCRIPT PARA CRIAÇÃO DA TABELA DE COLABORADORES
+-- SCRIPT PARA CRIAÇÃO DA TABELA DE COLABORADORES (V2 - FIX TYPE MISMATCH)
 -- Execute no SQL Editor do Supabase (https://app.supabase.com/project/_/sql)
 
-CREATE TABLE IF NOT EXISTS collaborators (
+-- Remove a tabela antiga para garantir a recriação com os tipos corretos
+DROP TABLE IF EXISTS collaborators;
+
+CREATE TABLE collaborators (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  company_id TEXT REFERENCES companies(id) ON DELETE CASCADE, -- Alterado para TEXT para bater com companies.id
   name TEXT NOT NULL,
   email TEXT,
   phone TEXT,
