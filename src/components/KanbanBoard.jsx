@@ -243,7 +243,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     fetchMembers();
   }, [currentCompany]);
 
-  // Fetch tasks from Supabase
+  // Fetch tasks from Supabase with Caching for instant load
   useEffect(() => {
     const fetchTasks = async () => {
       if (!projectId) {
@@ -251,14 +251,29 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         setLoading(false);
         return;
       }
-      setLoading(true);
+
+      // Try loading from cache first for instant UI
+      const cacheKey = `kanban_tasks_${projectId}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          console.log("Loading tasks from cache...");
+          setTasks(parsed);
+          setLoading(false); // Stop loading early if we have cache
+        } catch (e) {
+          console.error("Cache parse error:", e);
+        }
+      } else {
+        setLoading(true);
+      }
+
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('project_id', projectId);
 
       if (!error && data) {
-        // Map back consistent with UI (snake_case to camelCase)
         const mapped = data.map(t => ({
           ...t,
           desc: t.description,
@@ -269,6 +284,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           tagColor: t.tag_color
         }));
         setTasks(mapped);
+        localStorage.setItem(cacheKey, JSON.stringify(mapped));
       } else if (error) {
         console.error('Error fetching tasks:', error);
       }

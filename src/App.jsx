@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -90,6 +90,10 @@ function App() {
     localStorage.getItem('synapseSelectedProjectId') || null
   );
 
+  // Performance: prevent duplicate login calls
+  const isAuthenticating = useRef(false);
+  const lastAuthEmail = useRef('');
+
   // Load and sync projects from Supabase
   useEffect(() => {
     const fetchProjects = async () => {
@@ -180,7 +184,14 @@ function App() {
   };
 
   const handleLogin = async (email) => {
+    if (isAuthenticating.current && lastAuthEmail.current === email) {
+      console.log("Already authenticating for:", email);
+      return;
+    }
+    
     try {
+      isAuthenticating.current = true;
+      lastAuthEmail.current = email;
       setCurrentUser(email);
       
       const fetchWithTimeout = async () => {
@@ -202,7 +213,6 @@ function App() {
       if (profError) {
         if (profError.code === 'PGRST116') {
           console.log("No profile found for new user:", email);
-          // Only clear if confirmed no profile
           setCurrentCompany(null);
           setIsAuthenticated(true);
           localStorage.setItem('synapseAuth', 'true');
@@ -220,7 +230,6 @@ function App() {
           companyData = profile.companies;
         }
 
-        // STICKY LOGIC: Only wipe currentCompany if we are SURE they don't have one
         if (companyData) {
           const cwr = { 
             ...companyData, 
@@ -232,16 +241,8 @@ function App() {
           localStorage.setItem('synapseCurrentCompany', JSON.stringify(cwr));
           localStorage.setItem('synapseUserRole', profile.role || 'member');
         } else if (!profile.company_id) {
-          // Explicitly no company ID on profile
-          console.log("User confirmed to have no company ID.");
-          
-          // CRITICAL: Only clear state if we aren't already happily in a company
-          // This prevents a late background sync from wiping out a company just created
           setCurrentCompany(prev => {
-            if (prev) {
-              console.warn("Background sync tried to clear company, but we already have one. Ignoring.");
-              return prev;
-            }
+            if (prev) return prev;
             localStorage.removeItem('synapseCurrentCompany');
             return null;
           });
@@ -254,6 +255,8 @@ function App() {
     } catch (err) {
       console.error("Critical handleLogin error:", err);
       throw err;
+    } finally {
+      isAuthenticating.current = false;
     }
   };
 
@@ -269,8 +272,13 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    handleLogoutLocal();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("SignOut error:", err);
+    } finally {
+      handleLogoutLocal();
+    }
   };
 
   // Load session on mount
