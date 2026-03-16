@@ -149,6 +149,9 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailActivity, setDetailActivity] = useState(null);
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({ status: '', type: '' });
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenu, setOpenMenu] = useState(null); // { id: rowKey, rect: DOMRect }
@@ -186,6 +189,13 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
     fetchActivities();
   }, [currentCompany]);
+
+  const handleReset = () => {
+    setSearch('');
+    setFilters({ status: '', type: '' });
+    setCurrentPage(1);
+    fetchActivities();
+  };
 
   const nowStr = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -376,13 +386,18 @@ export default function ActivityList({ currentUser, currentCompany }) {
   };
 
   // The simplified filter for team collaboration
-  const filtered = (activities || []).filter(a =>
-    search === '' ||
-    (a.id && a.id.toLowerCase().includes(search.toLowerCase())) ||
-    (a.location && a.location.toLowerCase().includes(search.toLowerCase())) ||
-    (a.type && a.type.toLowerCase().includes(search.toLowerCase())) ||
-    (a.status && a.status.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = (activities || []).filter(a => {
+    const matchesSearch = search === '' ||
+      (a.id && a.id.toLowerCase().includes(search.toLowerCase())) ||
+      (a.location && a.location.toLowerCase().includes(search.toLowerCase())) ||
+      (a.type && a.type.toLowerCase().includes(search.toLowerCase())) ||
+      (a.status && a.status.toLowerCase().includes(search.toLowerCase()));
+    
+    const matchesStatus = filters.status === '' || a.status === filters.status;
+    const matchesType = filters.type === '' || a.type === filters.type;
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -410,13 +425,21 @@ export default function ActivityList({ currentUser, currentCompany }) {
               onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
             />
           </div>
-          <button className="action-btn-icon" title="Limpar busca" onClick={() => setSearch('')}>
+          <button className="action-btn-icon" title="Recarregar e Limpar" onClick={handleReset}>
             <RotateCcw size={18} />
           </button>
-          <button className="action-btn-icon hide-mobile" title="Visualizar em grade">
+          <button 
+            className={`action-btn-icon hide-mobile ${viewMode === 'grid' ? 'active' : ''}`} 
+            title="Visualizar em grade"
+            onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+          >
             <LayoutGrid size={18} />
           </button>
-          <button className="action-btn-icon hide-mobile" title="Filtrar">
+          <button 
+            className={`action-btn-icon hide-mobile ${isFilterOpen ? 'active' : ''}`} 
+            title="Filtrar"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+          >
             <Filter size={18} />
           </button>
           <button className="btn-new-request" onClick={() => setIsModalOpen(true)}>
@@ -424,6 +447,40 @@ export default function ActivityList({ currentUser, currentCompany }) {
           </button>
         </div>
       </header>
+
+      {/* Filter Bar */}
+      {isFilterOpen && (
+        <div className="activity-filter-bar animate-slide-down">
+          <div className="filter-group">
+            <label>Situação</label>
+            <select 
+              value={filters.status} 
+              onChange={e => { setFilters({...filters, status: e.target.value}); setCurrentPage(1); }}
+            >
+              <option value="">Todas</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Agendada">Agendada</option>
+              <option value="Concluída">Concluída</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Tipo de Serviço</label>
+            <select 
+              value={filters.type} 
+              onChange={e => { setFilters({...filters, type: e.target.value}); setCurrentPage(1); }}
+            >
+              <option value="">Todos</option>
+              {[...new Set(activities.map(a => a.type).filter(Boolean))].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <button className="btn-clear-filters" onClick={() => setFilters({ status: '', type: '' })}>
+            Limpar Filtros
+          </button>
+        </div>
+      )}
 
       {/* Create modal */}
       <NewActivityModal
@@ -456,108 +513,153 @@ export default function ActivityList({ currentUser, currentCompany }) {
         </div>
       )}
 
-      <div className="activity-table-wrapper">
-        <table className="activity-table">
-          <thead>
-            <tr>
-              <th>Identificador</th>
-              <th>Localização</th>
-              <th>Tipo do serviço</th>
-              <th>Situação</th>
-              <th>Avaliação</th>
-              <th>Criado em ↓</th>
-              <th>Atualizado em</th>
-              <th>Último agendamento</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && activities.length === 0 ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={`skeleton-${i}`}>
-                  <td colSpan={9} style={{ padding: '0.75rem' }}>
-                    <div className="activity-skeleton-row" />
-                  </td>
+      <div className="activity-content-wrapper">
+        {viewMode === 'table' ? (
+          <div className="activity-table-wrapper">
+            <table className="activity-table">
+              <thead>
+                <tr>
+                  <th>Identificador</th>
+                  <th>Localização</th>
+                  <th>Tipo do serviço</th>
+                  <th>Situação</th>
+                  <th>Avaliação</th>
+                  <th>Criado em ↓</th>
+                  <th>Atualizado em</th>
+                  <th>Último agendamento</th>
+                  <th>Ações</th>
                 </tr>
-              ))
-            ) : paginated.length === 0 ? (
-              <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                  Nenhuma atividade encontrada.
-                </td>
-              </tr>
-            ) : (
-              paginated.map((activity) => {
-                const rowKey = activity.id + activity.created;
-                return (
-                  <tr key={rowKey} onDoubleClick={() => setDetailActivity(activity)}>
-                    <td data-label="Identificador">{activity.id}</td>
-                    <td data-label="Localização" className="text-secondary">{activity.location}</td>
-                    <td data-label="Tipo do serviço" className="text-secondary">{activity.type}</td>
-                    <td data-label="Situação">
-                      <span className={`status-badge status-${activity.status.toLowerCase().replace(/\s/g, '-')}`}>
-                        {activity.status}
-                      </span>
-                    </td>
-                    <td data-label="Avaliação">
-                      <div className="rating-stars">
-                        {[1, 2, 3, 4, 5].map(star => (
-                          <Star
-                            key={star}
-                            size={16}
-                            className={`star-icon ${star <= activity.rating ? 'filled' : ''}`}
-                            onClick={(e) => { e.stopPropagation(); handleRatingChange(activity.id, star); }}
-                          />
-                        ))}
-                      </div>
-                    </td>
-                    <td data-label="Criado em">{activity.created}</td>
-                    <td data-label="Atualizado em">{activity.updated}</td>
-                    <td data-label="Último agend.">{activity.lastAppointment || ''}</td>
-                    <td>
-                      <div className="action-cell" onClick={e => e.stopPropagation()}>
-                        {/* Context menu trigger */}
-                        <div className="context-menu-wrapper">
-                          <button
-                            className="btn-details"
-                            title="Mais opções"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setOpenMenu(openMenu?.id === rowKey ? null : { id: rowKey, rect });
-                            }}
-                          >
-                            <MoreHorizontal size={20} />
-                          </button>
-                          {openMenu?.id === rowKey && (
-                            <ActivityContextMenu
-                              anchorRect={openMenu.rect}
-                              activity={activity}
-                              onClose={() => setOpenMenu(null)}
-                              onView={() => setDetailActivity(activity)}
-                              onEdit={() => setDetailActivity(activity)}
-                              onDuplicate={() => handleDuplicate(activity)}
-                              onDelete={() => setPendingDeleteId(activity.id)}
-                              onChangeStatus={(s) => handleChangeStatus(activity.id, s)}
-                            />
-                          )}
-                        </div>
-                        {/* Direct delete button */}
-                        <button
-                          className="btn-delete-activity"
-                          title="Excluir"
-                          onClick={() => setPendingDeleteId(activity.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {loading && activities.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={`skeleton-${i}`}>
+                      <td colSpan={9} style={{ padding: '0.75rem' }}>
+                        <div className="activity-skeleton-row" />
+                      </td>
+                    </tr>
+                  ))
+                ) : paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                      Nenhuma atividade encontrada.
                     </td>
                   </tr>
-                );
-              })
+                ) : (
+                  paginated.map((activity) => {
+                    const rowKey = activity.id + activity.created;
+                    return (
+                      <tr key={rowKey} onDoubleClick={() => setDetailActivity(activity)}>
+                        <td data-label="Identificador">{activity.id}</td>
+                        <td data-label="Localização" className="text-secondary">{activity.location}</td>
+                        <td data-label="Tipo do serviço" className="text-secondary">{activity.type}</td>
+                        <td data-label="Situação">
+                          <span className={`status-badge status-${activity.status.toLowerCase().replace(/\s/g, '-')}`}>
+                            {activity.status}
+                          </span>
+                        </td>
+                        <td data-label="Avaliação">
+                          <div className="rating-stars">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <Star
+                                key={star}
+                                size={16}
+                                className={`star-icon ${star <= activity.rating ? 'filled' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); handleRatingChange(activity.id, star); }}
+                              />
+                            ))}
+                          </div>
+                        </td>
+                        <td data-label="Criado em">{activity.created}</td>
+                        <td data-label="Atualizado em">{activity.updated}</td>
+                        <td data-label="Último agend.">{activity.lastAppointment || ''}</td>
+                        <td>
+                          <div className="action-cell" onClick={e => e.stopPropagation()}>
+                            <div className="context-menu-wrapper">
+                              <button
+                                className="btn-details"
+                                title="Mais opções"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setOpenMenu(openMenu?.id === rowKey ? null : { id: rowKey, rect });
+                                }}
+                              >
+                                <MoreHorizontal size={20} />
+                              </button>
+                              {openMenu?.id === rowKey && (
+                                <ActivityContextMenu
+                                  anchorRect={openMenu.rect}
+                                  activity={activity}
+                                  onClose={() => setOpenMenu(null)}
+                                  onView={() => setDetailActivity(activity)}
+                                  onEdit={() => setDetailActivity(activity)}
+                                  onDuplicate={() => handleDuplicate(activity)}
+                                  onDelete={() => setPendingDeleteId(activity.id)}
+                                  onChangeStatus={(s) => handleChangeStatus(activity.id, s)}
+                                />
+                              )}
+                            </div>
+                            <button
+                              className="btn-delete-activity"
+                              title="Excluir"
+                              onClick={() => setPendingDeleteId(activity.id)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="activity-grid-view">
+            {loading && activities.length === 0 ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={`grid-skeleton-${i}`} className="cp-skeleton-row" style={{ height: '180px' }} />
+              ))
+            ) : paginated.length === 0 ? (
+              <div className="cp-empty">Nenhuma atividade encontrada.</div>
+            ) : (
+              paginated.map((activity) => (
+                <div key={activity.id} className="activity-card animate-fade-in" onDoubleClick={() => setDetailActivity(activity)}>
+                  <div className="activity-card-header">
+                    <span className="activity-card-id">#{activity.id}</span>
+                    <span className={`status-badge status-${activity.status.toLowerCase().replace(/\s/g, '-')}`}>
+                      {activity.status}
+                    </span>
+                  </div>
+                  <div className="activity-card-body">
+                    <h3 className="activity-card-title">{activity.location}</h3>
+                    <p className="activity-card-type">{activity.type}</p>
+                    <div className="activity-card-date">
+                      <span>Criada em: {activity.created}</span>
+                    </div>
+                  </div>
+                  <div className="activity-card-footer">
+                    <div className="rating-stars">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star
+                          key={star}
+                          size={14}
+                          className={`star-icon ${star <= activity.rating ? 'filled' : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="activity-card-actions">
+                      <button onClick={() => setDetailActivity(activity)}><Eye size={16} /></button>
+                      <button className="danger" onClick={() => setPendingDeleteId(activity.id)}><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))
             )}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
       <footer className="activity-footer">
