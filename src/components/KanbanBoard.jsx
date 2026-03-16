@@ -120,6 +120,11 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
       {/* Footer: assignees + tag + comments */}
       <div className="card-footer">
         <div className="card-meta-left">
+          {task.customer_name && (
+            <span className="badge card-customer-badge">
+              {task.customer_name}
+            </span>
+          )}
           {task.tag && (
             <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: `var(--color-${task.tagColor}, #00e5ff)` }}>
               {task.tag}
@@ -227,6 +232,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [formDesc, setFormDesc] = useState('');
   const [formDeadline, setFormDeadline] = useState('');
   const [formAssignees, setFormAssignees] = useState([]);
+  const [formCustomer, setFormCustomer] = useState('');
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
 
   const [companyMembers, setCompanyMembers] = useState([]);
 
@@ -247,6 +255,30 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     };
     fetchMembers();
   }, [currentCompany]);
+
+  // Fetch customers for the task modal
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      if (!currentCompany?.id) return;
+      setLoadingCustomers(true);
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('name')
+          .eq('company_id', currentCompany.id)
+          .order('name', { ascending: true });
+        
+        if (!error && data) {
+          setCustomers(data.map(c => c.name));
+        }
+      } catch (err) {
+        console.error('Error fetching customers for Kanban:', err);
+      } finally {
+        setLoadingCustomers(false);
+      }
+    };
+    if (isAddingTask || editingTask) fetchCustomers();
+  }, [currentCompany, isAddingTask, editingTask]);
 
   // Fetch tasks from Supabase and sync cache
   useEffect(() => {
@@ -350,7 +382,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   const openAddModal = (colId) => {
     setNewTaskCol(colId);
-    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]);
+    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]); setFormCustomer('');
     setIsAddingTask(true);
   };
 
@@ -360,6 +392,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     setFormDesc(task.desc || '');
     setFormDeadline(task.deadline || '');
     setFormAssignees(task.assignees || []);
+    setFormCustomer(task.customer_name || '');
   };
 
   const handleAddTask = async (e) => {
@@ -378,7 +411,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       assignees: formAssignees,
       comments: [],
       company_id: currentCompany?.id,
-      project_id: projectId
+      project_id: projectId,
+      customer_name: formCustomer
     };
 
     // Optimistic Mapping
@@ -421,7 +455,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       description: formDesc.trim(),
       deadline: formDeadline || null,
       assignees: formAssignees,
-      ai_response: null
+      ai_response: null,
+      customer_name: formCustomer
     };
 
     const { error } = await supabase
@@ -587,7 +622,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       onClick={closeModal}
     >
       <div
-        className="km-modal"
+        className="km-modal animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <div className="km-modal-header">
@@ -598,8 +633,31 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           <div className="km-modal-body">
             <div className="km-field">
               <label>Título <span className="km-required">*</span></label>
-              <input autoFocus placeholder="Título da tarefa" value={formTitle} onChange={e => setFormTitle(e.target.value)} required />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Ex: Revisar contrato"
+                value={formTitle}
+                onChange={e => setFormTitle(e.target.value)}
+                required
+              />
             </div>
+
+            <div className="km-field">
+              <label>Cliente (CRM)</label>
+              <select
+                value={formCustomer}
+                onChange={e => setFormCustomer(e.target.value)}
+                className="km-select"
+                disabled={loadingCustomers}
+              >
+                <option value="">Selecione um cliente...</option>
+                {customers.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="km-field">
               <label>Descrição</label>
               <textarea placeholder="Descreva a tarefa..." value={formDesc} onChange={e => setFormDesc(e.target.value)} rows={3} />

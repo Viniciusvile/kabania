@@ -73,11 +73,18 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
         <div className="cdm-header">
           <div className="cdm-title-area">
             <h2>{task.title}</h2>
-            {task.tag && (
-              <span className="cdm-tag" style={{ color: `var(--color-${task.tagColor}, #00e5ff)` }}>
-                {task.tag}
-              </span>
-            )}
+            <div className="flex gap-2">
+              {task.customer_name && (
+                <span className="cdm-tag" style={{ background: 'rgba(0, 229, 255, 0.1)', color: '#00e5ff' }}>
+                  {task.customer_name}
+                </span>
+              )}
+              {task.tag && (
+                <span className="cdm-tag" style={{ color: `var(--color-${task.tagColor}, #00e5ff)` }}>
+                  {task.tag}
+                </span>
+              )}
+            </div>
           </div>
           <button className="cdm-close" onClick={onClose}><X size={20} /></button>
         </div>
