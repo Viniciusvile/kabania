@@ -107,31 +107,53 @@ export default function CompanySetup({ currentUser, onComplete, onLogout }) {
   };
 
   const handleJoin = async () => {
-    if (!joinCode.trim()) { setError('Digite o código da empresa.'); return; }
+    const trimmedCode = joinCode.trim().toUpperCase();
+    if (!trimmedCode) { setError('Digite o código da empresa.'); return; }
+    
     setIsLoading(true);
     setError('');
+    console.log("Attempting to join company with code:", trimmedCode);
 
-    const { data: companies, error: coError } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('code', joinCode.trim().toUpperCase());
+    try {
+      const { data: companies, error: coError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('code', trimmedCode);
 
-    if (!coError && companies && companies.length > 0) {
-      const company = companies[0];
-      const { error: profError } = await supabase
-        .from('profiles')
-        .update({ company_id: company.id, role: 'member' })
-        .eq('email', currentUser);
-
-      if (!profError) {
-        onComplete({ company, role: 'member' });
-      } else {
-        setError('Erro ao ingressar na empresa.');
+      if (coError) {
+        console.error("Database error during join search:", coError);
+        throw new Error(coError.message);
       }
-    } else {
-      setError('Código inválido ou empresa não encontrada.');
+
+      if (companies && companies.length > 0) {
+        const company = companies[0];
+        console.log("Company found:", company.name, "ID:", company.id);
+        
+        const { error: profError } = await supabase
+          .from('profiles')
+          .update({ 
+            company_id: company.id, 
+            role: 'member' 
+          })
+          .eq('email', currentUser);
+
+        if (!profError) {
+          console.log("Profile updated successfully. Redirecting...");
+          onComplete({ company, role: 'member' });
+        } else {
+          console.error("Profile update error during join:", profError);
+          setError(`Erro ao vincular seu perfil à empresa: ${profError.message}`);
+        }
+      } else {
+        console.warn("No company found for code:", trimmedCode);
+        setError('Código inválido ou empresa não encontrada.');
+      }
+    } catch (err) {
+      console.error("Join process exception:", err);
+      setError(`Falha ao ingressar: ${err.message || 'Erro interno.'}`);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
