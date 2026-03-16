@@ -544,6 +544,8 @@ function App() {
               />
             ) : currentView === 'ai_insights' ? (
               <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+            ) : currentView === 'support' ? (
+              <SupportPortal currentUser={currentUser} currentCompany={currentCompany} />
             ) : currentView === 'profile' ? (
               <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
             ) : currentView === 'settings' ? (
