@@ -111,167 +111,154 @@ export default function SupportPortal({ currentUser, currentCompany }) {
   };
 
   return (
-    <div className="support-portal-wrapper animate-fade-in">
-      {/* Decorative background blobs */}
-      <div className="support-bg-blobs">
-        <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
-      </div>
-
-      <header className="text-center mb-12 relative z-10">
-        <h1 className="support-title-hero">Central de Atendimento</h1>
-        <p className="support-subtitle-hero">
-          Abra um chamado e receba uma solução inteligente instantaneamente usando nossa Base de Conhecimento.
-        </p>
+    <div className="support-portal-wrapper">
+      <header className="support-header-area">
+        <div className="support-title-row">
+          <h1 className="support-title">Central de Atendimento</h1>
+        </div>
+        <div className="support-breadcrumbs">
+          <span>Gestão de Projetos</span>
+          <ChevronRight size={14} className="text-dark" />
+          <span className="text-accent">Suporte ao Cliente</span>
+        </div>
       </header>
 
-      <div className="support-ultra-card relative z-10 support-form-animate">
+      <div className="support-panel-card support-form-animate">
         {step === 1 ? (
-          <form onSubmit={handleSubmit} className="p-10 md:p-14">
-            <div className="flex items-center justify-between mb-12">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-accent shadow-lg border border-white/5">
-                  <MessageSquare size={24} />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Novo Chamado</h2>
-                  <p className="text-sm text-muted">Inteligência Artificial Ativa</p>
-                </div>
+          <>
+            <div className="support-panel-header">
+              <div className="support-panel-header-title">
+                <MessageSquare size={20} className="text-accent" />
+                <span>Abrir Novo Chamado</span>
               </div>
-              <div className="hidden sm:flex support-badge-ai">
-                <Sparkles size={14} /> AI Triage System
+              <div className="ai-badge">
+                <Sparkles size={12} /> IA Triage Ativo
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              <div className="premium-input-group">
-                <label className="premium-label">Seu Nome</label>
-                <div className="premium-input-container">
-                  <User className="premium-input-icon" size={18} />
+            <form onSubmit={handleSubmit} className="support-panel-body">
+              <div className="support-form-grid">
+                <div className="support-field-group">
+                  <label className="support-field-label">Seu Nome</label>
+                  <div className="support-input-container">
+                    <User className="support-input-icon" size={16} />
+                    <input 
+                      type="text" 
+                      name="name"
+                      value={ticketData.name}
+                      onChange={handleInputChange}
+                      className="support-input"
+                      placeholder="Como devemos te chamar?"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="support-field-group">
+                  <label className="support-field-label">E-mail de Contato</label>
+                  <div className="support-input-container">
+                    <Mail className="support-input-icon" size={16} />
+                    <input 
+                      type="email" 
+                      name="email"
+                      value={ticketData.email}
+                      onChange={handleInputChange}
+                      className="support-input"
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="support-field-group">
+                <label className="support-field-label">Assunto do Chamado</label>
+                <div className="support-input-container">
+                  <AlertCircle className="support-input-icon" size={16} />
                   <input 
                     type="text" 
-                    name="name"
-                    value={ticketData.name}
+                    name="subject"
+                    value={ticketData.subject}
                     onChange={handleInputChange}
-                    className="premium-input-field"
-                    placeholder="Como devemos te chamar?"
+                    className="support-input"
+                    placeholder="Ex: Problema no acesso aos módulos"
                     required
                   />
                 </div>
               </div>
-              <div className="premium-input-group">
-                <label className="premium-label">E-mail de Contato</label>
-                <div className="premium-input-container">
-                  <Mail className="premium-input-icon" size={18} />
-                  <input 
-                    type="email" 
-                    name="email"
-                    value={ticketData.email}
+
+              <div className="support-field-group">
+                <label className="support-field-label">Descrição Detalhada</label>
+                <div className="support-input-container">
+                  <MessageSquare className="support-input-icon" style={{ top: '1.2rem', transform: 'none' }} size={16} />
+                  <textarea 
+                    name="description"
+                    value={ticketData.description}
                     onChange={handleInputChange}
-                    className="premium-input-field"
-                    placeholder="seu@email.com"
+                    className="support-input support-textarea"
+                    placeholder="Descreva o problema de forma detalhada para uma melhor resposta da IA..."
                     required
                   />
                 </div>
               </div>
-            </div>
 
-            <div className="premium-input-group mb-8">
-              <label className="premium-label">Assunto do Chamado</label>
-              <div className="premium-input-container">
-                <AlertCircle className="premium-input-icon" size={18} />
-                <input 
-                  type="text" 
-                  name="subject"
-                  value={ticketData.subject}
-                  onChange={handleInputChange}
-                  className="premium-input-field"
-                  placeholder="Resuma o problema de forma clara"
-                  required
-                />
+              <div className="mt-8">
+                <button 
+                  type="submit" 
+                  className="btn-premium btn-premium-primary w-full py-4 text-lg font-bold"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <><Loader2 className="animate-spin" size={20} /> Processando Chamado...</>
+                  ) : (
+                    <><Send size={20} /> Enviar Chamado</>
+                  )}
+                </button>
               </div>
-            </div>
-
-            <div className="premium-input-group mb-12">
-              <label className="premium-label">Descrição Detalhada</label>
-              <div className="premium-input-container">
-                <MessageSquare className="premium-input-icon" style={{ top: '1.5rem', transform: 'none' }} size={18} />
-                <textarea 
-                  name="description"
-                  value={ticketData.description}
-                  onChange={handleInputChange}
-                  className="premium-input-field premium-textarea"
-                  placeholder="Explique o que está acontecendo... Quanto mais detalhes, melhor será a resposta da IA."
-                  required
-                />
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              className="btn-ultra-submit group"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <><Loader2 className="animate-spin" size={24} /> Analisando Contexto...</>
-              ) : (
-                <><Send size={24} /> Enviar Chamado</>
-              )}
-            </button>
-          </form>
+            </form>
+          </>
         ) : (
           <div className="support-form-animate">
-            <div className="ai-response-container support-ai-glow">
-              <div className="flex items-center justify-between mb-8">
-                <div className="support-badge-ai">
-                  <Sparkles size={16} /> Resposta Inteligente
-                </div>
-                <div className="text-xs text-slate-500 font-mono">ID: {ticketId}</div>
+            <div className="support-panel-header">
+              <div className="support-panel-header-title">
+                <Sparkles size={20} className="text-accent" />
+                <span>Sugestão da Inteligência Artificial</span>
               </div>
-              
-              <div className="ai-suggestion-box mb-10">
-                <div className="ai-text">
-                  {aiResponse}
-                </div>
+              <div className="text-xs text-muted">ID: {ticketId}</div>
+            </div>
+
+            <div className="support-panel-body">
+              <div className="ai-suggestion-panel">
+                {aiResponse}
               </div>
 
-              <div className="bg-white/5 rounded-3xl p-8 border border-white/5">
-                <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
-                  <div>
-                    <h4 className="text-white text-xl font-bold mb-2">Isso ajudou você?</h4>
-                    <p className="text-slate-400 text-sm max-w-sm">
-                      Se a resposta da nossa IA resolveu sua dúvida, você pode encerrar este chamado agora. Caso contrário, fale com nossa equipe técnica.
-                    </p>
-                  </div>
-                  <div className="flex gap-4 w-full md:w-auto">
-                    <button 
-                      onClick={() => {
-                          setStep(1);
-                          setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
-                      }}
-                      className="btn-premium bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 px-8 py-4"
-                    >
-                      <CheckCircle size={20} /> Resolvido
-                    </button>
-                    <button 
-                      onClick={handleEscalate}
-                      className="btn-ultra-submit flex-1 md:flex-initial py-4 px-8"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? <Loader2 className="animate-spin" size={20} /> : <><ArrowRight size={20} /> Escalar p/ Equipe</>}
-                    </button>
-                  </div>
+              <div className="support-actions-footer">
+                <div className="support-footer-info">
+                  <h4>A solução funcionou?</h4>
+                  <p>Caso contrário, nossa equipe técnica cuidará do seu caso.</p>
+                </div>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => {
+                        setStep(1);
+                        setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
+                    }}
+                    className="btn-premium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 transition-all font-bold px-8"
+                  >
+                    <CheckCircle size={18} /> Resolvido
+                  </button>
+                  <button 
+                    onClick={handleEscalate}
+                    className="btn-premium btn-premium-primary px-8"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Escalar p/ Equipe</>}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
-
-      <footer className="support-footer-glass relative z-10">
-        © {new Date().getFullYear()} NÚCLEO DE SUPORTE INTELIGENTE — SISTEMA KABANIA
-      </footer>
     </div>
   );
 }
