@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   CheckCircle, 
-  XCircle, 
+  XCircles, 
   Clock, 
   User, 
   FileText, 
-  Phone, 
+  Mail, 
   AlertCircle,
   Search,
-  RotateCcw
+  RotateCcw,
+  MessageSquare
 } from 'lucide-react';
 import { createNotification } from '../services/notificationService';
-import './ActivityList.css'; // Reusing some styles for consistency
+import './ServiceCenter.css'; 
 
 export default function ServiceCenter({ currentCompany, currentUser }) {
   const [requests, setRequests] = useState([]);
@@ -45,7 +46,6 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
     const newActivityId = String(Math.floor(Math.random() * 90000) + 10000);
     const nowIso = new Date().toISOString();
 
-    // 1. Create activity from request
     const activityPayload = {
       id: newActivityId,
       location: request.customer_name,
@@ -62,7 +62,6 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
     const { error: activityError } = await supabase.from('activities').insert([activityPayload]);
 
     if (!activityError) {
-      // 2. Update request status to 'accepted'
       const { error: requestError } = await supabase
         .from('service_requests')
         .update({ status: 'accepted', updated_at: nowIso })
@@ -104,7 +103,7 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
   );
 
   return (
-    <div className="activity-list-container animate-fade-in">
+    <div className="service-center-container">
       <header className="activity-header">
         <h1 className="activity-title">Central de Atendimento</h1>
         <div className="activity-actions">
@@ -123,62 +122,61 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
         </div>
       </header>
 
-      <div className="activity-content-wrapper">
-        <div className="activity-grid-view">
-          {loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="cp-skeleton-row" style={{ height: '200px' }} />
-            ))
-          ) : filteredRequests.length === 0 ? (
-            <div className="cp-empty" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '4rem' }}>
-              <Clock size={48} className="mx-auto mb-4 opacity-20" />
-              <p>Nenhum chamado pendente no momento.</p>
-              <span className="text-xs opacity-50">Novos chamados aparecerão aqui automaticamente.</span>
-            </div>
-          ) : (
-            filteredRequests.map(request => (
-              <div key={request.id} className="activity-card animate-slide-up">
-                <div className="activity-card-header">
-                  <span className="activity-card-id">Chamado</span>
-                  <span className="status-badge status-pendente">Aguardando</span>
-                </div>
-                <div className="activity-card-body">
-                  <h3 className="activity-card-title flex items-center gap-2">
-                    <User size={16} className="text-accent" /> {request.customer_name}
-                  </h3>
-                  <p className="activity-card-type">{request.service_type}</p>
-                  <div className="mt-2 text-sm opacity-80 line-clamp-2">
-                    <FileText size={14} className="inline mr-1" /> {request.description || 'Sem descrição'}
-                  </div>
-                  {request.contact_info && (
-                    <div className="mt-1 text-xs opacity-60">
-                      <Phone size={12} className="inline mr-1" /> {request.contact_info}
-                    </div>
-                  )}
-                  <div className="activity-card-date mt-3">
-                    <span>Recebido em: {new Date(request.created_at).toLocaleString('pt-BR')}</span>
-                  </div>
-                </div>
-                <div className="activity-card-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem' }}>
-                  <div className="flex gap-2 w-full">
-                    <button 
-                      className="flex-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 py-2 rounded-lg text-sm font-semibold transition-all border border-green-500/20 flex items-center justify-center gap-2"
-                      onClick={() => handleAccept(request)}
-                    >
-                      <CheckCircle size={16} /> Aceitar
-                    </button>
-                    <button 
-                      className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 rounded-lg text-sm font-semibold transition-all border border-red-500/20 flex items-center justify-center gap-2"
-                      onClick={() => handleReject(request)}
-                    >
-                      <XCircle size={16} /> Recusar
-                    </button>
-                  </div>
-                </div>
+      <div className="service-grid">
+        {loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="cp-skeleton-row" style={{ height: '240px', borderRadius: '20px' }} />
+          ))
+        ) : filteredRequests.length === 0 ? (
+          <div className="cp-empty" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '6rem 4rem' }}>
+            <Clock size={64} className="mx-auto mb-6 opacity-20" />
+            <p className="text-xl font-bold">Nenhum chamado pendente</p>
+            <span className="text-sm opacity-50">Novos chamados aparecerão aqui automaticamente.</span>
+          </div>
+        ) : (
+          filteredRequests.map(request => (
+            <div key={request.id} className="service-card">
+              <div className="service-card-header">
+                <span className="service-id-badge">Protocolo #{request.id.slice(0, 8)}</span>
+                <span className="service-status-pill">Aguardando</span>
               </div>
-            ))
-          )}
-        </div>
+              
+              <div className="service-card-main">
+                <h3 className="service-card-title">
+                  <User size={18} className="text-accent" /> {request.customer_name}
+                </h3>
+                <p className="service-card-subtitle">{request.service_type}</p>
+              </div>
+
+              <div className="service-description-box">
+                <p>{request.description || 'Sem descrição detalhada.'}</p>
+              </div>
+
+              <div className="service-contact-info">
+                <Mail size={14} /> {request.contact_info || 'Sem e-mail'}
+              </div>
+
+              <span className="service-card-date">
+                Recebido em: {new Date(request.created_at).toLocaleString('pt-BR')}
+              </span>
+
+              <div className="service-actions">
+                <button 
+                  className="btn-service btn-service-accept"
+                  onClick={() => handleAccept(request)}
+                >
+                  <CheckCircle size={18} /> Aceitar
+                </button>
+                <button 
+                  className="btn-service btn-service-reject"
+                  onClick={() => handleReject(request)}
+                >
+                  <RotateCcw size={18} style={{ transform: 'rotate(-45deg)' }} /> Recusar
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
