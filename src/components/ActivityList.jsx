@@ -150,7 +150,10 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [detailActivity, setDetailActivity] = useState(null);
   const [search, setSearch] = useState('');
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [viewMode, setViewMode] = useState(() => {
+    const saved = localStorage.getItem('synapseActivitiesViewMode');
+    return saved || 'grid';
+  }); // 'table' or 'grid'
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({ status: '', type: '' });
   const [pageSize, setPageSize] = useState(10);
@@ -449,7 +452,11 @@ export default function ActivityList({ currentUser, currentCompany }) {
           <button 
             className={`action-btn-icon hide-mobile ${viewMode === 'grid' ? 'active' : ''}`} 
             title="Visualizar em grade"
-            onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+            onClick={() => {
+              const newMode = viewMode === 'table' ? 'grid' : 'table';
+              setViewMode(newMode);
+              localStorage.setItem('synapseActivitiesViewMode', newMode);
+            }}
           >
             <LayoutGrid size={18} />
           </button>
