@@ -9,7 +9,7 @@
 }
 
 .kb-header {
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .kb-title {
@@ -31,9 +31,9 @@
 
 .kb-actions-bar {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 3.5rem;
+  align-items: stretch; /* Allow children to have same height */
 }
 
 .kb-search {
@@ -42,10 +42,11 @@
   gap: 0.75rem;
   background-color: var(--bg-panel);
   border: 1px solid var(--border-color);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0 1.25rem;
+  border-radius: 12px;
   flex: 1;
-  max-width: 400px;
+  max-width: 450px;
+  min-height: 48px;
 }
 
 .kb-search input {
@@ -244,16 +245,18 @@
   background: linear-gradient(135deg, var(--accent-cyan), #00b3cc);
   color: var(--bg-app);
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
-  font-size: 0.9rem;
+  padding: 0 1.5rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
   box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+  min-height: 48px;
 }
 
 .kb-btn-template:hover {
@@ -670,6 +673,8 @@
 }
 
 .kb-btn-add {
-  min-width: 180px;
+  min-width: 200px;
   justify-content: center;
+  min-height: 48px;
+  border-radius: 12px;
 }
