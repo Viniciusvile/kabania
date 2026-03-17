@@ -625,3 +625,51 @@
 .flex-wrap { flex-wrap: wrap; }
 .mt-1 { margin-top: 0.25rem; }
 .text-\[10px\] { font-size: 10px; }
+
+/* --- Visual Fixes for KB Upload --- */
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite ease-in-out;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.kb-card-empty-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1.5rem;
+  border: 1px dashed rgba(0, 229, 255, 0.2);
+  background: rgba(0, 229, 255, 0.02);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+}
+
+.kb-card-empty-slot:hover {
+  background: rgba(0, 229, 255, 0.05);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 229, 255, 0.1);
+}
+
+.kb-card-empty-slot span {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.kb-upload-wrapper {
+  z-index: 100;
+  position: relative;
+}
+
+.kb-btn-add {
+  min-width: 180px;
+  justify-content: center;
+}

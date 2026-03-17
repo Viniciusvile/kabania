@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles } from 'lucide-react';
+import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles, RotateCcw } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { fileProcessingService } from '../services/fileProcessingService';
@@ -462,10 +461,14 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
                   </div>
                 ))}
                 
-                {sectionItems.length === 0 && !searchTerm && (
-                  <div className="kb-card kb-card-empty-slot" onClick={() => { setNewSection(section.id); setIsModalOpen(true); }}>
-                    <Plus size={24} />
+                {sectionItems.length === 0 && (
+                  <div 
+                    className="kb-card kb-card-empty-slot animate-pulse-slow" 
+                    onClick={() => isAdmin && fileInputRef.current?.click()}
+                  >
+                    <Plus size={32} strokeWidth={1} />
                     <span>Adicionar em {section.label}</span>
+                    <p className="text-[10px] opacity-40 mt-1">Clique para subir PDF, Word ou CSV</p>
                   </div>
                 )}
               </div>

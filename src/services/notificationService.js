@@ -82,3 +82,48 @@ export function subscribeToNotifications(companyId, callback) {
     supabase.removeChannel(channel);
   };
 }
+
+// --- UTILITIES TO FIX BUILD ERRORS ---
+
+export function getDeadlineStatus(deadline) {
+  if (!deadline) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dDate = new Date(deadline + 'T00:00:00');
+  dDate.setHours(0, 0, 0, 0);
+
+  const diffTime = dDate - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return { color: 'red', icon: '🚨', label: 'Atrasado' };
+  if (diffDays === 0) return { color: 'orange', icon: '⚠️', label: 'Vence Hoje' };
+  if (diffDays <= 2) return { color: 'yellow', icon: '⏰', label: 'Próximo' };
+  return { color: 'green', icon: '📅', label: 'No Prazo' };
+}
+
+export async function notifyComment(task, authorEmail) {
+  const authorName = authorEmail.split('@')[0];
+  const content = `💬 ${authorName} comentou em "${task.title}"`;
+  return createNotification(task.company_id, null, 'comment', content);
+}
+
+export async function notifyTaskMoved(task, oldCol, newCol) {
+  const content = `🚚 Tarefa "${task.title}" movida de ${oldCol} para ${newCol}`;
+  return createNotification(task.company_id, null, 'kanban_move', content);
+}
+
+export async function notifyAssignment(task, assigneeEmail) {
+  const name = assigneeEmail.split('@')[0];
+  const content = `👤 ${name} foi designado para "${task.title}"`;
+  return createNotification(task.company_id, null, 'assignment', content);
+}
+
+export async function checkDeadlineNotifications(tasks, companyId) {
+  if (!tasks) return;
+  tasks.forEach(task => {
+    const status = getDeadlineStatus(task.deadline);
+    if (status && (status.label === 'Atrasado' || status.label === 'Vence Hoje')) {
+       // Targeted notification logic could go here
+    }
+  });
+}
