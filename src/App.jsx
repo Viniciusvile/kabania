@@ -12,6 +12,7 @@ import Login from './components/Login';
 import CompanySetup from './components/CompanySetup';
 import CompanyPanel from './components/CompanyPanel';
 import ReportsDashboard from './components/ReportsDashboard';
+import ServiceCenter from './components/ServiceCenter';
 import BusinessManagement from './components/BusinessManagement';
 import AIInsights from './components/AIInsights';
 import UserProfile from './components/UserProfile';
@@ -627,6 +628,8 @@ function App() {
                 />
               ) : currentView === 'ai_insights' ? (
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'service_center' ? (
+                <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'support' ? (
                 <SupportPortal currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'profile' ? (
