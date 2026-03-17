@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_multi_tenant ON public.tasks(company_id, pr
 CREATE INDEX IF NOT EXISTS idx_tasks_company_id ON public.tasks(company_id);
 
 -- Atividades
-CREATE INDEX IF NOT EXISTS idx_activities_multi_tenant ON public.activities(company_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activities_multi_tenant ON public.activities(company_id, created DESC);
 
 -- Notificações (Crítico para Realtime)
 CREATE INDEX IF NOT EXISTS idx_notifications_multi_tenant ON public.notifications(company_id, user_id, read) WHERE read = false;
