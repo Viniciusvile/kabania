@@ -41,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_customers_multi_tenant ON public.customers(compan
 CREATE INDEX IF NOT EXISTS idx_audit_logs_multi_tenant ON public.audit_logs(company_id, created_at DESC);
 
 -- Colaboradores
-CREATE INDEX IF NOT EXISTS idx_collaborators_multi_tenant ON public.collaborators(company_id, profile_id);
+CREATE INDEX IF NOT EXISTS idx_collaborators_multi_tenant ON public.collaborators(company_id, email);
 
 -- 3. ANALYZE
 -- Força o Postgres a atualizar as estatísticas para usar os novos índices imediatamente.
