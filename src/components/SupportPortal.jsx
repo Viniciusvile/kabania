@@ -135,9 +135,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
               <div className="ai-badge">
                 <Sparkles size={12} /> IA Triage Ativo
               </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="support-panel-body">
+            </d            <form onSubmit={handleSubmit} className="support-panel-body">
               <div className="support-form-grid">
                 <div className="support-field-group">
                   <label className="support-field-label">Seu Nome Completo</label>
@@ -154,6 +152,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     />
                   </div>
                 </div>
+                
                 <div className="support-field-group">
                   <label className="support-field-label">E-mail Corporativo</label>
                   <div className="support-input-container">
@@ -169,6 +168,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     />
                   </div>
                 </div>
+
                 <div className="support-field-group">
                   <label className="support-field-label">Unidade / Cliente</label>
                   <div className="support-input-container">
@@ -184,6 +184,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     />
                   </div>
                 </div>
+
                 <div className="support-field-group">
                   <label className="support-field-label">Data da Ocorrência</label>
                   <div className="support-input-container">
@@ -198,53 +199,54 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="support-field-group">
-                <label className="support-field-label">Assunto do Chamado</label>
-                <div className="support-input-container">
-                  <AlertCircle className="support-input-icon" size={16} />
-                  <input 
-                    type="text" 
-                    name="subject"
-                    value={ticketData.subject}
-                    onChange={handleInputChange}
-                    className="support-input"
-                    placeholder="Ex: Problema no acesso aos módulos"
-                    required
-                  />
+                <div className="support-field-group support-field-full">
+                  <label className="support-field-label">Assunto Principal</label>
+                  <div className="support-input-container">
+                    <AlertCircle className="support-input-icon" size={18} />
+                    <input 
+                      type="text" 
+                      name="subject"
+                      value={ticketData.subject}
+                      onChange={handleInputChange}
+                      className="support-input"
+                      placeholder="Resuma o motivo do seu contato..."
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="support-field-group support-field-full">
+                  <label className="support-field-label">Relatório de Ocorrência</label>
+                  <div className="support-input-container">
+                    <FileText className="support-input-icon" style={{ top: '1.25rem', transform: 'none' }} size={18} />
+                    <textarea 
+                      name="description"
+                      value={ticketData.description}
+                      onChange={handleInputChange}
+                      className="support-input support-textarea"
+                      placeholder="Forneça o máximo de detalhes para uma triagem precisa..."
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="support-field-group">
-                <label className="support-field-label">Relatório de Ocorrência</label>
-                <div className="support-input-container">
-                  <FileText className="support-input-icon" style={{ top: '1.25rem', transform: 'none' }} size={18} />
-                  <textarea 
-                    name="description"
-                    value={ticketData.description}
-                    onChange={handleInputChange}
-                    className="support-input support-textarea"
-                    placeholder="Forneça o máximo de detalhes para uma triagem precisa..."
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mt-8">
+              <div className="support-footer-actions">
                 <button 
                   type="submit" 
-                  className="btn-premium btn-premium-primary w-full py-4 text-lg font-bold"
+                  className="btn-premium-send"
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <><Loader2 className="animate-spin" size={20} /> Processando Chamado...</>
+                    <><Loader2 className="animate-spin" size={20} /> Processando dados...</>
                   ) : (
-                    <><Send size={20} /> Enviar Chamado</>
+                    <><Send size={20} /> Autenticar e Enviar Chamado</>
                   )}
                 </button>
               </div>
             </form>
+    </form>
           </>
         ) : step === 2 ? (
           <div className="support-form-animate">
