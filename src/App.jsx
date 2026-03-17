@@ -466,7 +466,7 @@ function App() {
   };
 
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
+    <>
       {!isAuthenticated ? (
         <Login onLogin={handleLogin} />
       ) : !currentCompany && !isSessionLoading ? (
@@ -554,7 +554,7 @@ function App() {
           <AIChatFab currentCompany={currentCompany} />
         </div>
       )}
-    </GoogleOAuthProvider>
+    </>
   );
 }
 
