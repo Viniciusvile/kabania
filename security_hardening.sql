@@ -39,11 +39,11 @@ CREATE POLICY "Knowledge base company isolation" ON knowledge_base
     company_id IN (SELECT company_id FROM profiles WHERE user_id = auth.uid())
   );
 
--- 5. Kanban Tasks: Project/Company isolation
-ALTER TABLE kanban_tasks ENABLE ROW LEVEL SECURITY;
+-- 5. Tasks: Project/Company isolation
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Tasks project isolation" ON kanban_tasks;
-CREATE POLICY "Tasks project isolation" ON kanban_tasks
+DROP POLICY IF EXISTS "Tasks project isolation" ON tasks;
+CREATE POLICY "Tasks project isolation" ON tasks
   FOR ALL USING (
     project_id IN (
       SELECT id FROM projects WHERE company_id IN (
