@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { fileProcessingService } from '../services/fileProcessingService';
 import { processKnowledgeFile } from '../services/geminiService';
+import { logEvent } from '../services/historyService';
 import './KnowledgeBase.css';
 
 const KB_SECTIONS = [
