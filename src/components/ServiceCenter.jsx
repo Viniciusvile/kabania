@@ -20,9 +20,10 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (silent = false) => {
     if (!currentCompany?.id) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
+    
     const { data, error } = await supabase
       .from('service_requests')
       .select('*')
@@ -40,6 +41,24 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
 
   useEffect(() => {
     fetchRequests();
+
+    // Realtime subscription for instant updates
+    const channel = supabase
+      .channel('service_requests_realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'service_requests',
+        filter: `company_id=eq.${currentCompany?.id}`
+      }, (payload) => {
+        console.log('Realtime update received:', payload);
+        fetchRequests(true); // Silent update on any change
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentCompany]);
 
   const handleAccept = async (request) => {

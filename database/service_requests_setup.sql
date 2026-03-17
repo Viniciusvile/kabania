@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS service_requests (
     service_type TEXT NOT NULL,
     description TEXT,
     contact_info TEXT,
+    origin TEXT DEFAULT 'portal', -- 'portal', 'manual'
+    ai_summary TEXT,
     status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -15,19 +17,28 @@ CREATE TABLE IF NOT EXISTS service_requests (
 -- 2. Enable Row Level Security
 ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
 
--- 3. Access Policies (Email-based identification)
+-- 3. Access Policies (Optimized)
+-- We use a direct join check or a security definer function for maximum speed
 DROP POLICY IF EXISTS "Users can view their company's service requests" ON service_requests;
 CREATE POLICY "Users can view their company's service requests" ON service_requests
 FOR SELECT USING (
-    company_id IN (SELECT company_id FROM profiles WHERE email = auth.jwt()->>'email')
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.email = auth.jwt()->>'email' 
+        AND profiles.company_id = service_requests.company_id
+    )
 );
 
 DROP POLICY IF EXISTS "Users can manage their company's service requests" ON service_requests;
 CREATE POLICY "Users can manage their company's service requests" ON service_requests
 FOR ALL USING (
-    company_id IN (SELECT company_id FROM profiles WHERE email = auth.jwt()->>'email')
+    EXISTS (
+        SELECT 1 FROM profiles 
+        WHERE profiles.email = auth.jwt()->>'email' 
+        AND profiles.company_id = service_requests.company_id
+    )
 );
 
 -- 4. Index for performance
-CREATE INDEX IF NOT EXISTS idx_service_requests_company_id ON service_requests(company_id);
-CREATE INDEX IF NOT EXISTS idx_service_requests_status ON service_requests(status);
+CREATE INDEX IF NOT EXISTS idx_service_requests_company_id_status ON service_requests(company_id, status);
+CREATE INDEX IF NOT EXISTS idx_service_requests_created_at ON service_requests(created_at DESC);
