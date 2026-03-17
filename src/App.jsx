@@ -298,7 +298,6 @@ function App() {
 
       if (profError) {
         if (profError.code === 'PGRST116') {
-          console.log("No profile found for new user:", email);
           setCurrentCompany(null);
           setProfileData({ name: email.split('@')[0], avatar_url: null });
           setIsAuthenticated(true);
@@ -314,7 +313,6 @@ function App() {
         if (!profile.user_id) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user?.id) {
-            console.log("[AUTO-REPAIR] Linking user_id to legacy profile:", email);
             await supabase.from('profiles').update({ user_id: session.user.id }).eq('email', email);
           }
         }
@@ -360,7 +358,6 @@ function App() {
         }
 
         if (companyData) {
-          console.log("Applying Company Data:", companyData.name);
           const cwr = { 
             ...companyData, 
             createdAt: companyData.created_at || companyData.createdAt,
@@ -436,7 +433,6 @@ function App() {
         
         if (isMounted) {
           if (session) {
-            console.log("Session found for:", session.user.email);
             await handleLogin(session.user.email);
           } else {
             console.log("No active session found.");
@@ -457,7 +453,6 @@ function App() {
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth event:", event);
       if (isMounted) {
         if (event === 'SIGNED_IN' && session) {
           await handleLogin(session.user.email);
