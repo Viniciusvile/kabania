@@ -382,7 +382,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="kb-actions-btns">
           {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector] && (
             <button className="kb-btn-template" onClick={handleLoadTemplates} title="Recarregar temas padrão do setor">
               <Sparkles size={18} /> Restaurar Preset
