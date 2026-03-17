@@ -209,7 +209,46 @@ export default function SupportPortal({ currentUser, currentCompany }) {
               </div>
             </form>
           </>
-        ) : (
+        ) : step === 2 ? (
+          <div className="support-form-animate">
+            <div className="support-panel-header">
+              <div className="support-panel-header-title">
+                <Sparkles size={20} className="text-accent" />
+                <span>Sugestão da Inteligência Artificial</span>
+              </div>
+              <div className="text-xs text-muted">ID: {ticketId}</div>
+            </div>
+
+            <div className="support-panel-body">
+              <div className="ai-suggestion-panel">
+                {aiResponse}
+              </div>
+
+              <div className="support-actions-footer">
+                <div className="support-footer-info">
+                  <h4>A solução funcionou?</h4>
+                  <p>Caso contrário, nossa equipe técnica cuidará do seu caso.</p>
+                </div>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => {
+                        setStep(1);
+                        setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
+                    }}
+                    className="btn-premium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 transition-all font-bold px-8"
+                  >
+                    <CheckCircle size={18} /> Resolvido
+                  </button>
+                  <button 
+                    onClick={handleEscalate}
+                    className="btn-premium btn-premium-primary px-8"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Escalar p/ Equipe</>}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="support-success-view animate-fade-in p-12 text-center">
