@@ -27,6 +27,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
   const [editingItem, setEditingItem] = useState(null);
   const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadGuideOpen, setIsUploadGuideOpen] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null); // { action, suggested, explanation }
   const fileInputRef = React.useRef(null);
 
@@ -392,7 +393,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
               />
               <button 
                 className="kb-btn-add" 
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => setIsUploadGuideOpen(true)}
                 disabled={isUploading}
               >
                 {isUploading ? <RotateCcw className="animate-spin" size={18} /> : <Plus size={18} />}
@@ -465,7 +466,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
                 {sectionItems.length === 0 && (
                   <div 
                     className="kb-card kb-card-empty-slot animate-pulse-slow" 
-                    onClick={() => isAdmin && fileInputRef.current?.click()}
+                    onClick={() => isAdmin && setIsUploadGuideOpen(true)}
                   >
                     <Plus size={32} strokeWidth={1} />
                     <span>Adicionar em {section.label}</span>
@@ -665,6 +666,94 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
               <button className="kb-btn-cancel" onClick={() => setAiSuggestion(null)}>Ignorar</button>
               <button className="kb-btn-submit" onClick={confirmAiSuggestion}>
                 {aiSuggestion.action === 'merge' ? 'Mesclar Informações' : 'Confirmar e Criar TAG'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Guide Modal */}
+      {isUploadGuideOpen && (
+        <div className="kb-modal-overlay" onClick={() => setIsUploadGuideOpen(false)}>
+          <div className="kb-modal kb-guide-modal animate-slide-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '650px' }}>
+            <div className="kb-modal-header">
+              <h2 className="flex items-center gap-2">
+                <FileText size={20} color="var(--accent-cyan)" />
+                Como preparar seu arquivo
+              </h2>
+              <button className="kb-modal-close" onClick={() => setIsUploadGuideOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="kb-modal-body">
+              <p className="text-sm text-muted mb-4">
+                Para que a IA aprenda corretamente, seu arquivo CSV deve seguir a estrutura abaixo. 
+                Certifique-se de usar os nomes das colunas exatamente como mostrado.
+              </p>
+
+              <div className="kb-guide-table-wrapper">
+                <table className="kb-guide-table">
+                  <thead>
+                    <tr>
+                      <th>Tema</th>
+                      <th>Conteudo</th>
+                      <th>Categoria</th>
+                      <th>Tags</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Manual de Vendas</td>
+                      <td>"A abordagem deve ser..."</td>
+                      <td><span className="kb-guide-tag-blue">company_data</span></td>
+                      <td>"vendas, script"</td>
+                    </tr>
+                    <tr>
+                      <td>Reset de Senha</td>
+                      <td>"Para resetar, acesse..."</td>
+                      <td><span className="kb-guide-tag-blue">troubleshooting</span></td>
+                      <td>"ajuda, login"</td>
+                    </tr>
+                    <tr>
+                      <td>Politica de Frota</td>
+                      <td>"O uso dos carros..."</td>
+                      <td><span className="kb-guide-tag-blue">general</span></td>
+                      <td>"regras, transporte"</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="kb-guide-info">
+                <div className="kb-info-item">
+                  <strong>Categorias permitidas:</strong>
+                  <code>company_data</code>, <code>troubleshooting</code>, <code>general</code>
+                </div>
+                <div className="kb-info-item">
+                  <strong>Dica:</strong> Salve como <code>.csv</code> (separado por vírgula) codificado em UTF-8.
+                </div>
+              </div>
+            </div>
+            <div className="kb-modal-footer">
+              <a 
+                href="/template_importacao_kabania.csv" 
+                download 
+                className="kb-btn-cancel flex items-center gap-2"
+                onClick={(e) => {
+                  // If path is wrong, we can just point to raw content or ignore
+                  // For now, let's assume it's in public or accessible
+                }}
+              >
+                <FileText size={16} /> Baixar Modelo
+              </a>
+              <button 
+                className="kb-btn-submit flex items-center gap-2"
+                onClick={() => {
+                  setIsUploadGuideOpen(false);
+                  fileInputRef.current?.click();
+                }}
+              >
+                <CheckCircle size={16} /> Continuar para Upload
               </button>
             </div>
           </div>

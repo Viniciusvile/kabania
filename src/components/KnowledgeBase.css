@@ -730,3 +730,83 @@
   align-items: center;
 }
 
+
+/* --- Upload Guide Modal Styles --- */
+.kb-guide-modal .kb-modal-body {
+  padding: 1.5rem 2rem;
+}
+
+.kb-guide-table-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.kb-guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.kb-guide-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kb-guide-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+}
+
+.kb-guide-table tr:last-child td {
+  border-bottom: none;
+}
+
+.kb-guide-tag-blue {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-cyan);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.kb-guide-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.kb-info-item {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.kb-info-item strong {
+  color: var(--text-main);
+  margin-right: 0.5rem;
+}
+
+.kb-info-item code {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-cyan);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.kb-guide-modal .kb-modal-footer {
+  justify-content: space-between;
+}
