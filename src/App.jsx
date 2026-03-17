@@ -20,6 +20,8 @@ import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
+import { processKnowledgeRow } from './services/geminiService';
+import { processKnowledgeRow } from './services/geminiService';
 import './App.css';
 import './components/AIChatFab.css';
 
@@ -77,6 +79,14 @@ function App() {
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
+  
+  // Background Import State
+  const [bulkImportStatus, setBulkImportStatus] = useState({ 
+    isActive: false, 
+    current: 0, 
+    total: 0, 
+    results: null 
+  });
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('synapseProfileData');
     return saved ? JSON.parse(saved) : { name: '', avatar_url: null };
@@ -160,6 +170,74 @@ function App() {
     } else {
       console.error('Error creating project:', error);
     }
+  };
+
+  const runBackgroundImport = async (rows, currentKnowledge) => {
+    setBulkImportStatus({ isActive: true, current: 0, total: rows.length, results: null });
+    let newCount = 0;
+    let mergeCount = 0;
+    let errorCount = 0;
+    let localKnowledge = [...currentKnowledge];
+
+    for (let i = 0; i < rows.length; i++) {
+      setBulkImportStatus(prev => ({ ...prev, current: i + 1 }));
+      try {
+        const analysis = await processKnowledgeRow(rows[i], localKnowledge);
+        if (!analysis) {
+          errorCount++;
+          continue;
+        }
+
+        if (analysis.action === 'create') {
+          const newItem = {
+            id: `kb-bulk-${Date.now()}-${i}`,
+            title: analysis.suggested.title,
+            description: analysis.suggested.description,
+            enabled: true,
+            type: 'file',
+            tags: analysis.suggested.tags,
+            section: analysis.suggested.section || 'general',
+            company_id: currentCompany?.id,
+            created_at: new Date().toISOString()
+          };
+          const { error } = await supabase.from('knowledge_base').insert([newItem]);
+          if (!error) {
+            localKnowledge = [newItem, ...localKnowledge];
+            newCount++;
+          } else {
+            errorCount++;
+          }
+        } else if (analysis.action === 'merge' && analysis.existingId) {
+          const item = localKnowledge.find(it => it.id === analysis.existingId);
+          if (item) {
+            const payload = {
+              description: `${item.description}\n\n[Bulk Update]: ${analysis.suggested.description}`,
+              tags: [...new Set([...item.tags, ...analysis.suggested.tags])]
+            };
+            const { error } = await supabase.from('knowledge_base').update(payload).eq('id', analysis.existingId);
+            if (!error) {
+              localKnowledge = localKnowledge.map(it => it.id === analysis.existingId ? { ...it, ...payload } : it);
+              mergeCount++;
+            } else {
+              errorCount++;
+            }
+          } else {
+            errorCount++;
+          }
+        }
+      } catch (err) {
+        console.error("Background Import Error:", err);
+        errorCount++;
+      }
+    }
+
+    setBulkImportStatus(prev => ({ 
+      ...prev, 
+      isActive: false, 
+      results: { total: rows.length, newCount, mergeCount, errorCount } 
+    }));
+    
+    logEvent(currentCompany.id, currentUser, 'BULK_UPLOAD_KB', `Background import: ${newCount} created, ${mergeCount} merged, ${errorCount} errors.`);
   };
 
   const handleRemoveProject = async (projectIdToRemove) => {
@@ -520,7 +598,12 @@ function App() {
                   />
                 </>
               ) : currentView === 'knowledge' ? (
-                <KnowledgeBase currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+                <KnowledgeBase 
+                  currentUser={currentUser} 
+                  currentCompany={currentCompany} 
+                  userRole={userRole} 
+                  onRunBulkImport={runBackgroundImport}
+                />
               ) : currentView === 'activities' ? (
                 <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'calendar' ? (
@@ -552,6 +635,35 @@ function App() {
             </div>
           </div>
           <AIChatFab currentCompany={currentCompany} />
+
+          {/* Global Background Import Progress */}
+          {(bulkImportStatus.isActive || bulkImportStatus.results) && (
+            <div className={`global-bg-import ${bulkImportStatus.results ? 'completed' : 'active'}`}>
+              <div className="bg-import-icon">
+                <Sparkles size={16} className={bulkImportStatus.isActive ? 'animate-pulse' : ''} />
+              </div>
+              <div className="bg-import-content">
+                {bulkImportStatus.isActive ? (
+                  <>
+                    <div className="bg-import-text">Importando Dados ({bulkImportStatus.current}/{bulkImportStatus.total})</div>
+                    <div className="bg-import-bar-shell">
+                      <div className="bg-import-bar" style={{ width: `${(bulkImportStatus.current / bulkImportStatus.total) * 100}%` }} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-import-text">Importação Concluída!</div>
+                    <div className="bg-import-summary">
+                      {bulkImportStatus.results.newCount} novos, {bulkImportStatus.results.mergeCount} mesclados
+                    </div>
+                    <button className="bg-import-close" onClick={() => setBulkImportStatus({ ...bulkImportStatus, results: null })}>
+                      <X size={14} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

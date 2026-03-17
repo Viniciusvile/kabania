@@ -13,7 +13,7 @@ const KB_SECTIONS = [
   { id: 'general', label: 'Geral / Outros', icon: '📚' }
 ];
 
-export default function KnowledgeBase({ currentUser, currentCompany, userRole }) {
+export default function KnowledgeBase({ currentUser, currentCompany, userRole, onRunBulkImport }) {
   const isAdmin = userRole === 'admin';
 
   const [knowledgeItems, setKnowledgeItems] = useState([]);
@@ -28,7 +28,6 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
   const [isUploading, setIsUploading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null); // { action, suggested, explanation }
-  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, isActive: false });
   const fileInputRef = React.useRef(null);
 
   const showFeedback = (title, message, type = 'info', onConfirm = null) => {
@@ -290,8 +289,9 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       const result = await fileProcessingService.extractText(file);
       
       if (result.type === 'structured') {
-        // Handle CSV Bulk
-        await handleBulkUpload(result.content);
+        // Handle CSV Bulk via App (Background)
+        onRunBulkImport(result.content, knowledgeItems);
+        showFeedback('Importação Iniciada', 'Sua planilha está sendo processada em segundo plano. Você pode continuar usando o sistema normalmente.', 'info');
       } else {
         // 2. Process single file with AI
         const suggestion = await processKnowledgeFile(result.content, knowledgeItems);
@@ -306,95 +306,6 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     }
   };
 
-  const handleBulkUpload = async (rows) => {
-    setBulkProgress({ current: 0, total: rows.length, isActive: true });
-    let newCount = 0;
-    let mergeCount = 0;
-    let errorCount = 0;
-    const addedItems = [];
-    
-    console.log(`Iniciando importação de ${rows.length} linhas...`);
-
-    // Re-check current state to avoid duplicates during loop
-    let currentKnowledge = [...knowledgeItems];
-
-    for (let i = 0; i < rows.length; i++) {
-      setBulkProgress(prev => ({ ...prev, current: i + 1 }));
-      const row = rows[i];
-      
-      try {
-        // Process each row with IA
-        const analysis = await processKnowledgeRow(row, currentKnowledge);
-        
-        if (!analysis) {
-          console.warn(`Linha ${i + 1} ignorada (IA retornou vazio ou dados inválidos)`);
-          errorCount++;
-          continue;
-        }
-
-        if (analysis.action === 'create') {
-          const newItem = {
-            id: `kb-bulk-${Date.now()}-${i}`,
-            title: analysis.suggested.title,
-            description: analysis.suggested.description,
-            enabled: true,
-            type: 'file',
-            tags: analysis.suggested.tags,
-            section: analysis.suggested.section || 'general',
-            company_id: currentCompany?.id,
-            created_at: new Date().toISOString()
-          };
-          const { error } = await supabase.from('knowledge_base').insert([newItem]);
-          if (!error) {
-            addedItems.push(newItem);
-            currentKnowledge = [newItem, ...currentKnowledge];
-            newCount++;
-            console.log(`Linha ${i + 1}: Novo tema criado -> ${newItem.title}`);
-          } else {
-            console.error(`Linha ${i + 1}: Erro no banco ao criar ->`, error);
-            errorCount++;
-          }
-        } else if (analysis.action === 'merge' && analysis.existingId) {
-          const item = currentKnowledge.find(it => it.id === analysis.existingId);
-          if (item) {
-            const payload = {
-              description: `${item.description}\n\n[Bulk Update]: ${analysis.suggested.description}`,
-              tags: [...new Set([...item.tags, ...analysis.suggested.tags])]
-            };
-            const { error } = await supabase.from('knowledge_base').update(payload).eq('id', analysis.existingId);
-            if (!error) {
-              currentKnowledge = currentKnowledge.map(it => it.id === analysis.existingId ? { ...it, ...payload } : it);
-              mergeCount++;
-              console.log(`Linha ${i + 1}: Informação mesclada em ${item.title}`);
-            } else {
-              console.error(`Linha ${i + 1}: Erro no banco ao mesclar ->`, error);
-              errorCount++;
-            }
-          } else {
-            console.warn(`Linha ${i + 1}: ID de mesclagem ${analysis.existingId} não encontrado localmente.`);
-            errorCount++;
-          }
-        } else {
-          console.warn(`Linha ${i + 1}: Ação desconhecida ou incompleta:`, analysis.action);
-          errorCount++;
-        }
-      } catch (loopErr) {
-        console.error(`Erro fatal na linha ${i + 1}:`, loopErr);
-        errorCount++;
-      }
-    }
-
-    setKnowledgeItems(currentKnowledge);
-    localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify(currentKnowledge));
-    logEvent(currentCompany.id, currentUser, 'BULK_UPLOAD_KB', `Importação em lote concluída: ${newCount} criados, ${mergeCount} mesclados, ${errorCount} erros.`);
-    
-    setBulkProgress(prev => ({ ...prev, isActive: false }));
-    
-    const summaryMsg = `Processamos ${rows.length} linhas:\n- ${newCount} novos temas criados.\n- ${mergeCount} informações mescladas.` + 
-      (errorCount > 0 ? `\n- ${errorCount} linhas falharam (verifique o console).` : '');
-      
-    showFeedback('Importação Concluída', summaryMsg, 'info');
-  };
 
   const confirmAiSuggestion = async () => {
     if (!aiSuggestion) return;
@@ -762,28 +673,6 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
               <button className="kb-btn-submit" onClick={confirmAiSuggestion}>
                 {aiSuggestion.action === 'merge' ? 'Mesclar Informações' : 'Confirmar e Criar TAG'}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Bulk Import Progress Overlay */}
-      {bulkProgress.isActive && (
-        <div className="kb-modal-overlay">
-          <div className="kb-modal bulk-progress-modal animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
-            <Sparkles size={40} color="var(--accent-cyan)" className="mx-auto mb-4 animate-pulse" />
-            <h2 className="text-xl font-bold mb-2">Processando Lote...</h2>
-            <p className="text-muted mb-6">Estamos analisando cada linha com IA para evitar duplicidades.</p>
-            
-            <div className="bulk-progress-bar-container">
-              <div 
-                className="bulk-progress-bar" 
-                style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
-              />
-            </div>
-            
-            <div className="flex justify-between mt-2 text-xs text-muted">
-              <span>Item {bulkProgress.current} de {bulkProgress.total}</span>
-              <span>{Math.round((bulkProgress.current / bulkProgress.total) * 100)}%</span>
             </div>
           </div>
         </div>
