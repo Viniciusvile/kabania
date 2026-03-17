@@ -465,109 +465,95 @@ function App() {
     localStorage.setItem('synapseUserRole', role);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
-        <Login onLogin={handleLogin} />
-      </GoogleOAuthProvider>
-    );
-  }
-
-  // Changed: Don't show CompanySetup if we're still loading the session background info, 
-  // unless we're sure they don't have one after loading.
-  if (!currentCompany && !isSessionLoading) {
-    return <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} onLogout={handleLogout} />;
-  }
-
-  // If we're authenticated but still loading and have no company info yet, 
-  // show a minimal loading state instead of flickering the setup screen.
-  if (!currentCompany && isSessionLoading) {
-    return (
-      <div className="restoring-session-backdrop">
-        <div className="restoring-session-content">
-          <div className="loading-spinner" />
-          <p>Carregando informações da empresa...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
-      <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-        <Sidebar
-          isCollapsed={isSidebarCollapsed}
-          onLogout={handleLogout}
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          userRole={userRole}
-        />
-        <div className="main-content">
-          <TopBar
-            onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            onViewChange={setCurrentView}
-            searchQuery={searchQuery}
-            onSearchChange={(e) => setSearchQuery(e.target.value)}
-            currentUser={currentUser}
-            currentCompany={currentCompany}
-            userRole={userRole}
-            onLogout={handleLogout}
-            theme={theme}
-            onToggleTheme={toggleTheme}
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            onProjectChange={(id) => {
-              setSelectedProjectId(id);
-              setCurrentView('kanban');
-            }}
-            onAddProject={handleAddProject}
-            onRemoveProject={handleRemoveProject}
-          />
-          <div className="content-scroll">
-            {currentView === 'kanban' ? (
-              <>
-                <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />
-                <KanbanBoard
-                  searchQuery={searchQuery}
-                  currentUser={currentUser}
-                  currentCompany={currentCompany}
-                  projectId={selectedProjectId}
-                />
-              </>
-            ) : currentView === 'knowledge' ? (
-              <KnowledgeBase currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
-            ) : currentView === 'activities' ? (
-              <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
-            ) : currentView === 'calendar' ? (
-              <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
-            ) : currentView === 'company' ? (
-              <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
-            ) : currentView === 'reports' ? (
-              <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />
-            ) : currentView === 'business_history' || currentView === 'business_export' ? (
-              <BusinessManagement
-                currentUser={currentUser}
-                currentCompany={currentCompany}
-                userRole={userRole}
-                initialTab={currentView === 'business_history' ? 'history' : 'export'}
-              />
-            ) : currentView === 'ai_insights' ? (
-              <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
-            ) : currentView === 'support' ? (
-              <SupportPortal currentUser={currentUser} currentCompany={currentCompany} />
-            ) : currentView === 'profile' ? (
-              <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
-            ) : currentView === 'settings' ? (
-              <UserSettings theme={theme} onToggleTheme={toggleTheme} />
-            ) : currentView === 'billing' ? (
-              <BillingView currentCompany={currentCompany} />
-            ) : (
-              <div className="p-8 text-center text-muted">View em desenvolvimento</div>
-            )}
+      {!isAuthenticated ? (
+        <Login onLogin={handleLogin} />
+      ) : !currentCompany && !isSessionLoading ? (
+        <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} onLogout={handleLogout} />
+      ) : !currentCompany && isSessionLoading ? (
+        <div className="restoring-session-backdrop">
+          <div className="restoring-session-content">
+            <div className="loading-spinner" />
+            <p>Carregando informações da empresa...</p>
           </div>
         </div>
-        <AIChatFab currentCompany={currentCompany} />
-      </div>
+      ) : (
+        <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          <Sidebar
+            isCollapsed={isSidebarCollapsed}
+            onLogout={handleLogout}
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            userRole={userRole}
+          />
+          <div className="main-content">
+            <TopBar
+              onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              onViewChange={setCurrentView}
+              searchQuery={searchQuery}
+              onSearchChange={(e) => setSearchQuery(e.target.value)}
+              currentUser={currentUser}
+              currentCompany={currentCompany}
+              userRole={userRole}
+              onLogout={handleLogout}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onProjectChange={(id) => {
+                setSelectedProjectId(id);
+                setCurrentView('kanban');
+              }}
+              onAddProject={handleAddProject}
+              onRemoveProject={handleRemoveProject}
+            />
+            <div className="content-scroll">
+              {currentView === 'kanban' ? (
+                <>
+                  <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />
+                  <KanbanBoard
+                    searchQuery={searchQuery}
+                    currentUser={currentUser}
+                    currentCompany={currentCompany}
+                    projectId={selectedProjectId}
+                  />
+                </>
+              ) : currentView === 'knowledge' ? (
+                <KnowledgeBase currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+              ) : currentView === 'activities' ? (
+                <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'calendar' ? (
+                <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'company' ? (
+                <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+              ) : currentView === 'reports' ? (
+                <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />
+              ) : currentView === 'business_history' || currentView === 'business_export' ? (
+                <BusinessManagement
+                  currentUser={currentUser}
+                  currentCompany={currentCompany}
+                  userRole={userRole}
+                  initialTab={currentView === 'business_history' ? 'history' : 'export'}
+                />
+              ) : currentView === 'ai_insights' ? (
+                <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'support' ? (
+                <SupportPortal currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'profile' ? (
+                <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+              ) : currentView === 'settings' ? (
+                <UserSettings theme={theme} onToggleTheme={toggleTheme} />
+              ) : currentView === 'billing' ? (
+                <BillingView currentCompany={currentCompany} />
+              ) : (
+                <div className="p-8 text-center text-muted">View em desenvolvimento</div>
+              )}
+            </div>
+          </div>
+          <AIChatFab currentCompany={currentCompany} />
+        </div>
+      )}
     </GoogleOAuthProvider>
   );
 }
