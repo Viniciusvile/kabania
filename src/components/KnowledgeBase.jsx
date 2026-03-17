@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles, RotateCcw } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
