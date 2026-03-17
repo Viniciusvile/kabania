@@ -369,3 +369,50 @@ export async function processKnowledgeFile(extractedText, existingKnowledge = []
     throw error;
   }
 }
+
+export async function processKnowledgeRow(rowData, existingKnowledge = []) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    
+    // Prepare comparison context
+    const context = existingKnowledge.slice(0, 50).map(k => ({
+      id: k.id,
+      title: k.title,
+      tags: k.tags
+    }));
+
+    const prompt = `Analise este item de conhecimento para importar:
+    TEMA: "${rowData.Tema || rowData.title || ''}"
+    CONTEUDO: "${rowData.Conteudo || rowData.description || rowData.Descricao || ''}"
+    CATEGORIA SUGERIDA: "${rowData.Categoria || rowData.section || ''}"
+    TAGS SUGERIDAS: "${rowData.Tags || rowData.tags || ''}"
+    
+    BASE ATUAL: ${JSON.stringify(context)}
+    
+    REGRAS:
+    1. Se já existir algo muito similar, retorne action: "merge".
+    2. Se for novo, retorne action: "create".
+    3. Normalize a seção para: "company_data", "troubleshooting" ou "general".
+    4. Melhore as Tags se estiverem pobres.
+    
+    Retorne JSON:
+    {
+      "action": "create" | "merge",
+      "existingId": "string",
+      "suggested": {
+        "title": "string",
+        "description": "string",
+        "section": "string",
+        "tags": ["string"]
+      }
+    }`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+  } catch (error) {
+    console.error("Erro ao processar linha:", error);
+    return null;
+  }
+}

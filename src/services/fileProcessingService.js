@@ -16,19 +16,22 @@ export const fileProcessingService = {
    * Main entry point to process a file.
    */
   async extractText(file) {
-    // 1. Validate file
     this.validateFile(file);
-
     const type = file.type;
     console.log(`Processing file type: ${type}`);
 
-    // 2. route to specific extractor
     if (type === 'application/pdf') {
-      return await this.extractTextFromPDF(file);
+      const text = await this.extractTextFromPDF(file);
+      return { type: 'text', content: text };
     } else if (type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      return await this.extractTextFromDocx(file);
-    } else if (type === 'text/plain' || type === 'text/csv' || file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
-      return await this.extractTextFromPlain(file);
+      const text = await this.extractTextFromDocx(file);
+      return { type: 'text', content: text };
+    } else if (type === 'text/csv' || file.name.endsWith('.csv')) {
+      const rows = await this.extractStructuredCSV(file);
+      return { type: 'structured', content: rows };
+    } else if (type === 'text/plain' || file.name.endsWith('.txt')) {
+      const text = await this.extractTextFromPlain(file);
+      return { type: 'text', content: text };
     } else {
       throw new Error(`Formato de arquivo não suportado: ${file.name}`);
     }
@@ -46,6 +49,23 @@ export const fileProcessingService = {
       reader.onload = () => resolve(this.sanitizeText(reader.result));
       reader.onerror = () => reject(new Error('Erro ao ler arquivo de texto.'));
       reader.readAsText(file);
+    });
+  },
+
+  async extractStructuredCSV(file) {
+    return new Promise((resolve, reject) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.errors.length > 0 && results.data.length === 0) {
+            reject(new Error('Erro ao processar CSV: ' + results.errors[0].message));
+          } else {
+            resolve(results.data);
+          }
+        },
+        error: (err) => reject(err)
+      });
     });
   },
 

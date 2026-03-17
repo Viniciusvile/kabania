@@ -3,7 +3,7 @@ import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleL
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { fileProcessingService } from '../services/fileProcessingService';
-import { processKnowledgeFile } from '../services/geminiService';
+import { processKnowledgeFile, processKnowledgeRow } from '../services/geminiService';
 import { logEvent } from '../services/historyService';
 import './KnowledgeBase.css';
 
@@ -28,6 +28,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
   const [isUploading, setIsUploading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null); // { action, suggested, explanation }
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0, isActive: false });
   const fileInputRef = React.useRef(null);
 
   const showFeedback = (title, message, type = 'info', onConfirm = null) => {
@@ -286,12 +287,16 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setIsUploading(true);
     try {
       // 1. Extract Text
-      const text = await fileProcessingService.extractText(file);
+      const result = await fileProcessingService.extractText(file);
       
-      // 2. Process with AI
-      const suggestion = await processKnowledgeFile(text, knowledgeItems);
-      
-      setAiSuggestion(suggestion);
+      if (result.type === 'structured') {
+        // Handle CSV Bulk
+        await handleBulkUpload(result.content);
+      } else {
+        // 2. Process single file with AI
+        const suggestion = await processKnowledgeFile(result.content, knowledgeItems);
+        setAiSuggestion(suggestion);
+      }
     } catch (err) {
       console.error('Upload error:', err);
       showFeedback('Erro no Upload', err.message || 'Não foi possível processar o arquivo.', 'info');
@@ -299,6 +304,66 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleBulkUpload = async (rows) => {
+    setBulkProgress({ current: 0, total: rows.length, isActive: true });
+    let newCount = 0;
+    let mergeCount = 0;
+    const addedItems = [];
+
+    // Re-check current state to avoid duplicates during loop
+    let currentKnowledge = [...knowledgeItems];
+
+    for (let i = 0; i < rows.length; i++) {
+      setBulkProgress(prev => ({ ...prev, current: i + 1 }));
+      const row = rows[i];
+      
+      // Process each row with IA
+      const analysis = await processKnowledgeRow(row, currentKnowledge);
+      
+      if (!analysis) continue;
+
+      if (analysis.action === 'create') {
+        const newItem = {
+          id: `kb-bulk-${Date.now()}-${i}`,
+          title: analysis.suggested.title,
+          description: analysis.suggested.description,
+          enabled: true,
+          type: 'file',
+          tags: analysis.suggested.tags,
+          section: analysis.suggested.section || 'general',
+          company_id: currentCompany?.id,
+          created_at: new Date().toISOString()
+        };
+        const { error } = await supabase.from('knowledge_base').insert([newItem]);
+        if (!error) {
+          addedItems.push(newItem);
+          currentKnowledge = [newItem, ...currentKnowledge];
+          newCount++;
+        }
+      } else if (analysis.action === 'merge' && analysis.existingId) {
+        const item = currentKnowledge.find(it => it.id === analysis.existingId);
+        if (item) {
+          const payload = {
+            description: `${item.description}\n\n[Bulk Update]: ${analysis.suggested.description}`,
+            tags: [...new Set([...item.tags, ...analysis.suggested.tags])]
+          };
+          const { error } = await supabase.from('knowledge_base').update(payload).eq('id', analysis.existingId);
+          if (!error) {
+            currentKnowledge = currentKnowledge.map(it => it.id === analysis.existingId ? { ...it, ...payload } : it);
+            mergeCount++;
+          }
+        }
+      }
+    }
+
+    setKnowledgeItems(currentKnowledge);
+    localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify(currentKnowledge));
+    logEvent(currentCompany.id, currentUser, 'BULK_UPLOAD_KB', `Importação em lote concluída: ${newCount} criados, ${mergeCount} mesclados.`);
+    
+    setBulkProgress(prev => ({ ...prev, isActive: false }));
+    showFeedback('Importação Concluída', `Processamos ${rows.length} linhas:\n- ${newCount} novos temas criados.\n- ${mergeCount} informações mescladas.`, 'info');
   };
 
   const confirmAiSuggestion = async () => {
@@ -667,6 +732,28 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
               <button className="kb-btn-submit" onClick={confirmAiSuggestion}>
                 {aiSuggestion.action === 'merge' ? 'Mesclar Informações' : 'Confirmar e Criar TAG'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Bulk Import Progress Overlay */}
+      {bulkProgress.isActive && (
+        <div className="kb-modal-overlay">
+          <div className="kb-modal bulk-progress-modal animate-fade-in" style={{ padding: '2rem', textAlign: 'center' }}>
+            <Sparkles size={40} color="var(--accent-cyan)" className="mx-auto mb-4 animate-pulse" />
+            <h2 className="text-xl font-bold mb-2">Processando Lote...</h2>
+            <p className="text-muted mb-6">Estamos analisando cada linha com IA para evitar duplicidades.</p>
+            
+            <div className="bulk-progress-bar-container">
+              <div 
+                className="bulk-progress-bar" 
+                style={{ width: `${(bulkProgress.current / bulkProgress.total) * 100}%` }}
+              />
+            </div>
+            
+            <div className="flex justify-between mt-2 text-xs text-muted">
+              <span>Item {bulkProgress.current} de {bulkProgress.total}</span>
+              <span>{Math.round((bulkProgress.current / bulkProgress.total) * 100)}%</span>
             </div>
           </div>
         </div>
