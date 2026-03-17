@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { LifeBuoy, Send, Sparkles, User, Mail, MessageSquare, ChevronRight, CheckCircle, AlertCircle, ArrowRight, Loader2, Clock, FileText } from 'lucide-react';
+import { LifeBuoy, Send, Sparkles, User, Mail, MessageSquare, ChevronRight, CheckCircle, AlertCircle, ArrowRight, Loader2, Clock, FileText, ChevronLeft } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { processTaskWithAI } from '../services/geminiService';
 import { logEvent } from '../services/historyService';
-import './SupportPortal.css'; // New ultra-premium styles
+import './SupportPortal.css';
 
 export default function SupportPortal({ currentUser, currentCompany }) {
-  const [step, setStep] = useState(1); // 1: Form, 2: AI Response, 3: Success
+  const [step, setStep] = useState(1); // 1: Interactive Form, 2: AI Response, 3: Success
+  const [subStep, setSubStep] = useState(1); // 1: Identity, 2: Context, 3: Details
   const [ticketData, setTicketData] = useState({
     name: '',
     email: currentUser || '',
@@ -24,8 +25,11 @@ export default function SupportPortal({ currentUser, currentCompany }) {
     setTicketData(prev => ({ ...prev, [name]: value }));
   };
 
+  const nextSubStep = () => setSubStep(prev => prev + 1);
+  const prevSubStep = () => setSubStep(prev => prev - 1);
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!ticketData.subject || !ticketData.description) return;
 
     setIsLoading(true);
@@ -93,15 +97,6 @@ export default function SupportPortal({ currentUser, currentCompany }) {
       if (error) throw error;
 
       setStep(3);
-      setTicketData({
-        name: '',
-        email: currentUser || '',
-        client: '',
-        date: new Date().toISOString().split('T')[0],
-        subject: '',
-        description: ''
-      });
-      setAiResponse('');
       setTicketId(null);
     } catch (err) {
       console.error("Error escalating ticket:", err);
@@ -111,206 +106,188 @@ export default function SupportPortal({ currentUser, currentCompany }) {
     }
   };
 
+  const progressPercentage = step === 1 ? (subStep / 3) * 100 : step === 2 ? 100 : 100;
+
   return (
     <div className="support-portal-wrapper">
-      <header className="support-header-area">
-        <div className="support-title-row">
-          <h1 className="support-title">Central de Atendimento</h1>
-        </div>
-        <div className="support-breadcrumbs">
-          <span>Gestão de Projetos</span>
-          <ChevronRight size={14} className="text-dark" />
-          <span className="text-accent">Suporte ao Cliente</span>
-        </div>
-      </header>
+      <div className="support-progress-bar">
+        <div className="support-progress-fill" style={{ width: `${progressPercentage}%` }}></div>
+      </div>
 
-      <div className="support-panel-card support-form-animate">
-        {step === 1 ? (
-          <>
-            <div className="support-panel-header">
-              <div className="support-panel-header-title">
-                <MessageSquare size={20} className="text-accent" />
-                <span>Abrir Novo Chamado</span>
-              </div>
-              <div className="ai-badge">
-                <Sparkles size={12} /> IA Triage Ativo
-              </div>
-            </d            <form onSubmit={handleSubmit} className="support-panel-body">
-              <div className="support-form-grid">
-                <div className="support-field-group">
-                  <label className="support-field-label">Seu Nome Completo</label>
-                  <div className="support-input-container">
-                    <User className="support-input-icon" size={18} />
-                    <input 
-                      type="text" 
-                      name="name"
-                      value={ticketData.name}
-                      onChange={handleInputChange}
-                      className="support-input"
-                      placeholder="Ex: João da Silva"
-                      required
-                    />
-                  </div>
-                </div>
+      <div className="support-panel-card">
+        {isLoading && (
+            <div className="loading-overlay">
+                <Loader2 className="animate-spin text-accent" size={48} />
+                <span className="loading-text">Processando com Inteligência Artificial...</span>
+            </div>
+        )}
+
+        {step === 1 && (
+          <div className="support-panel-body conversational-step" key={subStep}>
+            {subStep === 1 && (
+              <>
+                <h2 className="step-title">Olá! Vamos começar com o básico.</h2>
+                <p className="step-subtitle">Como devemos identificar você em nosso sistema de atendimento?</p>
                 
-                <div className="support-field-group">
-                  <label className="support-field-label">E-mail Corporativo</label>
-                  <div className="support-input-container">
-                    <Mail className="support-input-icon" size={18} />
+                <div className="interactive-field-group">
+                  <label className="interactive-label">Seu Nome Completo</label>
+                  <div className="interactive-input-wrap">
+                    <User className="interactive-icon" size={20} />
                     <input 
-                      type="email" 
-                      name="email"
-                      value={ticketData.email}
-                      onChange={handleInputChange}
-                      className="support-input"
-                      placeholder="joao@empresa.com"
-                      required
+                      type="text" name="name" value={ticketData.name} onChange={handleInputChange}
+                      className="interactive-input" placeholder="Ex: João da Silva" autoFocus
                     />
                   </div>
                 </div>
 
-                <div className="support-field-group">
-                  <label className="support-field-label">Unidade / Cliente</label>
-                  <div className="support-input-container">
-                    <LifeBuoy className="support-input-icon" size={18} />
+                <div className="interactive-field-group">
+                  <label className="interactive-label">E-mail Corporativo</label>
+                  <div className="interactive-input-wrap">
+                    <Mail className="interactive-icon" size={20} />
                     <input 
-                      type="text" 
-                      name="client"
-                      value={ticketData.client}
-                      onChange={handleInputChange}
-                      className="support-input"
-                      placeholder="Identifique a unidade..."
-                      required
+                      type="email" name="email" value={ticketData.email} onChange={handleInputChange}
+                      className="interactive-input" placeholder="seuemail@empresa.com"
                     />
                   </div>
                 </div>
 
-                <div className="support-field-group">
-                  <label className="support-field-label">Data da Ocorrência</label>
-                  <div className="support-input-container">
-                    <Clock className="support-input-icon" size={18} />
+                <div className="nav-actions">
+                  <button onClick={nextSubStep} className="btn-interactive btn-next" disabled={!ticketData.name || !ticketData.email}>
+                    Continuar <ChevronRight size={18} />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {subStep === 2 && (
+              <>
+                <h2 className="step-title">Onde e quando isso aconteceu?</h2>
+                <p className="step-subtitle">Precisamos localizar a unidade afetada para agilizar o suporte.</p>
+                
+                <div className="interactive-field-group">
+                  <label className="interactive-label">Unidade / Cliente</label>
+                  <div className="interactive-input-wrap">
+                    <LifeBuoy className="interactive-icon" size={20} />
                     <input 
-                      type="date" 
-                      name="date"
-                      value={ticketData.date}
-                      onChange={handleInputChange}
-                      className="support-input"
-                      required
+                      type="text" name="client" value={ticketData.client} onChange={handleInputChange}
+                      className="interactive-input" placeholder="Identifique a unidade..." autoFocus
                     />
                   </div>
                 </div>
 
-                <div className="support-field-group support-field-full">
-                  <label className="support-field-label">Assunto Principal</label>
-                  <div className="support-input-container">
-                    <AlertCircle className="support-input-icon" size={18} />
+                <div className="interactive-field-group">
+                  <label className="interactive-label">Data da Ocorrência</label>
+                  <div className="interactive-input-wrap">
+                    <Clock className="interactive-icon" size={20} />
                     <input 
-                      type="text" 
-                      name="subject"
-                      value={ticketData.subject}
-                      onChange={handleInputChange}
-                      className="support-input"
-                      placeholder="Resuma o motivo do seu contato..."
-                      required
+                      type="date" name="date" value={ticketData.date} onChange={handleInputChange}
+                      className="interactive-input"
                     />
                   </div>
                 </div>
 
-                <div className="support-field-group support-field-full">
-                  <label className="support-field-label">Relatório de Ocorrência</label>
-                  <div className="support-input-container">
-                    <FileText className="support-input-icon" style={{ top: '1.25rem', transform: 'none' }} size={18} />
+                <div className="nav-actions">
+                  <button onClick={prevSubStep} className="btn-interactive btn-back">
+                    Voltar
+                  </button>
+                  <button onClick={nextSubStep} className="btn-interactive btn-next" disabled={!ticketData.client}>
+                    Próximo Passo <ChevronRight size={18} />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {subStep === 3 && (
+              <>
+                <h2 className="step-title">O que está acontecendo?</h2>
+                <p className="step-subtitle">Nossa IA analisará seu relato agora mesmo para sugerir uma solução imediata.</p>
+                
+                <div className="interactive-field-group">
+                  <label className="interactive-label">Assunto Principal</label>
+                  <div className="interactive-input-wrap">
+                    <AlertCircle className="interactive-icon" size={20} />
+                    <input 
+                      type="text" name="subject" value={ticketData.subject} onChange={handleInputChange}
+                      className="interactive-input" placeholder="Resuma em uma frase..." autoFocus
+                    />
+                  </div>
+                </div>
+
+                <div className="interactive-field-group">
+                  <label className="interactive-label">Relatório Detalhado</label>
+                  <div className="interactive-input-wrap">
+                    <FileText className="interactive-icon" style={{ top: '1.5rem' }} size={20} />
                     <textarea 
-                      name="description"
-                      value={ticketData.description}
-                      onChange={handleInputChange}
-                      className="support-input support-textarea"
-                      placeholder="Forneça o máximo de detalhes para uma triagem precisa..."
-                      required
+                      name="description" value={ticketData.description} onChange={handleInputChange}
+                      className="interactive-input interactive-textarea" placeholder="Descreva o que aconteceu..."
                     />
                   </div>
                 </div>
-              </div>
 
-              <div className="support-footer-actions">
-                <button 
-                  type="submit" 
-                  className="btn-premium-send"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <><Loader2 className="animate-spin" size={20} /> Processando dados...</>
-                  ) : (
-                    <><Send size={20} /> Autenticar e Enviar Chamado</>
-                  )}
-                </button>
-              </div>
-            </form>
-    </form>
-          </>
-        ) : step === 2 ? (
-          <div className="support-form-animate">
-            <div className="support-panel-header">
-              <div className="support-panel-header-title">
-                <Sparkles size={20} className="text-accent" />
-                <span>Sugestão da Inteligência Artificial</span>
-              </div>
-              <div className="text-xs text-muted">ID: {ticketId}</div>
+                <div className="nav-actions">
+                  <button onClick={prevSubStep} className="btn-interactive btn-back">
+                    Voltar
+                  </button>
+                  <button onClick={handleSubmit} className="btn-interactive btn-next" disabled={!ticketData.subject || !ticketData.description}>
+                    <Send size={18} /> Enviar Chamado
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="support-panel-body conversational-step">
+            <h2 className="step-title">IA Triage: Temos uma sugestão!</h2>
+            <p className="step-subtitle">Analisei seu relato e esta pode ser a solução rápida:</p>
+            
+            <div className="ai-suggestion-panel">
+              {aiResponse}
             </div>
 
-            <div className="support-panel-body">
-              <div className="ai-suggestion-panel">
-                {aiResponse}
-              </div>
-
-              <div className="support-actions-footer">
-                <div className="support-footer-info">
-                  <h4>A solução funcionou?</h4>
-                  <p>Caso contrário, nossa equipe técnica cuidará do seu caso.</p>
-                </div>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => {
-                        setStep(1);
-                        setTicketData({
-                          name: '', 
-                          email: currentUser || '', 
-                          client: '', 
-                          date: new Date().toISOString().split('T')[0],
-                          subject: '', 
-                          description: ''
-                        });
-                    }}
-                    className="btn-premium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 transition-all font-bold px-8"
-                  >
-                    <CheckCircle size={18} /> Resolvido
-                  </button>
-                  <button 
-                    onClick={handleEscalate}
-                    className="btn-premium btn-premium-primary px-8"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Escalar p/ Equipe</>}
-                  </button>
-                </div>
+            <div className="nav-actions" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="text-sm text-muted">Não resolveu? Nossa equipe pode ajudar.</div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setStep(3)}
+                  className="btn-interactive bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 px-8"
+                >
+                  <CheckCircle size={18} /> Funcionou
+                </button>
+                <button 
+                  onClick={handleEscalate}
+                  className="btn-interactive btn-next px-8"
+                >
+                  <ArrowRight size={18} /> Escalar p/ Humano
+                </button>
               </div>
             </div>
           </div>
-        ) : (
-          <div className="support-success-view animate-fade-in p-12 text-center">
-            <div className="success-icon-wrapper mb-6">
-              <CheckCircle size={64} className="text-emerald-500 mx-auto" strokeWidth={1.5} />
+        )}
+
+        {step === 3 && (
+          <div className="support-panel-body text-center conversational-step">
+            <div className="success-icon-wrapper mx-auto mb-8" style={{ width: '80px', height: '80px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={40} className="text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold mb-4">Chamado Enviado com Sucesso!</h2>
-            <p className="text-muted mb-8 max-w-md mx-auto">
-              Nossa equipe técnica já recebeu sua solicitação e analisará os detalhes em breve. 
-              Fique atento ao seu e-mail para atualizações.
+            <h2 className="step-title">Tudo certo! Chamado Registrado.</h2>
+            <p className="step-subtitle mx-auto max-w-md">
+              Sua solicitação foi encaminhada. Você receberá atualizações no seu e-mail corporativo em breve.
             </p>
             <button 
-              className="btn-premium btn-premium-primary px-12 py-3"
-              onClick={() => setStep(1)}
+              className="btn-interactive btn-next mx-auto mt-8"
+              onClick={() => {
+                setStep(1);
+                setSubStep(1);
+                setTicketData({
+                  name: '', email: currentUser || '', client: '', date: new Date().toISOString().split('T')[0],
+                  subject: '', description: ''
+                });
+                setAiResponse('');
+              }}
             >
-              Voltar ao Início
+              Abrir Novo Chamado
             </button>
           </div>
         )}
