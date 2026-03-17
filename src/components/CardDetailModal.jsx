@@ -165,7 +165,7 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
                   <div className="cdm-comment-content">
                     <div className="cdm-comment-header">
                       <span className="cdm-comment-author">
-                        {comment.author === currentUser ? 'Você' : comment.author.split('@')[0]}
+                        {comment.author === currentUser ? 'Você' : (typeof comment.author === 'string' ? comment.author.split('@')[0] : 'Usuário')}
                       </span>
                       <span className="cdm-comment-time">{formatCommentTime(comment.createdAt)}</span>
                     </div>

@@ -101,19 +101,26 @@ export function getDeadlineStatus(deadline) {
   return { color: 'green', icon: '📅', label: 'No Prazo' };
 }
 
+// Safe email split helper
+function safeSplitEmail(email) {
+  if (typeof email !== 'string') return 'Usuário';
+  return email.split('@')[0];
+}
+
 export async function notifyComment(task, authorEmail) {
-  const authorName = authorEmail.split('@')[0];
+  const authorName = safeSplitEmail(authorEmail);
   const content = `💬 ${authorName} comentou em "${task.title}"`;
   return createNotification(task.company_id, null, 'comment', content);
 }
 
-export async function notifyTaskMoved(task, oldCol, newCol) {
-  const content = `🚚 Tarefa "${task.title}" movida de ${oldCol} para ${newCol}`;
+export async function notifyTaskMoved(task, newColLabel, userEmail) {
+  const userName = safeSplitEmail(userEmail);
+  const content = `🚚 Tarefa "${task.title}" movida para ${newColLabel} por ${userName}`;
   return createNotification(task.company_id, null, 'kanban_move', content);
 }
 
 export async function notifyAssignment(task, assigneeEmail) {
-  const name = assigneeEmail.split('@')[0];
+  const name = safeSplitEmail(assigneeEmail);
   const content = `👤 ${name} foi designado para "${task.title}"`;
   return createNotification(task.company_id, null, 'assignment', content);
 }

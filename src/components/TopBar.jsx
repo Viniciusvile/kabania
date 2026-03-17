@@ -56,7 +56,7 @@ export default function TopBar({
         filter: `email=eq.${currentUser}`
       }, (payload) => {
         setProfileData({
-          name: payload.new.name || currentUser.split('@')[0],
+          name: payload.new.name || (typeof currentUser === 'string' ? currentUser.split('@')[0] : 'Usuário'),
           avatar_url: payload.new.avatar_url
         });
       })
@@ -365,7 +365,7 @@ export default function TopBar({
           {activeDropdown === 'profile' && (
             <div className="dropdown-menu profile-menu">
               <div className="dropdown-header">
-                <strong>{currentUser || 'user@synapse.ai'}</strong>
+                <strong>{typeof currentUser === 'string' ? currentUser : 'user@synapse.ai'}</strong>
                 {currentCompany && <span className="text-xs text-muted">{currentCompany.name}</span>}
                 <span className={`topbar-role-pill ${userRole}`}>
                   {userRole === 'admin' ? <><Crown size={11} /> Admin</> : <><Shield size={11} /> Membro</>}

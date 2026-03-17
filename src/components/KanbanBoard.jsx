@@ -202,7 +202,7 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
             <div className="km-mp-avatar" style={{ background: getAvatarColor(email) }}>
               {getInitials(email)}
             </div>
-            <span>{email.split('@')[0]}</span>
+            <span>{typeof email === 'string' ? email.split('@')[0] : 'Usuário'}</span>
             {isSelected && <Check size={12} className="km-mp-check" />}
           </button>
         );
@@ -395,8 +395,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   // Deadline notifications on load
   useEffect(() => {
-    if (tasks.length > 0 && currentUser) {
-      checkDeadlineNotifications(tasks, currentUser);
+    if (tasks.length > 0 && currentCompany?.id) {
+      checkDeadlineNotifications(tasks, currentCompany.id);
     }
   }, []);
 
@@ -669,7 +669,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
               currentCompany?.id, 
               null, // null = broadcast to whole company
               'kanban_done',
-              `🎉 A tarefa "${currentTask.title}" foi movida para Concluído por ${currentUser.split('@')[0]}!`
+              `🎉 A tarefa "${currentTask.title}" foi movida para Concluído por ${typeof currentUser === 'string' ? currentUser.split('@')[0] : 'Usuário'}!`
             );
           }
         } else {
