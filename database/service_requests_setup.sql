@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS service_requests (
     service_type TEXT NOT NULL,
     description TEXT,
     contact_info TEXT,
+    client_unit TEXT,
+    incident_date DATE DEFAULT CURRENT_DATE,
     origin TEXT DEFAULT 'portal', -- 'portal', 'manual'
     ai_summary TEXT,
     status TEXT DEFAULT 'pending', -- 'pending', 'accepted', 'rejected'
