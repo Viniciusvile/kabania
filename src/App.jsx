@@ -21,7 +21,6 @@ import BillingView from './components/BillingView';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { processKnowledgeRow } from './services/geminiService';
-import { processKnowledgeRow } from './services/geminiService';
 import './App.css';
 import './components/AIChatFab.css';
 
