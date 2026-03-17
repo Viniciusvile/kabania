@@ -75,19 +75,13 @@ export default function SupportPortal({ currentUser, currentCompany }) {
         status: 'escalated'
       }).eq('id', ticketId);
 
-      const actId = String(Math.floor(Math.random() * 90000) + 10000);
-      const nowIso = new Date().toISOString();
-      
-      const { error } = await supabase.from('activities').insert([{
-        id: actId,
-        location: `Suporte: ${ticketData.name || ticketData.email}`,
-        type: 'Suporte Técnico',
-        status: 'Pendente',
-        description: `CHAMADO: ${ticketData.subject}\n\nCLIENTE: ${ticketData.name} (${ticketData.email})\n\nDESCRIÇÃO: ${ticketData.description}\n\nRESPOSTA DA IA: ${aiResponse}`,
+      const { error } = await supabase.from('service_requests').insert([{
         company_id: currentCompany?.id,
-        created_by: 'IA_PORTAL',
-        created: nowIso,
-        updated: nowIso
+        customer_name: ticketData.name || 'Cliente Anônimo',
+        service_type: ticketData.subject,
+        description: ticketData.description,
+        contact_info: ticketData.email,
+        status: 'pending'
       }]);
 
       if (error) throw error;
