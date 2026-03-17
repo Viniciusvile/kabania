@@ -61,7 +61,7 @@ async function getAuthorizedTags(companyId) {
 
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const authorizedTags = await getAuthorizedTags(companyId);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
@@ -106,7 +106,7 @@ Resposta curta:`;
 
 export async function analyzeProductivity(data, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Você é um consultor executivo de performance para a empresa ${companyName}.
     Analise estes dados de produtividade (Kanban e Atividades):
     ${JSON.stringify(data)}
@@ -128,7 +128,7 @@ export async function analyzeProductivity(data, companyName = "Empresa") {
 
 export async function generateWeeklySummary(data, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Gere um Resumo Executivo Semanal personalizado para ${companyName} baseado nestas atividades:
     ${JSON.stringify(data)}
     
@@ -146,7 +146,7 @@ export async function generateWeeklySummary(data, companyName = "Empresa") {
 
 export async function generateOperationFeedSummary(notifications, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Você é a IA assistente do Centro de Comando da operação da empresa ${companyName}.
     Aqui estão os eventos recentes:
     ${JSON.stringify(notifications)}
@@ -164,7 +164,7 @@ export async function generateOperationFeedSummary(notifications, companyName = 
 
 export async function suggestPrioritization(tasks, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Como consultor da ${companyName}, qual deve ser a prioridade #1 deste usuário hoje?
     Dados: ${JSON.stringify(tasks)}
     
@@ -179,7 +179,7 @@ export async function suggestPrioritization(tasks, companyName = "Empresa") {
 
 export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const prompt = `Identifique 2 gargalos críticos no Kanban da ${companyName} e sugira a solução imediata:
     ${JSON.stringify(kanbanData)}
     
@@ -198,7 +198,7 @@ export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
 
 export async function predictDemand(activities, companyName = "Empresa") {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     // Simplificar os dados contextuais para os últimos 30 dias se possível
     const recentActivities = activities.slice(0, 50).map(a => ({
@@ -228,7 +228,7 @@ export async function predictDemand(activities, companyName = "Empresa") {
 
 export async function analyzeServiceRequest(description, companyId) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const authorizedTags = await getAuthorizedTags(companyId);
 
     const prompt = `Você é um assistente de triagem inteligente para uma plataforma de gestão de serviços.
@@ -281,7 +281,7 @@ export async function analyzeServiceRequest(description, companyId) {
 
 export async function checkActivityDuplicates(description, existingActivities) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     // Send only relevant data to minimize tokens
     const context = existingActivities.slice(0, 10).map(a => ({
@@ -320,7 +320,7 @@ export async function checkActivityDuplicates(description, existingActivities) {
 
 export async function processKnowledgeFile(extractedText, existingKnowledge = []) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     
     // Prepare comparison context (titles and tags only)
     const context = existingKnowledge.map(k => ({
@@ -372,7 +372,20 @@ export async function processKnowledgeFile(extractedText, existingKnowledge = []
 
 export async function processKnowledgeRow(rowData, existingKnowledge = []) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    
+    // Normalize row data for better AI interpretation
+    const normalizedData = {
+      title: rowData.Tema || rowData.title || rowData.Assunto || rowData.Titulo || rowData.Subject || '',
+      content: rowData.Conteudo || rowData.description || rowData.Descricao || rowData.Text || rowData.Conteúdo || '',
+      section: rowData.Categoria || rowData.section || rowData.Seção || rowData.Category || '',
+      tags: rowData.Tags || rowData.tags || rowData.Etiquetas || ''
+    };
+
+    if (!normalizedData.title && !normalizedData.content) {
+      console.warn("Linha do CSV ignorada: Título e Conteúdo vazios.");
+      return null;
+    }
     
     // Prepare comparison context
     const context = existingKnowledge.slice(0, 50).map(k => ({
@@ -382,35 +395,51 @@ export async function processKnowledgeRow(rowData, existingKnowledge = []) {
     }));
 
     const prompt = `Analise este item de conhecimento para importar:
-    TEMA: "${rowData.Tema || rowData.title || ''}"
-    CONTEUDO: "${rowData.Conteudo || rowData.description || rowData.Descricao || ''}"
-    CATEGORIA SUGERIDA: "${rowData.Categoria || rowData.section || ''}"
-    TAGS SUGERIDAS: "${rowData.Tags || rowData.tags || ''}"
+    TEMA/TITULO: "${normalizedData.title}"
+    CONTEUDO: "${normalizedData.content}"
+    CATEGORIA SUGERIDA: "${normalizedData.section}"
+    TAGS SUGERIDAS: "${normalizedData.tags}"
     
-    BASE ATUAL: ${JSON.stringify(context)}
+    BASE ATUAL: ${JSON.stringify(context.map(c => c.title))}
     
     REGRAS:
-    1. Se já existir algo muito similar, retorne action: "merge".
-    2. Se for novo, retorne action: "create".
-    3. Normalize a seção para: "company_data", "troubleshooting" ou "general".
-    4. Melhore as Tags se estiverem pobres.
+    1. Se o TEMA/TITULO ou CONTEUDO já existir na BASE ATUAL de forma idêntica ou muito similar, retorne action: "merge".
+    2. Se for uma informação nova para a base, retorne action: "create".
+    3. Normalize a seção sugerida para um destes: "company_data", "troubleshooting" ou "general".
+    4. Gere pelo menos 3 tags relevantes se o campo tags estiver vazio.
     
-    Retorne JSON:
+    IMPORTANTE: Retorne APENAS o JSON no formato abaixo, sem explicações:
     {
       "action": "create" | "merge",
-      "existingId": "string",
+      "existingId": "id_do_item_similar_se_houver",
       "suggested": {
-        "title": "string",
-        "description": "string",
-        "section": "string",
-        "tags": ["string"]
+        "title": "Título Normalizado",
+        "description": "Conteúdo ou resumo",
+        "section": "company_data | troubleshooting | general",
+        "tags": ["tag1", "tag2", "tag3"]
       }
     }`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+    
+    if (!jsonMatch) {
+      console.error("IA não retornou JSON para a linha:", text);
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Final safety check: if it's merge, we need the ID. 
+    // If ID is missing, try to find by title match in local context
+    if (parsed.action === 'merge' && !parsed.existingId) {
+      const match = context.find(k => k.title.toLowerCase() === normalizedData.title.toLowerCase());
+      if (match) parsed.existingId = match.id;
+      else parsed.action = 'create';
+    }
+
+    return parsed;
   } catch (error) {
     console.error("Erro ao processar linha:", error);
     return null;

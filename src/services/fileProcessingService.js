@@ -56,11 +56,13 @@ export const fileProcessingService = {
     return new Promise((resolve, reject) => {
       Papa.parse(file, {
         header: true,
-        skipEmptyLines: true,
+        skipEmptyLines: 'greedy',
+        delimitersToGuess: [',', ';', '\t', '|', Papa.RECORD_SEP, Papa.UNIT_SEP],
         complete: (results) => {
           if (results.errors.length > 0 && results.data.length === 0) {
             reject(new Error('Erro ao processar CSV: ' + results.errors[0].message));
           } else {
+            console.log(`CSV processado: ${results.data.length} linhas encontradas.`);
             resolve(results.data);
           }
         },
