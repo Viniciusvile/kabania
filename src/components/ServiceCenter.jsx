@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   CheckCircle, 
-  XCircles, 
+  XCircle, 
   Clock, 
   User, 
   FileText, 
@@ -141,12 +141,12 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
                 <span className="service-status-pill">Aguardando</span>
               </div>
               
-              <div className="service-card-main">
-                <h3 className="service-card-title">
-                  <User size={18} className="text-accent" /> {request.customer_name}
-                </h3>
-                <p className="service-card-subtitle">{request.service_type}</p>
-              </div>
+                <div className="service-card-main">
+                  <h3 className="service-card-title">
+                    <User size={18} className="text-accent" /> {request.customer_name}
+                  </h3>
+                  <p className="service-card-subtitle">{request.service_type}</p>
+                </div>
 
               <div className="service-description-box">
                 <p>{request.description || 'Sem descrição detalhada.'}</p>
