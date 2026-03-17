@@ -47,18 +47,38 @@ function getDeadlineStatus(deadline) {
 }
 
 export default function ReportsDashboard({ currentUser, currentCompany }) {
-  const [tasks, setTasks] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [chartData, setChartData] = useState({
-    productivity: [],
-    sectors: []
+  // SWR Caching pattern: Load from cache instantly if available
+  const [tasks, setTasks] = useState(() => {
+    if (!currentCompany?.id) return [];
+    const cached = localStorage.getItem(`reports_tasks_${currentCompany.id}`);
+    return cached ? JSON.parse(cached) : [];
+  });
+  
+  const [activities, setActivities] = useState(() => {
+    if (!currentCompany?.id) return [];
+    const cached = localStorage.getItem(`reports_activities_${currentCompany.id}`);
+    return cached ? JSON.parse(cached) : [];
+  });
+  
+  const [loading, setLoading] = useState(!tasks.length || !activities.length);
+  const [syncing, setSyncing] = useState(false); // Background sync state
+
+  const [chartData, setChartData] = useState(() => {
+    if (!currentCompany?.id) return { productivity: [], sectors: [] };
+    const cached = localStorage.getItem(`reports_charts_${currentCompany.id}`);
+    return cached ? JSON.parse(cached) : { productivity: [], sectors: [] };
   });
 
   useEffect(() => {
     const fetchData = async () => {
       if (!currentCompany?.id) return;
-      setLoading(true);
+      
+      // If we don't have cached data, show hard loading
+      if (tasks.length === 0 && activities.length === 0) {
+        setLoading(true);
+      } else {
+        setSyncing(true); // Silent background sync
+      }
       
       try {
         // Fetch Only Necessary Columns for Tasks
@@ -79,14 +99,21 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
             columnId: t.column_id,
             tagColor: t.tag_color
           }));
+          
           setTasks(mappedTasks);
           setActivities(aData || []);
+          
+          // Persist to Cache
+          localStorage.setItem(`reports_tasks_${currentCompany.id}`, JSON.stringify(mappedTasks));
+          localStorage.setItem(`reports_activities_${currentCompany.id}`, JSON.stringify(aData || []));
+          
           processChartConfigs(mappedTasks, aData || []);
         }
       } catch (err) {
         console.error("Erro no dashboard:", err);
       } finally {
         setLoading(false);
+        setSyncing(false);
       }
     };
 
@@ -124,7 +151,12 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
     }, {});
 
     const sectorData = Object.entries(sectorMap).map(([name, value]) => ({ name, value }));
-    setChartData({ productivity: productivityData, sectors: sectorData });
+    const newChartData = { productivity: productivityData, sectors: sectorData };
+    
+    setChartData(newChartData);
+    if (currentCompany?.id) {
+       localStorage.setItem(`reports_charts_${currentCompany.id}`, JSON.stringify(newChartData));
+    }
   };
 
   const tasksByColumn = useMemo(() => {
@@ -174,6 +206,11 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
 
   return (
     <div className="rd-container animate-fade-in">
+      {syncing && (
+         <div className="fixed top-4 right-4 flex items-center gap-2 text-xs text-blue-400 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20 backdrop-blur-sm z-50">
+           <Zap size={12} className="animate-pulse" /> Sincronizando dados...
+         </div>
+      )}
       <header className="rd-header">
         <h1><BarChart2 size={24} /> Relatórios e Dashboard</h1>
         <p>Visão geral de produtividade e acompanhamento de tarefas para {currentCompany?.name}</p>
@@ -206,31 +243,41 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
             <span>Últimos 7 dias</span>
           </div>
           <div className="rd-chart-body">
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={chartData.productivity}>
-                <defs>
-                  <linearGradient id="rdColorProd" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                />
-                <Area 
-                  key={`area-${chartData.productivity.length}`}
-                  type="monotone" 
-                  dataKey="entregas" 
-                  stroke="#00e5ff" 
-                  fillOpacity={1} 
-                  fill="url(#rdColorProd)" 
-                  strokeWidth={2} 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {tasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full opacity-50 text-sm">
+                <TrendingUp size={32} className="mb-2 opacity-50" />
+                <p>Nenhuma tarefa registrada.</p>
+                <span className="text-xs">Crie tarefas no Kanban para ver o fluxo.</span>
+              </div>
+            ) : chartData.productivity.length === 0 ? (
+               <div className="flex flex-col items-center justify-center h-full opacity-50">Carregando...</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={chartData.productivity}>
+                  <defs>
+                    <linearGradient id="rdColorProd" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+                  />
+                  <Area 
+                    key={`area-${chartData.productivity.length}`}
+                    type="monotone" 
+                    dataKey="entregas" 
+                    stroke="#00e5ff" 
+                    fillOpacity={1} 
+                    fill="url(#rdColorProd)" 
+                    strokeWidth={2} 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -240,26 +287,34 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
             <span>Mix de serviços</span>
           </div>
           <div className="rd-chart-body">
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  key={`pie-${chartData.sectors.length}`}
-                  data={chartData.sectors}
-                  innerRadius={65}
-                  outerRadius={85}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {chartData.sectors.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
-                />
-                <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {chartData.sectors.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full opacity-50 text-sm">
+                <Zap size={32} className="mb-2 opacity-50" />
+                <p>Nenhuma atividade registrada.</p>
+                <span className="text-xs">Registre horas/serviços para ver a distribuição.</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    key={`pie-${chartData.sectors.length}`}
+                    data={chartData.sectors}
+                    innerRadius={65}
+                    outerRadius={85}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {chartData.sectors.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                  />
+                  <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
