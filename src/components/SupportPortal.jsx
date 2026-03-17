@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LifeBuoy, Send, Sparkles, User, Mail, MessageSquare, ChevronRight, CheckCircle, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { LifeBuoy, Send, Sparkles, User, Mail, MessageSquare, ChevronRight, CheckCircle, AlertCircle, ArrowRight, Loader2, Clock, FileText } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { processTaskWithAI } from '../services/geminiService';
 import { logEvent } from '../services/historyService';
@@ -10,6 +10,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
   const [ticketData, setTicketData] = useState({
     name: '',
     email: currentUser || '',
+    client: '',
+    date: new Date().toISOString().split('T')[0],
     subject: '',
     description: ''
   });
@@ -35,6 +37,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
         company_id: currentCompany?.id,
         client_name: ticketData.name || 'Cliente Anônimo',
         client_email: ticketData.email,
+        client_unit: ticketData.client,
+        incident_date: ticketData.date,
         subject: ticketData.subject,
         description: ticketData.description,
         status: 'pending_ai'
@@ -44,7 +48,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
       setTicketId(newId);
 
       const aiSugestion = await processTaskWithAI(
-        `ASSUNTO: ${ticketData.subject}\nDESCRIÇÃO: ${ticketData.description}`,
+        `CLIENTE/UNIDADE: ${ticketData.client}\nDATA: ${ticketData.date}\nASSUNTO: ${ticketData.subject}\nDESCRIÇÃO: ${ticketData.description}`,
         currentCompany?.id
       );
 
@@ -81,6 +85,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
         service_type: ticketData.subject,
         description: ticketData.description,
         contact_info: ticketData.email,
+        client_unit: ticketData.client,
+        incident_date: ticketData.date,
         status: 'pending'
       }]);
 
@@ -90,6 +96,8 @@ export default function SupportPortal({ currentUser, currentCompany }) {
       setTicketData({
         name: '',
         email: currentUser || '',
+        client: '',
+        date: new Date().toISOString().split('T')[0],
         subject: '',
         description: ''
       });
@@ -132,31 +140,60 @@ export default function SupportPortal({ currentUser, currentCompany }) {
             <form onSubmit={handleSubmit} className="support-panel-body">
               <div className="support-form-grid">
                 <div className="support-field-group">
-                  <label className="support-field-label">Seu Nome</label>
+                  <label className="support-field-label">Seu Nome Completo</label>
                   <div className="support-input-container">
-                    <User className="support-input-icon" size={16} />
+                    <User className="support-input-icon" size={18} />
                     <input 
                       type="text" 
                       name="name"
                       value={ticketData.name}
                       onChange={handleInputChange}
                       className="support-input"
-                      placeholder="Como devemos te chamar?"
+                      placeholder="Ex: João da Silva"
                       required
                     />
                   </div>
                 </div>
                 <div className="support-field-group">
-                  <label className="support-field-label">E-mail de Contato</label>
+                  <label className="support-field-label">E-mail Corporativo</label>
                   <div className="support-input-container">
-                    <Mail className="support-input-icon" size={16} />
+                    <Mail className="support-input-icon" size={18} />
                     <input 
                       type="email" 
                       name="email"
                       value={ticketData.email}
                       onChange={handleInputChange}
                       className="support-input"
-                      placeholder="seu@email.com"
+                      placeholder="joao@empresa.com"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="support-field-group">
+                  <label className="support-field-label">Unidade / Cliente</label>
+                  <div className="support-input-container">
+                    <LifeBuoy className="support-input-icon" size={18} />
+                    <input 
+                      type="text" 
+                      name="client"
+                      value={ticketData.client}
+                      onChange={handleInputChange}
+                      className="support-input"
+                      placeholder="Identifique a unidade..."
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="support-field-group">
+                  <label className="support-field-label">Data da Ocorrência</label>
+                  <div className="support-input-container">
+                    <Clock className="support-input-icon" size={18} />
+                    <input 
+                      type="date" 
+                      name="date"
+                      value={ticketData.date}
+                      onChange={handleInputChange}
+                      className="support-input"
                       required
                     />
                   </div>
@@ -180,15 +217,15 @@ export default function SupportPortal({ currentUser, currentCompany }) {
               </div>
 
               <div className="support-field-group">
-                <label className="support-field-label">Descrição Detalhada</label>
+                <label className="support-field-label">Relatório de Ocorrência</label>
                 <div className="support-input-container">
-                  <MessageSquare className="support-input-icon" style={{ top: '1.2rem', transform: 'none' }} size={16} />
+                  <FileText className="support-input-icon" style={{ top: '1.25rem', transform: 'none' }} size={18} />
                   <textarea 
                     name="description"
                     value={ticketData.description}
                     onChange={handleInputChange}
                     className="support-input support-textarea"
-                    placeholder="Descreva o problema de forma detalhada para uma melhor resposta da IA..."
+                    placeholder="Forneça o máximo de detalhes para uma triagem precisa..."
                     required
                   />
                 </div>
@@ -233,7 +270,14 @@ export default function SupportPortal({ currentUser, currentCompany }) {
                   <button 
                     onClick={() => {
                         setStep(1);
-                        setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
+                        setTicketData({
+                          name: '', 
+                          email: currentUser || '', 
+                          client: '', 
+                          date: new Date().toISOString().split('T')[0],
+                          subject: '', 
+                          description: ''
+                        });
                     }}
                     className="btn-premium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 transition-all font-bold px-8"
                   >
