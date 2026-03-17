@@ -136,8 +136,8 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
     if (!isAdmin || !currentCompany?.sector || !SECTOR_TEMPLATES[currentCompany.sector]) return;
     
     showFeedback(
-      'Confirmar Restauração',
-      `Deseja carregar a lista presetada de sugestões para o setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}?`,
+      'Atenção: Limpeza Total',
+      `Esta ação irá APAGAR PERMANENTEMENTE todos os itens atuais da sua Base de Conhecimento antes de carregar os padrões do setor: ${SECTOR_TEMPLATES[currentCompany.sector].label}. Deseja continuar?`,
       'confirm',
       confirmLoadTemplates
     );
@@ -147,26 +147,28 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
     setFeedback(prev => ({ ...prev, isOpen: false }));
     setLoading(true);
     try {
+      // 1. Wipe existing items for this company
+      const { error: deleteError } = await supabase
+        .from('knowledge_base')
+        .delete()
+        .eq('company_id', currentCompany.id);
+
+      if (deleteError) {
+        throw new Error(`Erro ao limpar base atual: ${deleteError.message}`);
+      }
+
       const template = SECTOR_TEMPLATES[currentCompany.sector];
-      
       const globalDefaults = [
-        // DADOS DA EMPRESA
         { title: 'Fundação e Visão', desc: 'Dados sobre a fundação da empresa, missão, visão e valores corporativos.', type: 'document', tag: 'Empresa', section: 'company_data' },
         { title: 'Estrutura Organizacional', desc: 'Informações sobre departamentos, hierarquia e contatos chave.', type: 'file', tag: 'Estrutura', section: 'company_data' },
         { title: 'Políticas Internas', desc: 'Regimento interno, normas de conduta, horários e benefícios.', type: 'file', tag: 'Regras', section: 'company_data' },
-        
-        // RESOLUÇÃO DE PROBLEMAS
         { title: 'Guia de Problemas Comuns', desc: 'Passo a passo para resolver os erros mais frequentes reportados pelo time.', type: 'database', tag: 'Suporte', section: 'troubleshooting' },
         { title: 'Protocolo de Emergência', desc: 'O que fazer em caso de incidentes críticos ou paradas de sistema.', type: 'document', tag: 'Crítico', section: 'troubleshooting' },
-        
-        // GERAL
         { title: 'Base de Conhecimento Geral', desc: 'Informações gerais de suporte, manuais e FAQ do time.', type: 'database', tag: 'Geral', section: 'general' }
       ];
 
-      const existingTitles = new Set(knowledgeItems.map(it => it.title));
       const timestamp = Date.now();
-      
-      const potentialItems = [
+      const itemsToInsert = [
         ...globalDefaults.map((d, i) => ({
           id: `kb-def-${timestamp}-${i}-${Math.random().toString(36).substr(2, 5)}`,
           company_id: currentCompany.id,
@@ -189,23 +191,14 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
         }))
       ];
 
-      const itemsToInsert = potentialItems.filter(item => !existingTitles.has(item.title));
-
-      if (itemsToInsert.length === 0) {
-        showFeedback('Atenção', 'Todos os temas deste preset já estão presentes na sua base.', 'info');
-        setLoading(false);
-        return;
-      }
-
       const { data, error } = await supabase.from('knowledge_base').insert(itemsToInsert).select();
       
       if (!error) {
-        setKnowledgeItems(prev => [...(data || itemsToInsert), ...prev]);
-        logEvent(currentCompany.id, currentUser, 'LOAD_KB_TEMPLATES', `Carregada lista presetada de ${itemsToInsert.length} temas para o setor ${template.label}.`);
-        showFeedback('Sucesso', 'Presets carregados com sucesso!', 'info');
+        setKnowledgeItems(data || itemsToInsert);
+        logEvent(currentCompany.id, currentUser, 'RESET_KB_TEMPLATES', `Base reiniciada com ${itemsToInsert.length} temas para o setor ${template.label}.`);
+        showFeedback('Sucesso', 'Base de conhecimento restaurada com os padrões do setor!', 'info');
       } else {
-        console.error('Supabase error detail:', error);
-        showFeedback('Erro', `Erro ao salvar no banco: ${error.message || 'Verifique sua conexão.'}`, 'info');
+        throw error;
       }
     } catch (err) {
       console.error('Crash in handleLoadTemplates:', err);
