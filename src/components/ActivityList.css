@@ -369,9 +369,9 @@
 }
 
 /* =====================================
-   RESPONSIVE — Tablet (≤ 900px)
+   RESPONSIVE — Tablet (≤ 1024px)
    ===================================== */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .activity-list-container {
     padding: 1rem;
   }
@@ -420,9 +420,9 @@
 }
 
 /* =====================================
-   RESPONSIVE — Mobile (≤ 600px)
+   RESPONSIVE — Mobile (≤ 768px)
    ===================================== */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .activity-list-container {
     padding: 0.75rem;
   }

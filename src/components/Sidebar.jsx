@@ -2,7 +2,7 @@ import React from 'react';
 import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy } from 'lucide-react';
 import './Dashboard.css';
 
-export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChange, userRole }) {
+export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
   const [expandedGroups, setExpandedGroups] = React.useState({
     activities: true, // Default open
     reports: false
@@ -12,11 +12,20 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
     setExpandedGroups(prev => ({ ...prev, [group]: !prev[group] }));
   };
   return (
-    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-brand">
-        <BrainCircuit className="brand-icon min-w-[32px]" size={32} />
-        <span className="brand-name">Synapse</span>
-      </div>
+    <>
+      {isMobileOpen && <div className="sidebar-overlay" onClick={onCloseMobile}></div>}
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-brand">
+          <div className="flex items-center gap-3 flex-1">
+            <BrainCircuit className="brand-icon min-w-[32px]" size={32} />
+            <span className="brand-name">Synapse</span>
+          </div>
+          {isMobileOpen && (
+            <button className="p-1 hover:bg-white/10 rounded-md lg:hidden" onClick={onCloseMobile}>
+              <LogOut className="rotate-180" size={20} />
+            </button>
+          )}
+        </div>
 
       <nav className="sidebar-nav">
         <div
@@ -118,5 +127,6 @@ export default function Sidebar({ isCollapsed, onLogout, currentView, onViewChan
         </div>
       </div>
     </aside>
+    </>
   );
 }

@@ -71,6 +71,7 @@ function App() {
     localStorage.getItem('synapseUserRole') || 'member'
   );
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState(() => 
     localStorage.getItem('synapseCurrentView') || 'kanban'
@@ -559,14 +560,25 @@ function App() {
         <div className={`app-container ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <Sidebar
             isCollapsed={isSidebarCollapsed}
+            isMobileOpen={isMobileMenuOpen}
+            onCloseMobile={() => setIsMobileMenuOpen(false)}
             onLogout={handleLogout}
             currentView={currentView}
-            onViewChange={setCurrentView}
+            onViewChange={(view) => {
+              setCurrentView(view);
+              setIsMobileMenuOpen(false); // Close on navigation
+            }}
             userRole={userRole}
           />
           <div className="main-content">
             <TopBar
-              onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              onToggleSidebar={() => {
+                if (window.innerWidth <= 768) {
+                  setIsMobileMenuOpen(!isMobileMenuOpen);
+                } else {
+                  setIsSidebarCollapsed(!isSidebarCollapsed);
+                }
+              }}
               onViewChange={setCurrentView}
               searchQuery={searchQuery}
               onSearchChange={(e) => setSearchQuery(e.target.value)}

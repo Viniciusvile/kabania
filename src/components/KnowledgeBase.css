@@ -673,10 +673,54 @@
 }
 
 .kb-btn-add {
-  min-width: 200px;
-  justify-content: center;
-  min-height: 48px;
   border-radius: 12px;
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+  .kb-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .knowledge-base-container {
+    padding: 1rem;
+  }
+
+  .kb-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .kb-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .kb-search {
+    max-width: none;
+  }
+
+  .kb-actions-btns {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .kb-btn-add, .kb-btn-template {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .kb-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kb-section-header {
+    margin-top: 1rem;
+  }
 }
 
 /* Button container spacing */

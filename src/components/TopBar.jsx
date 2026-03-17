@@ -173,11 +173,11 @@ export default function TopBar({
     <header className="topbar" ref={topbarRef}>
       <div className="topbar-left">
         <Menu size={20} className="text-muted cursor-pointer hover:text-white transition-colors" onClick={onToggleSidebar} />
-        <span className="topbar-title">Synapse Kanban AI</span>
+        <span className="topbar-title hidden md:block">Synapse Kanban AI</span>
       </div>
 
       <div className="topbar-right">
-        <div className="search-bar">
+        <div className="search-bar hidden sm:flex">
           <Search size={16} className="text-muted" />
           <input type="text" placeholder="Buscar tarefas..." value={searchQuery} onChange={onSearchChange} />
         </div>
