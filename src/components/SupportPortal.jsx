@@ -6,7 +6,7 @@ import { logEvent } from '../services/historyService';
 import './SupportPortal.css'; // New ultra-premium styles
 
 export default function SupportPortal({ currentUser, currentCompany }) {
-  const [step, setStep] = useState(1); // 1: Form, 2: AI Response
+  const [step, setStep] = useState(1); // 1: Form, 2: AI Response, 3: Success
   const [ticketData, setTicketData] = useState({
     name: '',
     email: currentUser || '',
@@ -86,8 +86,7 @@ export default function SupportPortal({ currentUser, currentCompany }) {
 
       if (error) throw error;
 
-      alert("Chamado escalado para nossa equipe técnica. Entraremos em contato em breve!");
-      setStep(1);
+      setStep(3);
       setTicketData({
         name: '',
         email: currentUser || '',
@@ -211,45 +210,23 @@ export default function SupportPortal({ currentUser, currentCompany }) {
             </form>
           </>
         ) : (
-          <div className="support-form-animate">
-            <div className="support-panel-header">
-              <div className="support-panel-header-title">
-                <Sparkles size={20} className="text-accent" />
-                <span>Sugestão da Inteligência Artificial</span>
-              </div>
-              <div className="text-xs text-muted">ID: {ticketId}</div>
+          </div>
+        ) : (
+          <div className="support-success-view animate-fade-in p-12 text-center">
+            <div className="success-icon-wrapper mb-6">
+              <CheckCircle size={64} className="text-emerald-500 mx-auto" strokeWidth={1.5} />
             </div>
-
-            <div className="support-panel-body">
-              <div className="ai-suggestion-panel">
-                {aiResponse}
-              </div>
-
-              <div className="support-actions-footer">
-                <div className="support-footer-info">
-                  <h4>A solução funcionou?</h4>
-                  <p>Caso contrário, nossa equipe técnica cuidará do seu caso.</p>
-                </div>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => {
-                        setStep(1);
-                        setTicketData({name:'', email: currentUser||'', subject: '', description: ''});
-                    }}
-                    className="btn-premium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 transition-all font-bold px-8"
-                  >
-                    <CheckCircle size={18} /> Resolvido
-                  </button>
-                  <button 
-                    onClick={handleEscalate}
-                    className="btn-premium btn-premium-primary px-8"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><ArrowRight size={18} /> Escalar p/ Equipe</>}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <h2 className="text-2xl font-bold mb-4">Chamado Enviado com Sucesso!</h2>
+            <p className="text-muted mb-8 max-w-md mx-auto">
+              Nossa equipe técnica já recebeu sua solicitação e analisará os detalhes em breve. 
+              Fique atento ao seu e-mail para atualizações.
+            </p>
+            <button 
+              className="btn-premium btn-premium-primary px-12 py-3"
+              onClick={() => setStep(1)}
+            >
+              Voltar ao Início
+            </button>
           </div>
         )}
       </div>
