@@ -5,7 +5,8 @@ import {
   notifyTaskMoved,
   notifyAssignment,
   checkDeadlineNotifications,
-  getDeadlineStatus
+  getDeadlineStatus,
+  createNotification
 } from '../services/notificationService';
 import {
   MoreHorizontal, Plus, AlertTriangle, Sparkles, Trash2, Edit2,
@@ -331,6 +332,65 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     };
 
     fetchTasks();
+    
+    // 3. REALTIME SUBSCRIPTION
+    if (!projectId) return;
+    
+    const channel = supabase
+      .channel(`public:tasks:project_id=eq.${projectId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'tasks',
+        filter: `project_id=eq.${projectId}`
+      }, (payload) => {
+        
+        setTasks(prevTasks => {
+          let updated = [...prevTasks];
+          
+          if (payload.eventType === 'INSERT') {
+            const newTask = payload.new;
+            // Avoid duplicates if we already optimistically added it
+            if (!updated.find(t => t.id === newTask.id)) {
+              updated.push({
+                ...newTask,
+                desc: newTask.description,
+                projectId: newTask.project_id,
+                companyId: newTask.company_id,
+                columnId: newTask.column_id,
+                aiResponse: newTask.ai_response,
+                tagColor: newTask.tag_color
+              });
+            }
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedTask = payload.new;
+            updated = updated.map(t => t.id === updatedTask.id ? {
+              ...t,
+              ...updatedTask,
+              desc: updatedTask.description,
+              projectId: updatedTask.project_id,
+              companyId: updatedTask.company_id,
+              columnId: updatedTask.column_id,
+              aiResponse: updatedTask.ai_response,
+              tagColor: updatedTask.tag_color
+            } : t);
+          } 
+          else if (payload.eventType === 'DELETE') {
+            updated = updated.filter(t => t.id !== payload.old.id);
+          }
+          
+          localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updated));
+          return updated;
+        });
+        
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+
   }, [projectId]);
 
   // Deadline notifications on load
@@ -602,6 +662,16 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
         if (!error) {
           notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
+          
+          // Triggers Command Center Notification for "Done"
+          if (newColId === 'done') {
+            createNotification(
+              currentCompany?.id, 
+              null, // null = broadcast to whole company
+              'kanban_done',
+              `🎉 A tarefa "${currentTask.title}" foi movida para Concluído por ${currentUser.split('@')[0]}!`
+            );
+          }
         } else {
           console.error('Error persisting drag and drop:', error);
           // Optional: handle rollback if critical

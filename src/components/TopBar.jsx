@@ -5,8 +5,9 @@ import {
   AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X
 } from 'lucide-react';
 import {
-  getNotifications, markAllRead, getUnreadCount, formatNotifTime
+  fetchNotifications, markAsRead, subscribeToNotifications
 } from '../services/notificationService';
+import { generateOperationFeedSummary } from '../services/geminiService';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 
@@ -38,6 +39,9 @@ export default function TopBar({
       setProfileData(initialProfileData);
     }
   }, [initialProfileData]);
+
+  const [aiSummary, setAiSummary] = useState(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -88,19 +92,36 @@ export default function TopBar({
     setNewProjectName('');
   };
 
-  const loadNotifications = () => {
-    if (currentUser) {
-      const notifs = getNotifications(currentUser);
-      setNotifications(notifs.slice(0, 12));
-      setUnreadCount(getUnreadCount(currentUser));
+  const loadNotifications = async () => {
+    if (currentCompany) {
+      const notifs = await fetchNotifications(currentCompany.id);
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.read).length);
     }
   };
 
   useEffect(() => {
     loadNotifications();
-    const interval = setInterval(loadNotifications, 5000); // refresh every 5s
-    return () => clearInterval(interval);
-  }, [currentUser]);
+    
+    if (currentCompany) {
+      const unsubscribe = subscribeToNotifications(currentCompany.id, (newNotif) => {
+        // Immediate UI update for new notification
+        setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+        setUnreadCount(prev => prev + 1);
+        
+        // Optional: Play sound or browser notification here if requested
+      });
+      return unsubscribe;
+    }
+  }, [currentCompany]);
+
+  const handleGenerateSummary = async (e) => {
+    e.stopPropagation();
+    setIsGeneratingSummary(true);
+    const summary = await generateOperationFeedSummary(notifications.slice(0, 20), currentCompany?.name);
+    setAiSummary(summary);
+    setIsGeneratingSummary(false);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -119,10 +140,32 @@ export default function TopBar({
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
-  const handleMarkAllRead = (e) => {
+  const handleMarkAllRead = async (e) => {
     e.stopPropagation();
-    markAllRead(currentUser);
-    loadNotifications();
+    // Optimistic UI update
+    const unreadNotifs = notifications.filter(n => !n.read);
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+    
+    // Background sync
+    for (const notif of unreadNotifs) {
+      /* markAsRead internally updates Supabase. We send them asynchronously to not block the UI */
+      markAsRead(notif.id).catch(console.error);
+    }
+  };
+
+  const formatNotifTime = (timestamp) => {
+    if (!timestamp) return 'Agora';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins} min atrás`;
+    if (diffHours < 24) return `${diffHours}h atrás`;
+    return `${diffDays}d atrás`;
   };
 
 
@@ -218,22 +261,49 @@ export default function TopBar({
           {unreadCount === 0 && <span className="notification-dot"></span>}
 
           {activeDropdown === 'notifications' && (
-            <div className="dropdown-menu notifications-menu" style={{ width: '320px', maxHeight: '400px', overflowY: 'auto' }}>
-              <div className="dropdown-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <strong>Notificações</strong>
+            <div className="dropdown-menu notifications-menu" style={{ width: '380px', maxHeight: '500px', overflowY: 'auto' }}>
+              <div className="dropdown-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.5rem' }}>
+                <strong style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BellRing size={16} className="text-accent" /> Centro de Comando
+                </strong>
                 {unreadCount > 0 && (
                   <button
                     onClick={handleMarkAllRead}
                     style={{ background: 'none', border: 'none', color: 'var(--accent-cyan)', fontSize: '0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   >
-                    <CheckCheck size={12} /> Marcar todas como lidas
+                    <CheckCheck size={12} /> Marcar lidas
                   </button>
                 )}
               </div>
 
+              {/* AI Summary Section */}
+              <div style={{ padding: '0 1rem 1rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
+                {!aiSummary && !isGeneratingSummary && (
+                  <button 
+                    onClick={handleGenerateSummary}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa', border: '1px solid rgba(167, 139, 250, 0.2)', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.1)'}
+                  >
+                    Resumir Dia com IA ✨
+                  </button>
+                )}
+                {isGeneratingSummary && (
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(167, 139, 250, 0.05)', color: '#a78bfa', fontSize: '0.8rem', textAlign: 'center', fontStyle: 'italic' }}>
+                    <span className="skeleton-pulse" style={{ display: 'inline-block', width: '80%', height: '12px', background: '#a78bfa', opacity: 0.3, borderRadius: '4px' }}></span>
+                  </div>
+                )}
+                {aiSummary && (
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(167, 139, 250, 0.05)', border: '1px solid rgba(167, 139, 250, 0.2)' }}>
+                    <div style={{ fontSize: '0.65rem', color: '#a78bfa', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Resumo da Operação via IA</div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-main)', margin: 0, lineHeight: 1.4 }}>{aiSummary}</p>
+                  </div>
+                )}
+              </div>
+
               {notifications.length === 0 && (
-                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  Nenhuma notificação ainda.
+                <div style={{ padding: '2rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  A operação está tranquila. Nenhuma notificação ainda.
                 </div>
               )}
 
@@ -243,20 +313,33 @@ export default function TopBar({
                   className="dropdown-item"
                   style={{
                     alignItems: 'flex-start',
-                    gap: '0.6rem',
-                    padding: '0.75rem 1rem',
+                    gap: '0.75rem',
+                    padding: '0.85rem 1rem',
                     background: notif.read ? 'transparent' : 'rgba(0, 229, 255, 0.04)',
                     borderLeft: notif.read ? '2px solid transparent' : '2px solid var(--accent-cyan)'
                   }}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!notif.read) {
+                      setNotifications(notifications.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                      setUnreadCount(prev => Math.max(0, prev - 1));
+                      await markAsRead(notif.id);
+                    }
+                  }}
                 >
                   <div style={{ flexShrink: 0, marginTop: '0.1rem' }}>
-                    {NOTIF_ICONS[notif.type] || <Bell size={14} />}
+                    {notif.type === 'system' ? <AlertTriangle size={16} /> :
+                     notif.type === 'kanban_done' ? <CheckCheck size={16} style={{ color: '#34d399' }} /> :
+                     notif.type === 'urgent' ? <AlertTriangle size={16} style={{ color: '#ef4444' }} /> :
+                     NOTIF_ICONS[notif.type] || <Bell size={16} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '0.78rem', color: notif.read ? '#64748b' : '#e2e8f0', margin: 0, lineHeight: 1.4 }}>
-                      {notif.message}
+                    <p style={{ fontSize: '0.82rem', color: notif.read ? '#64748b' : '#e2e8f0', margin: 0, lineHeight: 1.4 }}>
+                      {notif.content}
                     </p>
-                    <span style={{ fontSize: '0.68rem', color: '#475569' }}>{formatNotifTime(notif.timestamp)}</span>
+                    <span style={{ fontSize: '0.68rem', color: '#475569', display: 'block', marginTop: '0.2rem' }}>
+                      {formatNotifTime(notif.created_at)}
+                    </span>
                   </div>
                 </div>
               ))}

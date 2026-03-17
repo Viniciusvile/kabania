@@ -8,10 +8,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  background: var(--bg-panel);
-  padding: 2rem;
-  border-radius: 16px;
+  background: var(--bg-card); /* More premium translucent background */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 2.5rem;
+  border-radius: 24px;
   border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   transition: var(--transition-theme);
   position: relative;
   overflow: hidden;
@@ -82,20 +85,24 @@
 }
 
 .ai-insight-card {
-  background: var(--bg-panel);
+  background: var(--bg-card); /* Glassmorphism base */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 1.5rem;
+  border-radius: 24px; /* More rounded premium look */
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); /* Subtle ambient shadow */
 }
 
 .ai-insight-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  background: var(--bg-panel); /* Slightly brighter on hover */
 }
 
 .ai-card-header {
@@ -115,15 +122,17 @@
 }
 
 /* Color Variants */
-.cyan .ai-icon-box { background: rgba(0, 229, 255, 0.1); color: #00e5ff; }
-.purple .ai-icon-box { background: rgba(167, 139, 250, 0.1); color: #a78bfa; }
-.green .ai-icon-box { background: rgba(52, 211, 153, 0.1); color: #34d399; }
-.orange .ai-icon-box { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+.cyan .ai-icon-box { background: rgba(0, 229, 255, 0.1); color: #00e5ff; box-shadow: 0 4px 12px rgba(0, 229, 255, 0.15); }
+.purple .ai-icon-box { background: rgba(167, 139, 250, 0.1); color: #a78bfa; box-shadow: 0 4px 12px rgba(167, 139, 250, 0.15); }
+.green .ai-icon-box { background: rgba(52, 211, 153, 0.1); color: #34d399; box-shadow: 0 4px 12px rgba(52, 211, 153, 0.15); }
+.orange .ai-icon-box { background: rgba(251, 191, 36, 0.1); color: #fbbf24; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.15); }
+.blue .ai-icon-box { background: rgba(59, 130, 246, 0.1); color: #3b82f6; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15); } /* New color for predictDemand */
 
-.ai-insight-card.cyan:hover { border-color: #00e5ff; }
-.ai-insight-card.purple:hover { border-color: #a78bfa; }
-.ai-insight-card.green:hover { border-color: #34d399; }
-.ai-insight-card.orange:hover { border-color: #fbbf24; }
+.ai-insight-card.cyan:hover { border-color: rgba(0, 229, 255, 0.5); box-shadow: 0 16px 40px rgba(0, 229, 255, 0.08); }
+.ai-insight-card.purple:hover { border-color: rgba(167, 139, 250, 0.5); box-shadow: 0 16px 40px rgba(167, 139, 250, 0.08); }
+.ai-insight-card.green:hover { border-color: rgba(52, 211, 153, 0.5); box-shadow: 0 16px 40px rgba(52, 211, 153, 0.08); }
+.ai-insight-card.orange:hover { border-color: rgba(251, 191, 36, 0.5); box-shadow: 0 16px 40px rgba(251, 191, 36, 0.08); }
+.ai-insight-card.blue:hover { border-color: rgba(59, 130, 246, 0.5); box-shadow: 0 16px 40px rgba(59, 130, 246, 0.08); }
 
 .ai-title-box h3 {
   font-size: 1.2rem;
@@ -258,13 +267,16 @@
 }
 
 .ai-chart-card {
-  background: var(--bg-panel);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 1.5rem;
+  border-radius: 24px;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 .ai-chart-header h3 {
@@ -296,6 +308,24 @@
 
 .pie-chart-body {
   margin-top: -20px;
+}
+
+/* Skeleton Loaders (Premium SWR pattern) */
+@keyframes skeleton-pulse {
+  0% { opacity: 0.6; background-color: var(--border-color); }
+  50% { opacity: 1; background-color: var(--bg-card-hover); }
+  100% { opacity: 0.6; background-color: var(--border-color); }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.chart-skeleton {
+  width: 100%;
+  height: 240px;
+  border-radius: 12px;
+  background: var(--border-color);
 }
 
 @media (max-width: 900px) {

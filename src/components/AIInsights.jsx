@@ -4,29 +4,37 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { TrendingUp, Calendar, AlertCircle, Zap, Loader2, Sparkles, CheckCircle2, RotateCcw } from 'lucide-react';
-import { analyzeProductivity, generateWeeklySummary, suggestPrioritization, detectBottlenecks } from '../services/geminiService';
+import { TrendingUp, Calendar, AlertCircle, Zap, Loader2, Sparkles, CheckCircle2, RotateCcw, LineChart } from 'lucide-react';
+import { analyzeProductivity, generateWeeklySummary, suggestPrioritization, detectBottlenecks, predictDemand } from '../services/geminiService';
 import './AIInsights.css';
 
 export default function AIInsights({ currentUser, currentCompany }) {
+  const getCacheKey = (type) => `kabania_ai_${type}_${currentCompany?.id}`;
+
   const [loading, setLoading] = useState({
     productivity: false,
     summary: false,
     priority: false,
     bottlenecks: false,
-    data: true
+    demand: false,
+    data: false
   });
 
-  const [results, setResults] = useState({
-    productivity: '',
-    summary: '',
-    priority: '',
-    bottlenecks: ''
+  const [results, setResults] = useState(() => {
+    // Initial load from cache
+    return {
+      productivity: localStorage.getItem(getCacheKey('productivity')) || '',
+      summary: localStorage.getItem(getCacheKey('summary')) || '',
+      priority: localStorage.getItem(getCacheKey('priority')) || '',
+      bottlenecks: localStorage.getItem(getCacheKey('bottlenecks')) || '',
+      demand: localStorage.getItem(getCacheKey('demand')) || ''
+    };
   });
 
-  const [chartData, setChartData] = useState({
-    productivity: [],
-    sectors: []
+  const [chartData, setChartData] = useState(() => {
+    // Initial load from cache
+    const cachedCharts = localStorage.getItem(getCacheKey('charts'));
+    return cachedCharts ? JSON.parse(cachedCharts) : { productivity: [], sectors: [] };
   });
 
   useEffect(() => {
@@ -56,7 +64,8 @@ export default function AIInsights({ currentUser, currentCompany }) {
     } catch (err) {
       console.error("Erro ao buscar dados para gráficos:", err);
     } finally {
-      setLoading(prev => ({ ...prev, data: false }));
+      // Add a slight delay to allow smooth skeleton transition if data is fast
+      setTimeout(() => setLoading(prev => ({ ...prev, data: false })), 300);
     }
   };
 
@@ -92,7 +101,9 @@ export default function AIInsights({ currentUser, currentCompany }) {
 
     const sectorData = Object.entries(sectorMap).map(([name, value]) => ({ name, value }));
 
-    setChartData({ productivity: productivityData, sectors: sectorData });
+    const newChartData = { productivity: productivityData, sectors: sectorData };
+    setChartData(newChartData);
+    localStorage.setItem(getCacheKey('charts'), JSON.stringify(newChartData));
   };
 
   const runAnalysis = async (type) => {
@@ -118,10 +129,14 @@ export default function AIInsights({ currentUser, currentCompany }) {
       case 'bottlenecks':
         res = await detectBottlenecks(tasks || [], coName);
         break;
+      case 'demand':
+        res = await predictDemand(activities || [], coName);
+        break;
       default: break;
     }
 
     setResults(prev => ({ ...prev, [type]: res }));
+    localStorage.setItem(getCacheKey(type), res);
     setLoading(prev => ({ ...prev, [type]: false }));
   };
 
@@ -152,7 +167,10 @@ export default function AIInsights({ currentUser, currentCompany }) {
               <button className="ai-btn-refresh" onClick={() => runAnalysis(type)}>
                 <Loader2 size={14} className={loading[type] ? 'animate-spin' : ''} /> Recalcular
               </button>
-              <button className="ai-btn-reset" onClick={() => setResults(prev => ({ ...prev, [type]: '' }))}>
+              <button className="ai-btn-reset" onClick={() => {
+                setResults(prev => ({ ...prev, [type]: '' }));
+                localStorage.removeItem(getCacheKey(type));
+              }}>
                 <RotateCcw size={14} /> Resetar
               </button>
             </div>
@@ -202,8 +220,8 @@ export default function AIInsights({ currentUser, currentCompany }) {
             <p>Tarefas concluídas nos últimos 7 dias</p>
           </div>
           <div className="ai-chart-body">
-            {loading.data ? (
-              <div className="chart-loading"><Loader2 className="animate-spin" /></div>
+            {loading.data && chartData.productivity.length === 0 ? (
+              <div className="chart-skeleton skeleton-pulse"></div>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={chartData.productivity}>
@@ -233,8 +251,8 @@ export default function AIInsights({ currentUser, currentCompany }) {
             <p>Mix de atividades atuais</p>
           </div>
           <div className="ai-chart-body pie-chart-body">
-            {loading.data ? (
-              <div className="chart-loading"><Loader2 className="animate-spin" /></div>
+            {loading.data && chartData.sectors.length === 0 ? (
+              <div className="chart-skeleton skeleton-pulse" style={{ borderRadius: '50%', width: '160px', height: '160px', margin: 'auto' }}></div>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
@@ -281,6 +299,13 @@ export default function AIInsights({ currentUser, currentCompany }) {
           type="priority"
           description="Sugestão baseada em prazos e importância"
           colorClass="green"
+        />
+        <InsightCard 
+          title="Previsão de Demanda"
+          icon={LineChart}
+          type="demand"
+          description="Previsão dos próximos tipos de serviços focados"
+          colorClass="blue"
         />
         <InsightCard 
           title="Detecção de Gargalos"

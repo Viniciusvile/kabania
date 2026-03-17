@@ -108,6 +108,7 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
 
 import { useGoogleLogin } from '@react-oauth/google';
 import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
+import { createNotification } from '../services/notificationService';
 
 export default function ActivityList({ currentUser, currentCompany }) {
   const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
@@ -248,6 +249,24 @@ export default function ActivityList({ currentUser, currentCompany }) {
       setCurrentPage(1);
       if (currentCompany) {
         logEvent(currentCompany.id, currentUser, 'CREATE_ACTIVITY', `Nova solicitação criada: ${newId} para ${activity.location}`);
+        
+        // Trigger Command Center Notification if it's Urgent
+        if (activity.type === 'Urgente' || activity.type === 'Manutenção Corretiva (Urgente)') {
+          createNotification(
+            currentCompany.id,
+            null, // broadcast
+            'urgent',
+            `🚨 NOVA URGÊNCIA: ${activity.location} requer atenção imediata. (Criado por ${currentUser.split('@')[0]})`
+          );
+        } else {
+           // Normal notification (optional, maybe too noisy? Decided to keep for broad visibility as requested)
+           createNotification(
+             currentCompany.id,
+             null,
+             'new_activity',
+             `📝 Nova solicitação de ${activity.type} aberta em ${activity.location}.`
+           );
+        }
       }
     } else {
       console.error('Error saving activity:', error);

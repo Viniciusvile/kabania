@@ -144,6 +144,24 @@ export async function generateWeeklySummary(data, companyName = "Empresa") {
   }
 }
 
+export async function generateOperationFeedSummary(notifications, companyName = "Empresa") {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `Você é a IA assistente do Centro de Comando da operação da empresa ${companyName}.
+    Aqui estão os eventos recentes:
+    ${JSON.stringify(notifications)}
+    
+    Escreva um resumo narrativo CURTO (máximo 3 frases) do que está acontecendo na operação.
+    Exemplo de tom: "A equipe finalizou 5 instalações hoje, porém existem 2 novas vistorias urgentes pendentes de atenção."
+    Vá direto ao ponto. Não use formatação em markdown, use texto corrido.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Não foi possível gerar o resumo da operação agora: ${error.message}`;
+  }
+}
+
 export async function suggestPrioritization(tasks, companyName = "Empresa") {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -175,6 +193,36 @@ export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
     return result.response.text();
   } catch (error) {
     return `Erro na detecção: ${error.message}`;
+  }
+}
+
+export async function predictDemand(activities, companyName = "Empresa") {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Simplificar os dados contextuais para os últimos 30 dias se possível
+    const recentActivities = activities.slice(0, 50).map(a => ({
+      type: a.type,
+      date: a.created_at || a.created
+    }));
+
+    const prompt = `Analise o histórico recente de atividades da empresa ${companyName} e preveja a demanda para a próxima semana.
+    Dados recentes (máximo 50 itens):
+    ${JSON.stringify(recentActivities)}
+    
+    DIRETRIZES:
+    - Identifique qual "Tipo de Serviço" sofrerá maior demanda.
+    - Dê uma explicação curta do motivo (padrões observados).
+    - Sugira 1 ação preventiva (ex: "Alocar mais técnicos para X").
+    
+    FORMATO:
+    - 3 frases curtas e diretas.
+    - Tom executivo e focado em ação preventiva.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na previsão: ${error.message}`;
   }
 }
 
