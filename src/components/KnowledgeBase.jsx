@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleLeft, Plus, X, Trash2, Edit2, Lock, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
-import { logEvent } from '../services/historyService';
+import { fileProcessingService } from '../services/fileProcessingService';
+import { processKnowledgeFile } from '../services/geminiService';
 import './KnowledgeBase.css';
 
 const KB_SECTIONS = [
@@ -24,6 +25,9 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
   const [newSection, setNewSection] = useState('general');
   const [editingItem, setEditingItem] = useState(null);
   const [feedback, setFeedback] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: null });
+  const [isUploading, setIsUploading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null); // { action, suggested, explanation }
+  const fileInputRef = React.useRef(null);
 
   const showFeedback = (title, message, type = 'info', onConfirm = null) => {
     setFeedback({ isOpen: true, title, message, type, onConfirm });
@@ -274,6 +278,78 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
     setIsModalOpen(false);
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !isAdmin) return;
+
+    setIsUploading(true);
+    try {
+      // 1. Extract Text
+      const text = await fileProcessingService.extractText(file);
+      
+      // 2. Process with AI
+      const suggestion = await processKnowledgeFile(text, knowledgeItems);
+      
+      setAiSuggestion(suggestion);
+    } catch (err) {
+      console.error('Upload error:', err);
+      showFeedback('Erro no Upload', err.message || 'Não foi possível processar o arquivo.', 'info');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const confirmAiSuggestion = async () => {
+    if (!aiSuggestion) return;
+    
+    const { action, suggested, existingId } = aiSuggestion;
+    
+    if (action === 'merge' && existingId) {
+      // Logic to merge: Update existing item's description and tags
+      const existingItem = knowledgeItems.find(it => it.id === existingId);
+      if (existingItem) {
+        const payload = {
+          description: `${existingItem.description}\n\n[Atualização via IA]: ${suggested.description}`,
+          tags: [...new Set([...existingItem.tags, ...suggested.tags])],
+          section: suggested.section || existingItem.section
+        };
+        
+        // Optimistic
+        setKnowledgeItems(prev => prev.map(it => 
+          it.id === existingId ? { ...it, ...payload } : it
+        ));
+
+        const { error } = await supabase.from('knowledge_base').update(payload).eq('id', existingId);
+        if (!error) {
+          logEvent(currentCompany.id, currentUser, 'MERGE_KB_FILE', `Informação mesclada ao tema: ${existingItem.title}`);
+        }
+      }
+    } else {
+      // Logic to create new
+      const newItem = {
+        id: `kb-${Date.now()}`,
+        title: suggested.title,
+        description: suggested.description,
+        enabled: true,
+        type: 'file',
+        tags: suggested.tags,
+        section: suggested.section || 'general',
+        company_id: currentCompany?.id,
+        created_at: new Date().toISOString()
+      };
+
+      setKnowledgeItems(prev => [newItem, ...prev]);
+      const { error } = await supabase.from('knowledge_base').insert([newItem]);
+      if (!error) {
+        logEvent(currentCompany.id, currentUser, 'UPLOAD_KB_FILE', `Novo tema criado via upload: ${suggested.title}`);
+      }
+    }
+    
+    setAiSuggestion(null);
+    showFeedback('Sucesso', 'Conhecimento integrado com sucesso!', 'info');
+  };
+
   return (
     <div className="knowledge-base-container animate-fade-in">
       <header className="kb-header">
@@ -306,9 +382,23 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
             </button>
           )}
           {isAdmin && (
-            <button className="kb-btn-add" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
-              <Plus size={18} /> Conectar Nova Fonte
-            </button>
+            <div className="kb-upload-wrapper">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept=".pdf,.docx,.txt,.csv"
+                onChange={handleFileUpload}
+              />
+              <button 
+                className="kb-btn-add" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? <RotateCcw className="animate-spin" size={18} /> : <Plus size={18} />}
+                {isUploading ? 'Lendo Arquivo...' : 'Conectar Nova Fonte'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -514,6 +604,64 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole })
                   Entendi
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* AI Suggestion Modal */}
+      {aiSuggestion && (
+        <div className="kb-modal-overlay">
+          <div className="kb-modal ai-modal animate-slide-up" style={{ maxWidth: '600px' }}>
+            <div className="kb-modal-header">
+              <h2 className="flex items-center gap-2">
+                <Sparkles size={22} color="var(--accent-cyan)" className="animate-pulse" />
+                IA Analisou seu Arquivo
+              </h2>
+              <button className="kb-modal-close" onClick={() => setAiSuggestion(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="kb-modal-body">
+              <div className="ai-suggestion-badge">
+                {aiSuggestion.action === 'merge' ? '🔄 Sugestão de Mesclagem' : '✨ Novo Conteúdo Identificado'}
+              </div>
+              
+              <p className="ai-explanation mb-4 italic text-sm text-cyan-200">
+                "{aiSuggestion.explanation}"
+              </p>
+
+              <div className="kb-form-group">
+                <label>Título Sugerido</label>
+                <div className="ai-preview-box">{aiSuggestion.suggested.title}</div>
+              </div>
+
+              <div className="kb-form-group">
+                <label>Resumo Interpretado</label>
+                <div className="ai-preview-box text-sm leading-relaxed">
+                  {aiSuggestion.suggested.description}
+                </div>
+              </div>
+
+              <div className="kb-grid-2">
+                <div className="kb-form-group">
+                  <label>Seção</label>
+                  <div className="ai-preview-box">
+                    {KB_SECTIONS.find(s => s.id === aiSuggestion.suggested.section)?.label || 'Geral'}
+                  </div>
+                </div>
+                <div className="kb-form-group">
+                  <label>Tags Identificadas</label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {aiSuggestion.suggested.tags.map(t => <span key={t} className="kb-tag text-[10px]">{t}</span>)}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="kb-modal-footer">
+              <button className="kb-btn-cancel" onClick={() => setAiSuggestion(null)}>Ignorar</button>
+              <button className="kb-btn-submit" onClick={confirmAiSuggestion}>
+                {aiSuggestion.action === 'merge' ? 'Mesclar Informações' : 'Confirmar e Criar TAG'}
+              </button>
             </div>
           </div>
         </div>

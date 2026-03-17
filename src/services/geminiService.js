@@ -317,3 +317,55 @@ export async function checkActivityDuplicates(description, existingActivities) {
     return { isDuplicate: false };
   }
 }
+
+export async function processKnowledgeFile(extractedText, existingKnowledge = []) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    // Prepare comparison context (titles and tags only)
+    const context = existingKnowledge.map(k => ({
+      id: k.id,
+      title: k.title,
+      tags: k.tags
+    }));
+
+    const prompt = `Você é um analista de conhecimento sênior. Analise o texto extraído de um arquivo e organize-o para uma Base de Conhecimento.
+    
+    TEXTO DO ARQUIVO:
+    "${extractedText.substring(0, 5000)}" // First 5k chars for analysis
+    
+    BASE ATUAL (Títulos e Tags): ${JSON.stringify(context)}
+    
+    REGRAS DE RETORNO:
+    1. O sistema possui 3 seções: "company_data" (Empresa), "troubleshooting" (Problemas), "general" (Geral).
+    2. Identifique se o conteúdo é similar a algum item já existente na BASE ATUAL.
+    3. Se for similar, sugira "merge" e indique o "existingId".
+    4. Se for novo, sugira "create".
+    5. Gere um Título curto, uma Descrição de 2 frases e 3-4 Tags.
+    
+    Retorne APENAS um objeto JSON no formato:
+    {
+      "action": "create" | "merge",
+      "existingId": "id_do_item_similar_se_houver",
+      "suggested": {
+        "title": "Título Curto",
+        "description": "Descrição concatenada do que foi aprendido.",
+        "section": "company_data" | "troubleshooting" | "general",
+        "tags": ["Tag1", "Tag2", "Tag3"]
+      },
+      "explanation": "Por que escolhi esta ação e categoria?"
+    }
+    
+    RESPOSTA JSON:`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) throw new Error("IA não retornou um JSON válido.");
+    return JSON.parse(jsonMatch[0]);
+  } catch (error) {
+    console.error("Erro ao processar arquivo com IA:", error);
+    throw error;
+  }
+}
