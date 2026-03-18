@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
 import { Clock, MapPin, Briefcase, Calendar as CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
-import { getShifts, getEmployeeProfiles } from '../../../services/shiftService';
+import { getShifts, getEmployeeProfiles } from '../../services/shiftService';
 
 export default function MyShifts({ companyId, currentUser }) {
   const [shifts, setShifts] = useState([]);

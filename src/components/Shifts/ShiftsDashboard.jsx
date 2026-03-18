@@ -1,6 +1,7 @@
+```javascript
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Users, AlertTriangle, Clock, MapPin } from 'lucide-react';
-import { getShifts, getEmployeeProfiles, getEnvironments } from '../../../services/shiftService';
+import { getShifts, getEmployeeProfiles, getWorkEnvironments } from '../../services/shiftService';
 
 export default function ShiftsDashboard({ companyId }) {
   const [stats, setStats] = useState({

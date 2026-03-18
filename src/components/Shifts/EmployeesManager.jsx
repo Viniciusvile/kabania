@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Save, Loader2, Clock } from 'lucide-react';
-import { getEmployeeProfiles, updateEmployeeProfile } from '../../../services/shiftService';
+import { Users, Clock, Shield, Save, Loader2, AlertCircle } from 'lucide-react';
+import { getEmployeeProfiles, updateEmployeeProfile } from '../../services/shiftService';
 
 export default function EmployeesManager({ companyId }) {
   const [employees, setEmployees] = useState([]);

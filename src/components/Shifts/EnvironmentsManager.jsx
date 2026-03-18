@@ -1,6 +1,7 @@
+```javascript
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, MapPin, Briefcase, Loader2 } from 'lucide-react';
-import { getEnvironments, createEnvironment, getActivities, createActivity } from '../../../services/shiftService';
+import { MapPin, Plus, Trash2, Briefcase, PlusCircle, Loader2 } from 'lucide-react';
+import { getWorkEnvironments, createWorkEnvironment, createWorkActivity, deleteWorkEnvironment, deleteWorkActivity } from '../../services/shiftService';
 
 export default function EnvironmentsManager({ companyId }) {
   const [environments, setEnvironments] = useState([]);
