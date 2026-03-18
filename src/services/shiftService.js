@@ -164,18 +164,27 @@ export const getShifts = async (companyId, startDate, endDate) => {
     if (endDate) query = query.lte('end_time', endDate);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+        console.error('getShifts Query Error:', error);
+        return []; // Return empty array instead of throwing to prevent component hang
+    }
     
+    if (!data) return [];
+
     // Transform to include helpful counts
     return data.map(shift => ({
         ...shift,
-        assigned_employees: shift.shift_assignments?.map(a => ({
-            ...a.employee_profiles,
-            assignment_id: a.id,
-            assignment_status: a.status,
-            name: a.employee_profiles?.profiles?.name,
-            avatar_url: a.employee_profiles?.profiles?.avatar_url
-        })) || [],
+        assigned_employees: shift.shift_assignments?.map(a => {
+            // Safety check for nested profiles
+            const profile = a.employee_profiles?.profiles || {};
+            return {
+                ...a.employee_profiles,
+                assignment_id: a.id,
+                assignment_status: a.status,
+                name: profile.name || 'Colaborador',
+                avatar_url: profile.avatar_url || null
+            };
+        }) || [],
         calls_count: shift.shift_calls?.length || 0,
         open_calls_count: shift.shift_calls?.filter(c => c.status === 'open').length || 0
     }));

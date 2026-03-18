@@ -88,14 +88,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       ];
 
       const [statsData, shiftsData, employeesData, envsData, workActsData] = await Promise.all([
-        getShiftStats(companyId),
-        getShifts(companyId, weekStart.toISOString(), end.toISOString()),
-        getEmployeeProfiles(companyId),
+        getShiftStats(companyId).catch(err => { console.error('Stats fail:', err); return { total:0, open:0, inProgress:0, concluded:'0/0' }; }),
+        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(err => { console.error('Shifts fail:', err); return []; }),
+        getEmployeeProfiles(companyId).catch(err => { console.error('Employees fail:', err); return []; }),
         supabase.from('work_environments').select('*').eq('company_id', companyId),
         supabase.from('work_activities').select('*').eq('company_id', companyId)
       ]);
 
-      setStats(statsData);
+      if (statsData) setStats(statsData);
       
       const enrichedShifts = (shiftsData || []).map(shift => {
         if (!shift.service_request_id) return shift;
@@ -110,7 +110,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       });
 
       setShifts(enrichedShifts);
-      setEmployees(employeesData);
+      setEmployees(employeesData || []);
       setEnvironments(envsData.data || []);
       setActivities(workActsData.data || []);
       
@@ -127,8 +127,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       setPendingActivities(pending);
 
     } catch (err) {
-      console.error('Error loading Escalas data:', err);
+      console.error('Error loading Escalas data (Main):', err);
     } finally {
+      console.log('Shifts Load Complete (State cleared)');
       setLoading(false);
     }
   };
