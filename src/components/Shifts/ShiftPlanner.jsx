@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Wand2, ChevronLeft, ChevronRight, Loader2, Trash2, Clock, MapPin, Briefcase } from 'lucide-react';
-import { getShifts, getEmployeeProfiles, getEnvironments, getActivities, batchCreateShifts, deleteShift } from '../../services/shiftService';
+import { getShifts, getEmployeeProfiles, getWorkEnvironments, getActivities, batchCreateShifts, deleteShift } from '../../services/shiftService';
 import { generateSmartShiftForDay, notifyShiftAssignments } from '../../services/smartAllocationService';
 
 export default function ShiftPlanner({ companyId, currentUser }) {
@@ -28,7 +28,7 @@ export default function ShiftPlanner({ companyId, currentUser }) {
       const [sData, eData, envData, actData] = await Promise.all([
         getShifts(companyId, start.toISOString(), end.toISOString()),
         getEmployeeProfiles(companyId),
-        getEnvironments(companyId),
+        getWorkEnvironments(companyId),
         getActivities(companyId)
       ]);
       setShifts(sData);
