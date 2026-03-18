@@ -18,7 +18,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
         <div className="sidebar-brand">
           <div className="flex items-center gap-3 flex-1">
             <BrainCircuit className="brand-icon min-w-[32px]" size={32} />
-            <span className="brand-name">Synapse</span>
+            <span className="brand-name">Synapse Smart</span>
           </div>
           {isMobileOpen && (
             <button className="p-1 hover:bg-white/10 rounded-md lg:hidden" onClick={onCloseMobile}>
