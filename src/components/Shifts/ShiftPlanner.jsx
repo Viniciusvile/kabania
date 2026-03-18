@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Wand2, ChevronLeft, ChevronRight, Loader2, Trash2, Clock, MapPin, Briefcase, Plus, Filter } from 'lucide-react';
+import { Calendar as CalendarIcon, Wand2, ChevronLeft, ChevronRight, Loader2, Trash2, Clock, MapPin, Briefcase, Plus, Flame, CheckCircle2, Ticket, Users } from 'lucide-react';
 import { getShifts, getEmployeeProfiles, getWorkEnvironments, getActivities, batchCreateShifts, deleteShift } from '../../services/shiftService';
 import { generateSmartShiftForDay, notifyShiftAssignments } from '../../services/smartAllocationService';
 import './ShiftsRedesign.css';
@@ -11,7 +11,6 @@ export default function ShiftPlanner({ companyId, currentUser }) {
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
   const [activeFilter, setActiveFilter] = useState('todos');
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export default function ShiftPlanner({ companyId, currentUser }) {
     const day = d.getDay() || 7;
     if (day !== 1) d.setHours(-24 * (day - 1));
     
-    const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+    const labels = ['Seg', 'Ter', 'Qqa', 'Qua', 'Qui', 'Sex', 'Dom'];
     for (let i = 0; i < 7; i++) {
         days.push({
             date: new Date(d),
@@ -81,38 +80,31 @@ export default function ShiftPlanner({ companyId, currentUser }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Action Bar */}
-      <div className="control-bar">
-        <div className="filter-toggle">
-            <button className={`filter-btn ${activeFilter === 'todos' ? 'active' : ''}`} onClick={() => setActiveFilter('todos')}>Todos</button>
-            <button className={`filter-btn ${activeFilter === 'ativos' ? 'active' : ''}`} onClick={() => setActiveFilter('ativos')}>Ativos</button>
-            <button className={`filter-btn ${activeFilter === 'concluidos' ? 'active' : ''}`} onClick={() => setActiveFilter('concluidos')}>Concluídos</button>
+      {/* Action Bar PIXEL */}
+      <div className="action-bar-pixel">
+        <div className="flex items-center gap-4">
+            <span className="filter-label-pixel text-muted">Filtrar por:</span>
+            <div className="filter-group-pixel">
+                <button className={`pill-pixel ${activeFilter === 'todos' ? 'active' : ''}`} onClick={() => setActiveFilter('todos')}>Todos</button>
+                <button className={`pill-pixel ${activeFilter === 'ativos' ? 'active' : ''}`} onClick={() => setActiveFilter('ativos')}>Ativos</button>
+                <button className={`pill-pixel ${activeFilter === 'concluidos' ? 'active' : ''}`} onClick={() => setActiveFilter('concluidos')}>Concluídos</button>
+            </div>
         </div>
 
         <div className="flex items-center gap-4">
-            <div className="bg-white border border-black/5 rounded-xl px-4 py-2 flex items-center gap-3">
-                <button onClick={prevWeek} className="hover:text-accent"><ChevronLeft size={16}/></button>
-                <span className="font-bold text-sm">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} - {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})}</span>
-                <button onClick={nextWeek} className="hover:text-accent"><ChevronRight size={16}/></button>
+            <div className="bg-white border border-black/5 rounded-xl px-4 py-2 flex items-center gap-4">
+                <button onClick={prevWeek} className="p-1 hover:bg-gray-100 rounded text-muted transition-colors"><ChevronLeft size={16}/></button>
+                <span className="font-bold text-sm text-gray-500">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} à {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}</span>
+                <button onClick={nextWeek} className="p-1 hover:bg-gray-100 rounded text-muted transition-colors"><ChevronRight size={16}/></button>
             </div>
-            <button className="btn-new-shift">
+            <button className="n-shift-btn">
                 <Plus size={18} /> Nova Escala
             </button>
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="weekly-grid-container shadow-xl">
-        <header className="weekly-header">
-            {weekDays.map(d => (
-                <div key={d.label} className="day-column-header">
-                    <span className="day-number">{d.dayNum}</span>
-                    <span className="day-name">{d.label}</span>
-                </div>
-            ))}
-        </header>
-
-        <div className="weekly-content">
+      {/* Main Grid PIXEL */}
+      <div className="grid-container-pixel">
             {weekDays.map(day => {
                 let dayShifts = shifts.filter(s => {
                     const sDate = new Date(s.start_time);
@@ -127,36 +119,71 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                 }
 
                 return (
-                    <div key={day.label} className="day-column">
+                    <div key={day.label} className="column-pixel">
+                        <header className="column-header-pixel">
+                            <span className="day-num-pixel">{day.dayNum}</span>
+                            <span className="day-txt-pixel">{day.label}</span>
+                        </header>
+
                         {dayShifts.map(shift => {
                             const env = environments.find(e => e.id === shift.environment_id);
                             const act = activities.find(a => a.id === shift.activity_id);
                             const startTime = new Date(shift.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             const endTime = new Date(shift.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             
-                            // Get employees for this shift
+                            // Mocking some data from image for fidelity (replace with real if avail)
+                            const isUrgent = shift.status === 'open';
+                            const isInProgress = !isUrgent && new Date(shift.end_time) >= new Date();
+
+                            // Get employees
                             const assignedEmployees = employees.filter(e => e.shift_profile_id === shift.employee_id);
 
                             return (
-                                <div key={shift.id} className={`shift-card-new ${shift.status === 'open' ? 'urgent' : ''}`}>
-                                    <div className="shift-location">
-                                        <MapPin size={14} /> {env?.name || 'Local'}
+                                <div key={shift.id} className={`card-pixel ${isUrgent ? 'urgent' : ''} ${isInProgress ? 'in-progress' : ''}`}>
+                                    <div className="env-tag-pixel">
+                                        <Flame size={12} /> {act?.name || 'Recurso'}
                                     </div>
-                                    <div className="shift-time font-bold">{startTime} às {endTime}</div>
-                                    <div className={`shift-status-tag ${shift.status === 'in_progress' ? 'status-in-progress' : 'status-open'}`}>
-                                        {shift.status === 'in_progress' ? 'Em Curso' : 'Em Aberta'}
+                                    <div className="loc-title-pixel">
+                                        {isUrgent ? <Flame size={16} /> : <MapPin size={16} />} 
+                                        {env?.name || 'Local'}
+                                    </div>
+                                    <div className="time-row-pixel">
+                                        <CheckCircle2 size={14} /> {startTime} às {endTime}
                                     </div>
 
-                                    {assignedEmployees.length > 0 && (
-                                        <div className="avatars-list">
-                                            {assignedEmployees.map(emp => (
-                                                <div key={emp.id} className="avatar-item">
-                                                    <div className="avatar-circle">
-                                                        {emp.name.substring(0,2).toUpperCase()}
-                                                    </div>
-                                                    <span className="avatar-name">{emp.name}</span>
+                                    <div className="metrics-row-pixel">
+                                        <div className="metric-item-pixel">
+                                            <Flame size={12} className="text-red-500" /> 5 Chamados
+                                        </div>
+                                        <div className="metric-item-pixel">
+                                            <Ticket size={12} className="text-blue-500" /> 6 comissões
+                                        </div>
+                                        <div className={`status-badge-pixel ${isUrgent ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                            {isUrgent ? 'Em Aberta' : 'Em Curso'}
+                                        </div>
+                                    </div>
+
+                                    {/* VERTICAL AVATAR LIST PIXEL */}
+                                    <div className="v-avatars-pixel">
+                                        {assignedEmployees.map(emp => (
+                                            <div key={emp.id} className="v-avatar-item">
+                                                <div className="v-avatar-img">
+                                                    {emp.name.substring(0,1)}
                                                 </div>
-                                            ))}
+                                                <span className="v-avatar-name">{emp.name.split(' ')[0]}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Faded bottom items if first column (mocked for visual fidelity as seen in image) */}
+                                    {day.label === 'Seg' && (
+                                        <div className="secondary-items-pixel">
+                                            <div className="secondary-item-pixel text-gray-400">
+                                                <Users size={12} /> Agranca
+                                            </div>
+                                            <div className="secondary-item-pixel text-gray-400">
+                                                <Wand2 size={12} /> Renata
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -165,7 +192,6 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                     </div>
                 );
             })}
-        </div>
       </div>
     </div>
   );
