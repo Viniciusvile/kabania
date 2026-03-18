@@ -13,6 +13,7 @@ import CompanySetup from './components/CompanySetup';
 import CompanyPanel from './components/CompanyPanel';
 import ReportsDashboard from './components/ReportsDashboard';
 import ServiceCenter from './components/ServiceCenter';
+import ShiftsModule from './components/Shifts/ShiftsModule';
 import BusinessManagement from './components/BusinessManagement';
 import AIInsights from './components/AIInsights';
 import UserProfile from './components/UserProfile';
@@ -617,6 +618,12 @@ function App() {
                 <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'company' ? (
                 <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+              ) : currentView === 'shifts' ? (
+                <ShiftsModule 
+                  companyId={currentCompany?.id} 
+                  currentUser={currentUser}
+                  userRole={userRole}
+                />
               ) : currentView === 'reports' ? (
                 <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'business_history' || currentView === 'business_export' ? (

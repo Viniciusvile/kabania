@@ -50,6 +50,10 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               onClick={() => onViewChange('activities')}
             >Lista de atividades</div>
             <div
+              className={`submenu-item ${currentView === 'shifts' ? 'active' : ''}`}
+              onClick={() => onViewChange('shifts')}
+            >Escalas de Trabalho</div>
+            <div
               className={`submenu-item ${currentView === 'calendar' ? 'active' : ''}`}
               onClick={() => onViewChange('calendar')}
             >Atividades do dia</div>
