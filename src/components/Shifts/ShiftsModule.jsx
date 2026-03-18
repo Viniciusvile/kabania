@@ -71,11 +71,26 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      const [statsData, shiftsData, employeesData, activitiesData, envsData, workActsData] = await Promise.all([
+      // Attempt multi-table recovery
+      const [resActivities, resServiceRequests] = await Promise.all([
+        supabase.from('activities').select('*').eq('company_id', companyId),
+        supabase.from('service_requests').select('*').eq('company_id', companyId)
+      ]);
+
+      const rawActivities = [
+        ...(resActivities.data || []),
+        ...(resServiceRequests.data || []).map(sr => ({
+          ...sr,
+          location: sr.customer_name + ' (' + (sr.client_unit || '') + ')',
+          type: sr.service_type,
+          created: sr.created_at
+        }))
+      ];
+
+      const [statsData, shiftsData, employeesData, envsData, workActsData] = await Promise.all([
         getShiftStats(companyId),
         getShifts(companyId, weekStart.toISOString(), end.toISOString()),
         getEmployeeProfiles(companyId),
-        supabase.from('activities').select('*').eq('company_id', companyId).neq('status', 'Concluída').order('created', { ascending: false }),
         supabase.from('work_environments').select('*').eq('company_id', companyId),
         supabase.from('work_activities').select('*').eq('company_id', companyId)
       ]);
@@ -86,11 +101,21 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       setEnvironments(envsData.data || []);
       setActivities(workActsData.data || []);
       
-      const linkedIds = new Set(shiftsData.map(s => s.service_request_id).filter(Boolean));
-      setPendingActivities((activitiesData.data || []).filter(a => !linkedIds.has(a.id)));
+      const linkedIds = new Set(shiftsData.map(s => String(s.service_request_id)).filter(Boolean));
+      
+      const pending = rawActivities.filter(a => {
+        const status = (a.status || '').toLowerCase();
+        const isCompleted = status.includes('conclu') || status.includes('finalized');
+        const isLinked = linkedIds.has(String(a.id));
+        return !isCompleted && !isLinked;
+      }).sort((a, b) => new Date(b.created || b.created_at) - new Date(a.created || a.created_at));
+
+      console.log(`DEBUG: Loaded ${rawActivities.length} activities, ${pending.length} pending.`);
+      setPendingActivities(pending);
 
     } catch (err) {
       console.error('Error loading Escalas data:', err);
+      alert("Erro ao carregar dados: " + err.message);
     } finally {
       setLoading(false);
     }
