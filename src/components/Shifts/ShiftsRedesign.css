@@ -1,0 +1,234 @@
+/* Shifts UI Redesign - Premium Light Theme */
+.shifts-module-wrapper.premium-light {
+    --bg-card: #ffffff;
+    --border-light: rgba(0,0,0,0.05);
+    --text-main: #1a1a1a;
+    --text-muted: #666666;
+    --accent-gold: #c5a059;
+    background-color: #f8f9fa;
+    color: var(--text-main);
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.shifts-header-new {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+/* Stats Cards */
+.stats-grid-new {
+    display: grid;
+    grid-template-cols: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.stat-card-white {
+    background: var(--bg-card);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.01);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Weekly Grid */
+.weekly-grid-container {
+    background: white;
+    border-radius: 1.5rem;
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+}
+
+.weekly-header {
+    display: grid;
+    grid-template-cols: repeat(7, 1fr);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.day-column-header {
+    padding: 1.5rem;
+    text-align: left;
+    border-right: 1px solid var(--border-light);
+}
+
+.day-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
+.day-name {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.weekly-content {
+    display: grid;
+    grid-template-cols: repeat(7, 1fr);
+    min-height: 600px;
+}
+
+.day-column {
+    padding: 1rem;
+    border-right: 1px solid var(--border-light);
+    background: #fcfcfc;
+}
+
+.day-column:last-child {
+    border-right: none;
+}
+
+/* Shift Card Style */
+.shift-card-new {
+    background: white;
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-light);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.shift-card-new:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.shift-card-new.urgent {
+    background: #fff5f5;
+    border-color: #feb2b2;
+}
+
+.shift-location {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #c53030;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.shift-time {
+    font-size: 0.85rem;
+    color: #718096;
+    margin: 0.25rem 0;
+}
+
+.shift-status-tag {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.status-in-progress { background: #e6fffa; color: #319795; }
+.status-open { background: #fff5f5; color: #e53e3e; }
+
+/* Avatars */
+.avatars-list {
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-light);
+    padding-top: 0.75rem;
+}
+
+.avatar-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #edf2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #4a5568;
+}
+
+.avatar-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+/* Control Bar */
+.control-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.filter-toggle {
+    background: #edf2f7;
+    padding: 0.25rem;
+    border-radius: 0.75rem;
+    display: flex;
+    gap: 0.25rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+    transition: all 0.2s;
+}
+
+.filter-btn.active {
+    background: white;
+    color: var(--text-main);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btn-new-shift {
+    background: var(--accent-gold);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: brightness 0.2s;
+}
+
+.btn-new-shift:hover {
+    filter: brightness(1.1);
+}

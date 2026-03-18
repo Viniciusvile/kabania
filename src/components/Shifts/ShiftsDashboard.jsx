@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, Users, AlertTriangle, Clock, MapPin } from 'lucide-react';
+import { BarChart3, Users, Clock, Calendar, CheckCircle, Plus } from 'lucide-react';
 import { getShifts, getEmployeeProfiles, getWorkEnvironments } from '../../services/shiftService';
+import './ShiftsRedesign.css';
 
 export default function ShiftsDashboard({ companyId }) {
   const [stats, setStats] = useState({
-      totalEmployees: 0,
-      totalEnvironments: 0,
-      todayShifts: 0,
-      hoursToday: 0,
-      criticalEnvironments: 0
+      totalShifts: 0,
+      openShifts: 0,
+      inProgressShifts: 0,
+      concludedShifts: '0/0'
   });
 
   useEffect(() => {
@@ -28,24 +28,21 @@ export default function ShiftsDashboard({ companyId }) {
           getWorkEnvironments(companyId)
         ]);
 
-        let hours = 0;
-        shifts.forEach(s => {
-            const h = (new Date(s.end_time) - new Date(s.start_time)) / (1000 * 60 * 60);
-            hours += h;
-        });
+        const inProgress = shifts.filter(s => {
+            const now = new Date();
+            return now >= new Date(s.start_time) && now <= new Date(s.end_time);
+        }).length;
 
-        let critical = 0;
-        envs.forEach(env => {
+        const open = envs.reduce((acc, env) => {
             const covered = shifts.filter(s => s.environment_id === env.id).length;
-            if (covered < env.min_coverage) critical++;
-        });
+            return acc + Math.max(0, env.min_coverage - covered);
+        }, 0);
 
         setStats({
-            totalEmployees: employees.length,
-            totalEnvironments: envs.length,
-            todayShifts: shifts.length,
-            hoursToday: hours.toFixed(1),
-            criticalEnvironments: critical
+            totalShifts: shifts.length,
+            openShifts: open,
+            inProgressShifts: inProgress,
+            concludedShifts: `${shifts.filter(s => new Date(s.end_time) < new Date()).length}/${shifts.length}`
         });
       } catch(e) {
           console.error(e);
@@ -53,59 +50,44 @@ export default function ShiftsDashboard({ companyId }) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
-        <div className="shift-card bg-gradient-to-br from-[#0d1117] to-[#161b22] border-blue-500/20">
-            <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-blue-500/10 text-blue-400">
-                    <Users size={24} />
-                </div>
-                <div>
-                    <h3 className="text-muted text-sm font-bold uppercase tracking-wider">Equipe Total</h3>
-                    <div className="text-3xl font-bold mt-1">{stats.totalEmployees}</div>
-                </div>
+    <div className="stats-grid-new animate-fade-in">
+        <div className="stat-card-white">
+            <div className="stat-icon-wrapper bg-blue-50 text-blue-500">
+                <Calendar size={24} />
+            </div>
+            <div>
+                <p className="stat-label">Total Escalas</p>
+                <p className="stat-value">{stats.totalShifts}</p>
             </div>
         </div>
 
-        <div className="shift-card bg-gradient-to-br from-[#0d1117] to-[#161b22] border-accent/20">
-            <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-accent/10 text-accent">
-                    <Clock size={24} />
-                </div>
-                <div>
-                    <h3 className="text-muted text-sm font-bold uppercase tracking-wider">Horas Hoje</h3>
-                    <div className="text-3xl font-bold mt-1">{stats.hoursToday}h</div>
-                </div>
+        <div className="stat-card-white">
+            <div className="stat-icon-wrapper bg-amber-50 text-amber-500">
+                <Clock size={24} />
+            </div>
+            <div>
+                <p className="stat-label">Escalas Abertas</p>
+                <p className="stat-value text-amber-600">{stats.openShifts}</p>
             </div>
         </div>
 
-        <div className="shift-card bg-gradient-to-br from-[#0d1117] to-[#161b22] border-emerald-500/20">
-            <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-emerald-500/10 text-emerald-400">
-                    <MapPin size={24} />
-                </div>
-                <div>
-                    <h3 className="text-muted text-sm font-bold uppercase tracking-wider">Ambientes</h3>
-                    <div className="text-3xl font-bold mt-1">{stats.totalEnvironments}</div>
-                </div>
+        <div className="stat-card-white">
+            <div className="stat-icon-wrapper bg-indigo-50 text-indigo-500">
+                <CheckCircle size={24} />
+            </div>
+            <div>
+                <p className="stat-label">Escalas Em Curso</p>
+                <p className="stat-value">{stats.inProgressShifts}</p>
             </div>
         </div>
 
-        <div className="shift-card bg-gradient-to-br from-[#0d1117] to-red-900/10 border-red-500/30">
-            <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-red-500/10 text-red-500">
-                    <AlertTriangle size={24} />
-                </div>
-                <div>
-                    <h3 className="text-muted text-sm font-bold w-full truncate">Abaixo da Cobertura</h3>
-                    <div className="text-3xl font-bold mt-1 text-red-400">{stats.criticalEnvironments} <span className="text-base text-red-500/50">ambientes hoje</span></div>
-                </div>
+        <div className="stat-card-white">
+            <div className="stat-icon-wrapper bg-emerald-50 text-emerald-500">
+                <BarChart3 size={24} />
             </div>
-        </div>
-
-        <div className="shift-card lg:col-span-2 xl:col-span-3 min-h-[400px] flex items-center justify-center border-dashed border-white/5">
-            <div className="text-center opacity-50">
-                <BarChart3 size={48} className="mx-auto mb-4" />
-                <p>Gráficos de alocação mensal em desenvolvimento...</p>
+            <div>
+                <p className="stat-label">Escalas Concluídas</p>
+                <p className="stat-value text-emerald-600">{stats.concludedShifts}</p>
             </div>
         </div>
     </div>

@@ -8,6 +8,7 @@ import EnvironmentsManager from './EnvironmentsManager';
 import EmployeesManager from './EmployeesManager';
 import ShiftPlanner from './ShiftPlanner';
 import MyShifts from './MyShifts';
+import './ShiftsRedesign.css';
 
 export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,7 +21,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   }
 
   return (
-    <div className="shifts-module-wrapper animate-fade-in">
+    <div className="shifts-module-wrapper premium-light animate-fade-in">
       <header className="shifts-header">
         <div>
           <h1 className="text-2xl font-bold">Gestão Inteligente de Escalas</h1>

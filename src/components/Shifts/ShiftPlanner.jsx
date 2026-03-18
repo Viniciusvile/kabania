@@ -1,29 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Wand2, ChevronLeft, ChevronRight, Loader2, Trash2, Clock, MapPin, Briefcase } from 'lucide-react';
+import { Calendar as CalendarIcon, Wand2, ChevronLeft, ChevronRight, Loader2, Trash2, Clock, MapPin, Briefcase, Plus, Filter } from 'lucide-react';
 import { getShifts, getEmployeeProfiles, getWorkEnvironments, getActivities, batchCreateShifts, deleteShift } from '../../services/shiftService';
 import { generateSmartShiftForDay, notifyShiftAssignments } from '../../services/smartAllocationService';
+import './ShiftsRedesign.css';
 
 export default function ShiftPlanner({ companyId, currentUser }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [weekStart, setWeekStart] = useState(new Date());
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('todos');
 
   useEffect(() => {
-    loadData();
-  }, [companyId, currentDate]);
+    // Round to start of week (Monday)
+    const d = new Date(weekStart);
+    const day = d.getDay() || 7;
+    if (day !== 1) d.setHours(-24 * (day - 1));
+    d.setHours(0,0,0,0);
+    loadData(d);
+  }, [companyId, weekStart]);
 
-  const loadData = async () => {
+  const loadData = async (start) => {
     try {
       setLoading(true);
-      // Load entire week to display in planner
-      const start = new Date(currentDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(currentDate);
-      end.setHours(23, 59, 59, 999);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 7);
       
       const [sData, eData, envData, actData] = await Promise.all([
         getShifts(companyId, start.toISOString(), end.toISOString()),
@@ -37,126 +41,131 @@ export default function ShiftPlanner({ companyId, currentUser }) {
       setActivities(actData);
     } catch (err) {
       console.error(err);
-      alert('Erro ao carregar escalas.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSmartGenerate = async () => {
-    if (!confirm('Deseja gerar a alocação inteligente para este dia? Escalas existentes não serão sobrepostas, mas é recomendado limpar antes.')) return;
+  const nextWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 7);
+    setWeekStart(d);
+  };
+  const prevWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() - 7);
+    setWeekStart(d);
+  };
+
+  const getWeekDays = () => {
+    const days = [];
+    const d = new Date(weekStart);
+    const day = d.getDay() || 7;
+    if (day !== 1) d.setHours(-24 * (day - 1));
     
-    setGenerating(true);
-    try {
-      // Small artificial delay to show "AI processing" effect
-      await new Promise(r => setTimeout(r, 1500));
-      
-      const drafts = generateSmartShiftForDay(
-        employees, environments, activities, currentDate, 
-        { companyId, authorId: currentUser }
-      );
-
-      if (drafts.length === 0) {
-        alert("Não foi possível gerar escalas. Verifique as disponibilidades da equipe ou atividades cadastradas.");
-      } else {
-        await batchCreateShifts(drafts, companyId, currentUser);
-        await notifyShiftAssignments(drafts, employees, companyId);
-        await loadData();
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Erro ao gerar escala automática.');
-    } finally {
-      setGenerating(false);
+    const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
+    for (let i = 0; i < 7; i++) {
+        days.push({
+            date: new Date(d),
+            label: labels[i],
+            dayNum: d.getDate()
+        });
+        d.setDate(d.getDate() + 1);
     }
+    return days;
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Excluir esta escala?')) return;
-    try {
-      await deleteShift(id);
-      setShifts(shifts.filter(s => s.id !== id));
-    } catch (err) {
-      alert('Erro ao excluir escala.');
-    }
-  };
+  if (loading) return <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto mb-4 text-accent" /> Carregando...</div>;
 
-  const nextDay = () => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 1)));
-  const prevDay = () => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 1)));
-
-  if (loading) return <div className="p-8 text-center text-muted"><Loader2 className="animate-spin mx-auto mb-4" /> Carregando escalas...</div>;
+  const weekDays = getWeekDays();
 
   return (
-    <div className="flex flex-col h-full gap-4">
-      {/* Header Controls */}
-      <div className="flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5">
-        <div className="flex items-center gap-4">
-            <button onClick={prevDay} className="p-2 bg-dark hover:bg-white/10 rounded border border-white/10"><ChevronLeft size={16} /></button>
-            <div className="flex items-center gap-2 font-bold text-lg"><CalendarIcon className="text-accent" /> {currentDate.toLocaleDateString('pt-BR')}</div>
-            <button onClick={nextDay} className="p-2 bg-dark hover:bg-white/10 rounded border border-white/10"><ChevronRight size={16} /></button>
+    <div className="flex flex-col gap-4">
+      {/* Action Bar */}
+      <div className="control-bar">
+        <div className="filter-toggle">
+            <button className={`filter-btn ${activeFilter === 'todos' ? 'active' : ''}`} onClick={() => setActiveFilter('todos')}>Todos</button>
+            <button className={`filter-btn ${activeFilter === 'ativos' ? 'active' : ''}`} onClick={() => setActiveFilter('ativos')}>Ativos</button>
+            <button className={`filter-btn ${activeFilter === 'concluidos' ? 'active' : ''}`} onClick={() => setActiveFilter('concluidos')}>Concluídos</button>
         </div>
-        
-        <button 
-          className="btn-premium bg-accent/20 border border-accent/40 text-accent hover:bg-accent hover:text-dark px-6 py-3 font-bold flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(0,229,255,0.2)]"
-          onClick={handleSmartGenerate} disabled={generating}
-        >
-          {generating ? <Loader2 className="animate-spin" size={18} /> : <Wand2 size={18} />}
-          {generating ? 'IA Criando Escala...' : 'Alocação Inteligente'}
-        </button>
+
+        <div className="flex items-center gap-4">
+            <div className="bg-white border border-black/5 rounded-xl px-4 py-2 flex items-center gap-3">
+                <button onClick={prevWeek} className="hover:text-accent"><ChevronLeft size={16}/></button>
+                <span className="font-bold text-sm">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} - {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})}</span>
+                <button onClick={nextWeek} className="hover:text-accent"><ChevronRight size={16}/></button>
+            </div>
+            <button className="btn-new-shift">
+                <Plus size={18} /> Nova Escala
+            </button>
+        </div>
       </div>
 
-      {/* Grid visualization by Environment */}
-      <div className="flex-1 overflow-auto bg-black/20 border border-white/5 rounded-xl p-4">
-        {environments.length === 0 ? (
-            <div className="text-center p-12 text-muted">Cadastre ambientes e atividades na guia correspondente primeiro.</div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {environments.map(env => {
-                    const envShifts = shifts.filter(s => s.environment_id === env.id);
+      {/* Main Grid */}
+      <div className="weekly-grid-container shadow-xl">
+        <header className="weekly-header">
+            {weekDays.map(d => (
+                <div key={d.label} className="day-column-header">
+                    <span className="day-number">{d.dayNum}</span>
+                    <span className="day-name">{d.label}</span>
+                </div>
+            ))}
+        </header>
 
-                    return (
-                        <div key={env.id} className="bg-dark/80 rounded-xl border border-white/10 overflow-hidden flex flex-col h-[600px]">
-                            <div className="bg-white/5 p-4 border-b border-white/10 flex justify-between items-center">
-                                <h3 className="font-bold flex items-center gap-2"><MapPin size={16} className="text-accent"/> {env.name}</h3>
-                                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${envShifts.length >= env.min_coverage ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
-                                    {envShifts.length}/{env.min_coverage} Cobertura
-                                </span>
-                            </div>
+        <div className="weekly-content">
+            {weekDays.map(day => {
+                let dayShifts = shifts.filter(s => {
+                    const sDate = new Date(s.start_time);
+                    return sDate.getDate() === day.date.getDate() && sDate.getMonth() === day.date.getMonth();
+                });
+
+                // Apply filters
+                if (activeFilter === 'ativos') {
+                    dayShifts = dayShifts.filter(s => new Date(s.end_time) >= new Date());
+                } else if (activeFilter === 'concluidos') {
+                    dayShifts = dayShifts.filter(s => new Date(s.end_time) < new Date());
+                }
+
+                return (
+                    <div key={day.label} className="day-column">
+                        {dayShifts.map(shift => {
+                            const env = environments.find(e => e.id === shift.environment_id);
+                            const act = activities.find(a => a.id === shift.activity_id);
+                            const startTime = new Date(shift.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            const endTime = new Date(shift.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             
-                            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-                                {envShifts.length === 0 ? (
-                                    <div className="text-center text-xs text-muted py-8 border border-dashed border-white/10 rounded-xl">Sem alocações aqui hoje</div>
-                                ) : (
-                                    envShifts.map(shift => {
-                                        // Try to find employee name from state
-                                        const emp = employees.find(e => e.shift_profile_id === shift.employee_id) || { name: 'Desconhecido' };
-                                        const startTime = new Date(shift.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                        const endTime = new Date(shift.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                                        
-                                        return (
-                                            <div key={shift.id} className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-accent/40 relative group transition-colors">
-                                                <div className="font-bold text-sm mb-1 truncate">{emp.name}</div>
-                                                <div className="text-xs text-muted flex justify-between items-center">
-                                                    <span className="flex items-center gap-1"><Briefcase size={12}/> {shift.work_activities?.name}</span>
-                                                    <span className="flex items-center gap-1"><Clock size={12} className="text-accent"/> {startTime} - {endTime}</span>
+                            // Get employees for this shift
+                            const assignedEmployees = employees.filter(e => e.shift_profile_id === shift.employee_id);
+
+                            return (
+                                <div key={shift.id} className={`shift-card-new ${shift.status === 'open' ? 'urgent' : ''}`}>
+                                    <div className="shift-location">
+                                        <MapPin size={14} /> {env?.name || 'Local'}
+                                    </div>
+                                    <div className="shift-time font-bold">{startTime} às {endTime}</div>
+                                    <div className={`shift-status-tag ${shift.status === 'in_progress' ? 'status-in-progress' : 'status-open'}`}>
+                                        {shift.status === 'in_progress' ? 'Em Curso' : 'Em Aberta'}
+                                    </div>
+
+                                    {assignedEmployees.length > 0 && (
+                                        <div className="avatars-list">
+                                            {assignedEmployees.map(emp => (
+                                                <div key={emp.id} className="avatar-item">
+                                                    <div className="avatar-circle">
+                                                        {emp.name.substring(0,2).toUpperCase()}
+                                                    </div>
+                                                    <span className="avatar-name">{emp.name}</span>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleDelete(shift.id)}
-                                                    className="absolute top-2 right-2 p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-                                                    title="Remover da escala"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
-                                            </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        )}
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            })}
+        </div>
       </div>
     </div>
   );
