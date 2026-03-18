@@ -157,11 +157,12 @@ export const getShifts = async (companyId, startDate, endDate) => {
     
     if (!data) return [];
 
-    // Transform to include helpful counts
+    // Transform to include helpful counts and map view fields to component structure
     return data.map(shift => ({
         ...shift,
+        work_environments: { name: shift.environment_name },
+        work_activities: { name: shift.activity_name, required_role: shift.required_role },
         assigned_employees: shift.shift_assignments?.map(a => {
-            // Safety check for nested profiles
             const profile = a.employee_profiles?.profiles || {};
             return {
                 ...a.employee_profiles,
@@ -171,8 +172,8 @@ export const getShifts = async (companyId, startDate, endDate) => {
                 avatar_url: profile.avatar_url || null
             };
         }) || [],
-        calls_count: shift.shift_calls?.length || 0,
-        open_calls_count: shift.shift_calls?.filter(c => c.status === 'open').length || 0
+        calls_count: shift.calls_count || 0,
+        open_calls_count: shift.open_calls_count || 0
     }));
 };
 

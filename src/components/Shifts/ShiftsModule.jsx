@@ -72,13 +72,13 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       end.setDate(weekStart.getDate() + 7);
 
       const [statsData, shiftsData, employeesData, envsData, workActsData, resActivities, resServiceRequests] = await Promise.all([
-        getShiftStats(companyId),
-        getShifts(companyId, weekStart.toISOString(), end.toISOString()),
-        getEmployeeProfiles(companyId),
+        getShiftStats(companyId).catch(() => ({ total: 0, open: 0, inProgress: 0, concluded: '0/0' })),
+        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(() => []),
+        getEmployeeProfiles(companyId).catch(() => []),
         supabase.from('work_environments').select('id, name').eq('company_id', companyId),
         supabase.from('work_activities').select('id, name, environment_id').eq('company_id', companyId),
-        supabase.from('activities').select('id, name, description, created_at').eq('company_id', companyId),
-        supabase.from('service_requests').select('id, customer_name, client_unit, service_type, created_at').eq('company_id', companyId)
+        supabase.from('activities').select('id, name, description, status, created_at').eq('company_id', companyId),
+        supabase.from('service_requests').select('id, customer_name, client_unit, service_type, status, created_at').eq('company_id', companyId)
       ]);
 
       setStats(statsData || { total: 0, open: 0, inProgress: 0, concluded: '0/0' });
