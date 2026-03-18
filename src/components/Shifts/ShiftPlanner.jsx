@@ -65,22 +65,31 @@ export default function ShiftPlanner({ companyId, currentUser }) {
     <div className="flex flex-col gap-6 animate-fade-in">
       {/* Top Control Bar G4 */}
       <div className="action-bar-pixel">
-        <div className="filter-group-pixel">
-            <button className={`pill-pixel ${activeFilter === 'todos' ? 'active' : ''}`} onClick={() => setActiveFilter('todos')}>Todos</button>
-            <button className={`pill-pixel ${activeFilter === 'ativos' ? 'active' : ''}`} onClick={() => setActiveFilter('ativos')}>Ativos</button>
-            <button className={`pill-pixel ${activeFilter === 'concluidos' ? 'active' : ''}`} onClick={() => setActiveFilter('concluidos')}>Concluídos</button>
+        <div className="flex items-center gap-4">
+            <span className="text-gray-400 font-bold text-sm">Filtrar por:</span>
+            <div className="filter-group-pixel">
+                <button className={`pill-pixel ${activeFilter === 'todos' ? 'active' : ''}`} onClick={() => setActiveFilter('todos')}>Todos</button>
+                <button className={`pill-pixel ${activeFilter === 'ativos' ? 'active' : ''}`} onClick={() => setActiveFilter('ativos')}>Ativos</button>
+                <button className={`pill-pixel ${activeFilter === 'concluidos' ? 'active' : ''}`} onClick={() => setActiveFilter('concluidos')}>Concluídos</button>
+            </div>
         </div>
 
         <div className="flex items-center gap-6">
             <div className="bg-white border border-gray-100 rounded-xl px-6 py-2 shadow-sm flex items-center gap-6">
-                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))} className="text-gray-400 hover:text-gray-800 transition-colors"><ChevronLeft size={20}/></button>
-                <span className="font-extrabold text-sm text-gray-600">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} à {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}</span>
-                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))} className="text-gray-400 hover:text-gray-800 transition-colors"><ChevronRight size={20}/></button>
+                <CalendarIcon size={18} className="text-gray-400" />
+                <span className="font-extrabold text-sm text-gray-500">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} à {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}</span>
             </div>
             <button className="n-shift-btn">
-                <Plus size={18} /> Nova Escala
+                + Nova Escala
             </button>
         </div>
+      </div>
+
+      {/* Floating Week Nav G4 */}
+      <div className="g4-floating-nav">
+          <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))}><ChevronLeft size={20}/></button>
+          <span className="font-black text-sm">{weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} à {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}</span>
+          <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))}><ChevronRight size={20}/></button>
       </div>
 
       {/* Grid Semanal G4 */}
@@ -110,7 +119,7 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                             return (
                                 <div key={shift.id} className="card-pixel">
                                     <div className="badge-unit-pixel">
-                                        <Layout size={12} className="inline mr-2" /> {act?.name || 'Recurso'}
+                                        {act?.name || 'Recurso'}
                                     </div>
                                     
                                     <div className={`shift-main-card-pixel ${isUrgent ? 'urgent' : ''}`}>
@@ -118,7 +127,7 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                                             {env?.name || 'Local'}
                                         </div>
                                         <div className="time-row-pixel">
-                                            <Clock size={14} /> {startTime} às {endTime}
+                                            {startTime} às {endTime}
                                         </div>
 
                                         <div className="metrics-list-pixel">
@@ -128,17 +137,17 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                                             <div className="metric-item-pixel">
                                                 <Ticket size={14} /> 6 comissões
                                             </div>
-                                            <div className={`text-[10px] font-black uppercase mt-2 ${isUrgent ? 'text-red-500' : 'text-emerald-500'}`}>
+                                            <div className="text-[10px] font-black uppercase mt-2">
                                                 {isUrgent ? 'Em Aberta' : 'Em Curso'}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* DUAL TEAM LISTS (Superior/Inferior Gap Mirror) */}
+                                    {/* SUPERIOR TEAM */}
                                     <div className="v-team-group-pixel">
                                         {assignedEmployees.slice(0, 3).map(emp => (
                                             <div key={emp.id} className="v-avatar-item">
-                                                <div className="v-avatar-box grayscale hover:grayscale-0 transition-all">
+                                                <div className="v-avatar-box">
                                                     <div className="w-full h-full bg-gray-200 flex items-center justify-center font-black text-gray-500">{emp.name[0]}</div>
                                                 </div>
                                                 <span className="v-avatar-name">{emp.name.split(' ')[0]}</span>
@@ -146,14 +155,15 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                                         ))}
                                     </div>
 
+                                    {/* SECONDARY TEAM IMAGE 3 */}
                                     <div className="v-team-group-pixel secondary">
-                                         <div className="flex items-center gap-3 opacity-40 grayscale">
-                                            <div className="w-9 h-9 rounded-xl bg-gray-300"></div>
-                                            <span className="v-avatar-name text-sm">Reserva</span>
+                                         <div className="v-avatar-item">
+                                            <div className="v-avatar-box"></div>
+                                            <span className="v-avatar-name">Agranca</span>
                                          </div>
-                                         <div className="flex items-center gap-3 opacity-40 grayscale">
-                                            <div className="w-9 h-9 rounded-xl bg-gray-300"></div>
-                                            <span className="v-avatar-name text-sm">Liderança</span>
+                                         <div className="v-avatar-item">
+                                            <div className="v-avatar-box"></div>
+                                            <span className="v-avatar-name">Renata</span>
                                          </div>
                                     </div>
                                 </div>
