@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { Star, RotateCcw, Filter, LayoutGrid, MoreHorizontal, Plus, Search, Trash2, Eye, Edit2, Copy, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Star, RotateCcw, Filter, LayoutGrid, MoreHorizontal, Plus, Search, Trash2, Eye, Edit2, Copy, CheckCircle, XCircle, AlertTriangle, Calendar } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 import NewActivityModal from './NewActivityModal';
 import ActivityDetailModal from './ActivityDetailModal';
 import { logEvent } from '../services/historyService';
 import { supabase } from '../supabaseClient';
+import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
+import { createNotification } from '../services/notificationService';
+import { createShift } from '../services/shiftService';
 import './ActivityList.css';
 
 const STORAGE_KEY = 'synapseActivities_v2';
@@ -109,12 +113,6 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
     document.body
   );
 }
-
-import { useGoogleLogin } from '@react-oauth/google';
-import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
-import { createNotification } from '../services/notificationService';
-
-import { createShift } from '../services/shiftService';
 
 export default function ActivityList({ currentUser, currentCompany }) {
   const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
