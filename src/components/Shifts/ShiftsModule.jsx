@@ -96,12 +96,25 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       ]);
 
       setStats(statsData);
-      setShifts(shiftsData);
+      
+      const enrichedShifts = (shiftsData || []).map(shift => {
+        if (!shift.service_request_id) return shift;
+        const matchingActivity = rawActivities.find(a => String(a.id) === String(shift.service_request_id));
+        return {
+          ...shift,
+          service_request: matchingActivity ? {
+            location: matchingActivity.location,
+            type: matchingActivity.type
+          } : null
+        };
+      });
+
+      setShifts(enrichedShifts);
       setEmployees(employeesData);
       setEnvironments(envsData.data || []);
       setActivities(workActsData.data || []);
       
-      const linkedIds = new Set(shiftsData.map(s => String(s.service_request_id)).filter(Boolean));
+      const linkedIds = new Set(enrichedShifts.map(s => String(s.service_request_id)).filter(Boolean));
       
       const pending = rawActivities.filter(a => {
         const status = (a.status || '').toLowerCase();
@@ -115,7 +128,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
     } catch (err) {
       console.error('Error loading Escalas data:', err);
-      alert("Erro ao carregar dados: " + err.message);
     } finally {
       setLoading(false);
     }
