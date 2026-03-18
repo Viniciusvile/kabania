@@ -4,7 +4,7 @@ import { logEvent } from './historyService';
 // ==========================================
 // WORK ENVIRONMENTS
 // ==========================================
-export const getEnvironments = async (companyId) => {
+export const getWorkEnvironments = async (companyId) => {
   if (!companyId) return [];
   const { data, error } = await supabase
     .from('work_environments')
@@ -15,7 +15,7 @@ export const getEnvironments = async (companyId) => {
   return data;
 };
 
-export const createEnvironment = async (envData) => {
+export const createWorkEnvironment = async (envData) => {
   const { data, error } = await supabase
     .from('work_environments')
     .insert([envData])
@@ -23,6 +23,14 @@ export const createEnvironment = async (envData) => {
     .single();
   if (error) throw error;
   return data;
+};
+
+export const deleteWorkEnvironment = async (id) => {
+  const { error } = await supabase
+    .from('work_environments')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
 };
 
 // ==========================================
@@ -42,7 +50,7 @@ export const getActivities = async (companyId) => {
   return data;
 };
 
-export const createActivity = async (activityData) => {
+export const createWorkActivity = async (activityData) => {
   const { data, error } = await supabase
     .from('work_activities')
     .insert([activityData])
@@ -50,6 +58,14 @@ export const createActivity = async (activityData) => {
     .single();
   if (error) throw error;
   return data;
+};
+
+export const deleteWorkActivity = async (id) => {
+  const { error } = await supabase
+    .from('work_activities')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
 };
 
 // ==========================================
