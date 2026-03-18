@@ -33,6 +33,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     };
   }, [companyId, weekStart]);
 
+  const [pendingActivities, setPendingActivities] = useState([]);
+
   const loadAllData = async () => {
     if (!companyId) return;
     try {
@@ -40,15 +42,21 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      const [statsData, shiftsData, employeesData] = await Promise.all([
+      const [statsData, shiftsData, employeesData, activitiesData] = await Promise.all([
         getShiftStats(companyId),
         getShifts(companyId, weekStart.toISOString(), end.toISOString()),
-        getEmployeeProfiles(companyId)
+        getEmployeeProfiles(companyId),
+        supabase.from('activities').select('*').eq('company_id', companyId).neq('status', 'Concluída').order('created', { ascending: false })
       ]);
 
       setStats(statsData);
       setShifts(shiftsData);
       setEmployees(employeesData);
+      
+      // Filter activities that don't have a linked shift yet
+      const linkedIds = new Set(shiftsData.map(s => s.service_request_id).filter(Boolean));
+      setPendingActivities((activitiesData.data || []).filter(a => !linkedIds.has(a.id)));
+
     } catch (err) {
       console.error('Error loading Escalas data:', err);
     } finally {
@@ -56,53 +64,30 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const getWeekDays = () => {
-    const days = [];
-    const d = new Date(weekStart);
-    const labels = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-    for (let i = 0; i < 7; i++) {
-      days.push({ date: new Date(d), label: labels[i], dayNum: d.getDate() });
-      d.setDate(d.getDate() + 1);
-    }
-    return days;
+  const handleQuickSchedule = async (activity) => {
+     try {
+       setLoading(true);
+       const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
+       const endDate = new Date(startDate.getTime() + (60 * 60000));
+       
+       await supabase.from('shifts').insert([{
+         company_id: companyId,
+         service_request_id: activity.id,
+         start_time: startDate.toISOString(),
+         end_time: endDate.toISOString(),
+         status: 'scheduled',
+         notes: `Agendado via menu de Escalas`
+       }]);
+
+       await loadAllData();
+       alert("Escala gerada com sucesso!");
+     } catch (err) {
+       console.error("Erro ao agendar atividade:", err);
+       alert("Erro ao criar escala: " + err.message);
+     } finally {
+       setLoading(false);
+     }
   };
-
-  const weekDays = getWeekDays();
-
-  // Filter shifts by status and search
-  const filteredShifts = shifts.filter(s => {
-    const matchesStatus = filterStatus === 'todos' || 
-                         (filterStatus === 'ativos' && (s.status === 'in_progress' || s.status === 'active')) ||
-                         (filterStatus === 'concluidos' && (s.status === 'completed' || s.status === 'finished'));
-    const matchesSearch = !searchQuery || 
-                         s.work_environments?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         s.assigned_employees?.some(emp => emp.name?.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesStatus && matchesSearch;
-  });
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [environments, setEnvironments] = useState([]);
-  const [activities, setActivities] = useState([]);
-
-  useEffect(() => {
-     // Load environments and activities for the select fields
-     supabase.from('work_environments').select('*').eq('company_id', companyId).then(({data}) => setEnvironments(data || []));
-     supabase.from('work_activities').select('*').eq('company_id', companyId).then(({data}) => setActivities(data || []));
-  }, [companyId]);
-
-  const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
-
-  const handleAddEmployee = async (employeeId) => {
-    try {
-      await addEmployeeToShift(assignmentModal.shiftId, employeeId);
-      setAssignmentModal({ isOpen: false, shiftId: null });
-    } catch (err) {
-      console.error("Erro ao adicionar funcionário:", err);
-    }
-  };
-
-  const fieldWorkers = employees.filter(e => e.role?.toLowerCase().includes('campo') || e.role?.toLowerCase().includes('técnico'));
-  const staffMembers = employees.filter(e => !fieldWorkers.includes(e));
 
   return (
     <div className="escalas-page animate-fade-in">
@@ -138,42 +123,77 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         </div>
       </div>
 
-      {/* 🔎 FILTERS & CONTROLS */}
-      <div className="controls-bar-pixel">
-        <div className="flex items-center gap-4">
-          <div className="filter-pills-pixel">
-            <button className={filterStatus === 'todos' ? 'active' : ''} onClick={() => setFilterStatus('todos')}>Todos</button>
-            <button className={filterStatus === 'ativos' ? 'active' : ''} onClick={() => setFilterStatus('ativos')}>Ativos</button>
-            <button className={filterStatus === 'concluidos' ? 'active' : ''} onClick={() => setFilterStatus('concluidos')}>Concluídos</button>
+      <div className="shifts-main-layout">
+        <div className="shifts-grid-area">
+          {/* 🔎 FILTERS & CONTROLS */}
+          <div className="controls-bar-pixel">
+            <div className="flex items-center gap-4">
+              <div className="filter-pills-pixel">
+                <button className={filterStatus === 'todos' ? 'active' : ''} onClick={() => setFilterStatus('todos')}>Todos</button>
+                <button className={filterStatus === 'ativos' ? 'active' : ''} onClick={() => setFilterStatus('ativos')}>Ativos</button>
+                <button className={filterStatus === 'concluidos' ? 'active' : ''} onClick={() => setFilterStatus('concluidos')}>Concluídos</button>
+              </div>
+              
+              <div className="period-selector-pixel">
+                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))}><ChevronLeft size={16} /></button>
+                <span className="font-bold text-sm">
+                  {weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}
+                </span>
+                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))}><ChevronRight size={16} /></button>
+              </div>
+            </div>
+
+            <button className="new-escala-btn" onClick={() => setIsModalOpen(true)}>
+              <Plus size={18} /> Nova Escala
+            </button>
           </div>
+
+          {/* 📅 WEEKLY GRID */}
+          {loading ? (
+            <div className="loading-area-pixel">
+               <Loader2 className="animate-spin text-accent" size={40} />
+               <p>Sincronizando Escalas...</p>
+            </div>
+          ) : (
+            <EscalaGrid 
+              shifts={filteredShifts} 
+              weekDays={weekDays} 
+              onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
+            />
+          )}
+        </div>
+
+        {/* 📋 PENDING ACTIVITIES SIDEBAR */}
+        <aside className="pending-activities-sidebar">
+          <header className="sidebar-header">
+            <h3><Briefcase size={18} /> Solicitações Pendentes</h3>
+            <span className="pending-count">{pendingActivities.length}</span>
+          </header>
           
-          <div className="period-selector-pixel">
-            <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))}><ChevronLeft size={16} /></button>
-            <span className="font-bold text-sm">
-              {weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}
-            </span>
-            <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))}><ChevronRight size={16} /></button>
+          <div className="pending-list">
+            {pendingActivities.map(act => (
+              <div key={act.id} className="pending-act-card animate-slide-right">
+                <div className="act-header">
+                  <span className="act-id">#{act.id}</span>
+                  <span className="act-type">{act.type}</span>
+                </div>
+                <h4 className="act-location">{act.location}</h4>
+                <div className="act-footer">
+                  <button className="btn-schedule-quick" onClick={() => handleQuickSchedule(act)}>
+                    <Plus size={14} /> Ativar Escala
+                  </button>
+                </div>
+              </div>
+            ))}
+            {pendingActivities.length === 0 && (
+              <div className="empty-pending">
+                <CheckCircle size={32} className="text-muted opacity-20" />
+                <p>Tudo em escala!</p>
+              </div>
+            )}
           </div>
-        </div>
-
-        <button className="new-escala-btn" onClick={() => setIsModalOpen(true)}>
-          <Plus size={18} /> Nova Escala
-        </button>
+        </aside>
       </div>
-
-      {/* 📅 WEEKLY GRID */}
-      {loading ? (
-        <div className="loading-area-pixel">
-           <Loader2 className="animate-spin text-accent" size={40} />
-           <p>Sincronizando Escalas...</p>
-        </div>
-      ) : (
-        <EscalaGrid 
-          shifts={filteredShifts} 
-          weekDays={weekDays} 
-          onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
-        />
-      )}
 
       {/* 🤝 ASSIGNMENT MODAL */}
       {assignmentModal.isOpen && (
@@ -304,14 +324,20 @@ function EscalaCard({ shift, onAddEmployee }) {
   const startTime = new Date(shift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const locationName = shift.service_request?.location || shift.work_environments?.name || 'Local Não Definido';
+  const activityName = shift.service_request?.type || shift.work_activities?.name || 'Atividade';
+
   return (
     <div className={`escala-card-pixel ${isProblem ? 'problem' : inProgress ? 'progress' : 'normal'}`}>
       <div className="card-header">
-        <div className="location-name">{shift.work_environments?.name || 'Local Não Definido'}</div>
+        <div className="location-name">{locationName}</div>
         <div className="shift-time">{startTime} às {endTime}</div>
       </div>
 
       <div className="card-indicators">
+        <div className="indicator-chip" title={activityName}>
+          <Briefcase size={12} /> {activityName}
+        </div>
         <div className="indicator-chip">
           <Flame size={12} /> {shift.calls_count} chamados
         </div>

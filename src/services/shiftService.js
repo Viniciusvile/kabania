@@ -145,6 +145,7 @@ export const getShifts = async (companyId, startDate, endDate) => {
             *,
             work_environments ( name ),
             work_activities ( name, required_role ),
+            service_request:service_request_id ( location, type ),
             shift_assignments ( 
                 id, 
                 status, 

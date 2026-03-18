@@ -40,7 +40,7 @@ function DeleteConfirm({ activityId, location, onConfirm, onCancel }) {
 }
 
 // Row context menu component — rendered via portal so it overlaps everything
-function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, onDuplicate, onDelete, onChangeStatus }) {
+function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, onDuplicate, onDelete, onChangeStatus, onDirectToShift }) {
   const ref = useRef(null);
 
   // Calculate position: appear below the button, flip up if near bottom edge
