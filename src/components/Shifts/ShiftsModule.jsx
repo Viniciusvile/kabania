@@ -71,11 +71,18 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      const [resActivities, resServiceRequests] = await Promise.all([
-        supabase.from('activities').select('*').eq('company_id', companyId),
-        supabase.from('service_requests').select('*').eq('company_id', companyId)
+      const [statsData, shiftsData, employeesData, envsData, workActsData, resActivities, resServiceRequests] = await Promise.all([
+        getShiftStats(companyId),
+        getShifts(companyId, weekStart.toISOString(), end.toISOString()),
+        getEmployeeProfiles(companyId),
+        supabase.from('work_environments').select('id, name').eq('company_id', companyId),
+        supabase.from('work_activities').select('id, name, environment_id').eq('company_id', companyId),
+        supabase.from('activities').select('id, name, description, created_at').eq('company_id', companyId),
+        supabase.from('service_requests').select('id, customer_name, client_unit, service_type, created_at').eq('company_id', companyId)
       ]);
 
+      setStats(statsData || { total: 0, open: 0, inProgress: 0, concluded: '0/0' });
+      
       const rawActivities = [
         ...(resActivities.data || []).map(act => ({
           ...act,
@@ -92,39 +99,16 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         }))
       ];
 
-      const [statsData, shiftsData, employeesData, envsData, workActsData] = await Promise.all([
-        getShiftStats(companyId).catch(() => ({ total: 0, open: 0, inProgress: 0, concluded: '0/0' })),
-        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(() => []),
-        getEmployeeProfiles(companyId).catch(() => []),
-        supabase.from('work_environments').select('*').eq('company_id', companyId),
-        supabase.from('work_activities').select('*').eq('company_id', companyId)
-      ]);
-
-      setStats(statsData || { total: 0, open: 0, inProgress: 0, concluded: '0/0' });
-      
-      const enrichedShifts = (shiftsData || []).map(shift => {
-        if (!shift.service_request_id) return shift;
-        const matchingActivity = rawActivities.find(a => String(a.id) === String(shift.service_request_id));
-        return {
-          ...shift,
-          service_request: matchingActivity ? {
-            location: matchingActivity.location,
-            type: matchingActivity.type
-          } : null
-        };
-      });
-
-      setShifts(enrichedShifts);
+      setShifts(shiftsData || []);
       setEmployees(employeesData || []);
       setEnvironments(envsData.data || []);
       setActivities(workActsData.data || []);
       
-      const linkedIds = new Set(enrichedShifts.map(s => String(s.service_request_id)).filter(Boolean));
+      const linkedIds = new Set((shiftsData || []).map(s => String(s.service_request_id)).filter(Boolean));
       const pending = rawActivities.filter(a => {
         const status = (a.status || '').toLowerCase();
         const isCompleted = status.includes('conclu') || status.includes('finalized');
-        const isLinked = linkedIds.has(String(a.id));
-        return !isCompleted && !isLinked;
+        return !isCompleted && !linkedIds.has(String(a.id));
       }).sort((a, b) => new Date(b.created || b.created_at) - new Date(a.created || a.created_at));
 
       setPendingActivities(pending);

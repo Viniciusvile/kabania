@@ -73,36 +73,25 @@ export const deleteWorkActivity = async (id) => {
 // ==========================================
 export const getEmployeeProfiles = async (companyId) => {
   if (!companyId) return [];
-  // Get profiles and their shift data
-  const { data: shiftData, error: shiftError } = await supabase
+  // Direct join for faster performance
+  const { data, error } = await supabase
     .from('employee_profiles')
-    .select('*')
+    .select(`
+        *,
+        profiles:profile_id ( id, name, email, avatar_url )
+    `)
     .eq('company_id', companyId);
   
-  if (shiftError) throw shiftError;
+  if (error) throw error;
 
-  // We should also get the baseline public.profiles for name/email
-  const { data: profilesData, error: profError } = await supabase
-    .from('profiles')
-    .select('id, name, email')
-    .eq('company_id', companyId);
-
-  if (profError) throw profError;
-
-  // Merge them (or return raw if we handle it in component)
-  // For robustness, let's merge them here
-  const merged = profilesData.map(prof => {
-      const sData = shiftData.find(s => s.profile_id === prof.id);
-      return {
-          ...prof,
-          shift_profile_id: sData?.id || null, // The UUID in employee_profiles table
-          role: sData?.role || 'Não definido',
-          max_daily_hours: sData?.max_daily_hours || 8,
-          max_weekly_hours: sData?.max_weekly_hours || 44,
-          availability_schedule: sData?.availability_schedule || {}
-      };
-  });
-  return merged;
+  return data.map(sData => ({
+      ...sData.profiles,
+      shift_profile_id: sData.id,
+      role: sData.role || 'Não definido',
+      max_daily_hours: sData.max_daily_hours || 8,
+      max_weekly_hours: sData.max_weekly_hours || 44,
+      availability_schedule: sData.availability_schedule || {}
+  }));
 };
 
 export const updateEmployeeProfile = async (profileId, companyId, updateData) => {
@@ -140,11 +129,9 @@ export const getShifts = async (companyId, startDate, endDate) => {
     if (!companyId) return [];
     
     let query = supabase
-        .from('shifts')
+        .from('view_shifts_standard')
         .select(`
             *,
-            work_environments ( name ),
-            work_activities ( name, required_role ),
             shift_assignments ( 
                 id, 
                 status, 
@@ -154,8 +141,7 @@ export const getShifts = async (companyId, startDate, endDate) => {
                     profile_id,
                     profiles:profile_id ( name, avatar_url )
                 ) 
-            ),
-            shift_calls ( id, status )
+            )
         `)
         .eq('company_id', companyId)
         .order('start_time');
@@ -256,22 +242,26 @@ export const updateAssignmentStatus = async (assignmentId, status) => {
 export const getShiftStats = async (companyId) => {
     if (!companyId) return { total: 0, open: 0, inProgress: 0, concluded: '0/0' };
     
-    const { data: shifts, error } = await supabase
-        .from('shifts')
-        .select('id, status, end_time')
-        .eq('company_id', companyId);
+    // Fast path: use optimized server-side function
+    const { data: stats, error } = await supabase.rpc('get_shift_stats_optimized', {
+        p_company_id: companyId
+    });
         
-    if (error) throw error;
+    if (!error && stats) return stats;
+
+    // Fallback if RPC fails/not yet created
+    const { data: shifts, error: fallbackError } = await supabase
+        .from('shifts')
+        .select('id, status')
+        .eq('company_id', companyId);
+    
+    if (fallbackError) return { total: 0, open: 0, inProgress: 0, concluded: '0/0' };
     
     const total = shifts.length;
-    const open = shifts.filter(s => s.status === 'open' || s.status === 'scheduled').length;
-    const inProgress = shifts.filter(s => s.status === 'in_progress' || s.status === 'active').length;
-    const concludedCount = shifts.filter(s => s.status === 'completed' || new Date(s.end_time) < new Date()).length;
-    
     return {
         total,
-        open,
-        inProgress,
-        concluded: `${concludedCount}/${total}`
+        open: shifts.filter(s => s.status === 'open' || s.status === 'scheduled').length,
+        inProgress: shifts.filter(s => s.status === 'in_progress' || s.status === 'active').length,
+        concluded: `${shifts.filter(s => s.status === 'completed').length}/${total}`
     };
 };
