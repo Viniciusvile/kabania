@@ -34,6 +34,35 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   }, [companyId, weekStart]);
 
   const [pendingActivities, setPendingActivities] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
+  const [environments, setEnvironments] = useState([]);
+  const [activities, setActivities] = useState([]);
+
+  // 📝 Derived values for logic and display
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return {
+      date: d,
+      label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', ''),
+      dayNum: d.getDate()
+    };
+  });
+
+  const filteredShifts = shifts.filter(s => {
+    if (filterStatus === 'ativos') return s.status === 'in_progress' || s.status === 'open';
+    if (filterStatus === 'concluidos') return s.status === 'concluded';
+    return true;
+  }).filter(s => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return s.work_environments?.name?.toLowerCase().includes(q) || 
+           s.work_activities?.name?.toLowerCase().includes(q);
+  });
+
+  const fieldWorkers = employees.filter(e => e.role === 'field' || e.role === 'colaborador');
+  const staffMembers = employees.filter(e => e.role !== 'field' && e.role !== 'colaborador');
 
   const loadAllData = async () => {
     if (!companyId) return;
@@ -42,23 +71,78 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      const [statsData, shiftsData, employeesData, activitiesData] = await Promise.all([
+      const [statsData, shiftsData, employeesData, activitiesData, envsData, workActsData] = await Promise.all([
         getShiftStats(companyId),
         getShifts(companyId, weekStart.toISOString(), end.toISOString()),
         getEmployeeProfiles(companyId),
-        supabase.from('activities').select('*').eq('company_id', companyId).neq('status', 'Concluída').order('created', { ascending: false })
+        supabase.from('activities').select('*').eq('company_id', companyId).neq('status', 'Concluída').order('created', { ascending: false }),
+        supabase.from('work_environments').select('*').eq('company_id', companyId),
+        supabase.from('work_activities').select('*').eq('company_id', companyId)
       ]);
 
       setStats(statsData);
       setShifts(shiftsData);
       setEmployees(employeesData);
+      setEnvironments(envsData.data || []);
+      setActivities(workActsData.data || []);
       
-      // Filter activities that don't have a linked shift yet
       const linkedIds = new Set(shiftsData.map(s => s.service_request_id).filter(Boolean));
       setPendingActivities((activitiesData.data || []).filter(a => !linkedIds.has(a.id)));
 
     } catch (err) {
       console.error('Error loading Escalas data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddEmployee = async (profileId) => {
+    if (!assignmentModal.shiftId) return;
+    try {
+      setLoading(true);
+      await addEmployeeToShift(assignmentModal.shiftId, profileId);
+      setAssignmentModal({ isOpen: false, shiftId: null });
+      await loadAllData();
+    } catch (err) {
+      alert("Erro ao adicionar colaborador: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveEmployee = async (shiftId, profileId) => {
+    try {
+      setLoading(true);
+      await removeEmployeeFromShift(shiftId, profileId);
+      await loadAllData();
+    } catch (err) {
+      alert("Erro ao remover colaborador: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateShift = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const newShift = {
+      company_id: companyId,
+      environment_id: formData.get('environment_id'),
+      activity_id: formData.get('activity_id'),
+      start_time: new Date(formData.get('start_time')).toISOString(),
+      end_time: new Date(formData.get('end_time')).toISOString(),
+      status: 'scheduled'
+    };
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('shifts').insert([newShift]);
+      if (error) throw error;
+      setIsModalOpen(false);
+      await loadAllData();
+      alert("Escala criada com sucesso!");
+    } catch (err) {
+      alert("Erro ao criar escala: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -251,17 +335,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
               <h3>Agendar Nova Escala</h3>
               <button onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <form className="modal-form" onSubmit={(e) => { e.preventDefault(); setIsModalOpen(false); }}>
+            <form className="modal-form" onSubmit={handleCreateShift}>
               <div className="form-group">
                 <label>Ambiente</label>
-                <select required>
+                <select name="environment_id" required>
                   <option value="">Selecione o local</option>
                   {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
               <div className="form-group">
                 <label>Atividade</label>
-                <select required>
+                <select name="activity_id" required>
                   <option value="">Selecione a atividade</option>
                   {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
@@ -269,11 +353,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="form-group">
                   <label>Início</label>
-                  <input type="datetime-local" required />
+                  <input name="start_time" type="datetime-local" required />
                 </div>
                 <div className="form-group">
                   <label>Fim</label>
-                  <input type="datetime-local" required />
+                  <input name="end_time" type="datetime-local" required />
                 </div>
               </div>
               <div className="modal-actions">
