@@ -1,8 +1,14 @@
--- ============================================================================
--- FIX: Shifts Module Joins and RLS (High Reliability)
--- ============================================================================
-
 -- 1. Ensure Foreign Keys exist for PostgREST joins
+-- First ensure profiles(user_id) is UNIQUE so it can be referenced
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'profiles_user_id_key'
+    ) THEN
+        ALTER TABLE public.profiles ADD CONSTRAINT profiles_user_id_key UNIQUE (user_id);
+    END IF;
+END $$;
+
 -- Check if profile_id in employee_profiles has a reference
 DO $$
 BEGIN
