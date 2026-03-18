@@ -33,15 +33,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           onClick={() => onViewChange('kanban')}
         >
           <Grid size={20} />
-          <span>Dashboard</span>
-        </div>
-
-        <div
-          className={`nav-item ${currentView === 'team' ? 'active' : ''}`}
-          onClick={() => onViewChange('team')}
-        >
-          <Users size={20} />
-          <span>Equipe</span>
+          <span>Projetos</span>
         </div>
 
         <div
@@ -49,72 +41,95 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           onClick={() => onViewChange('shifts')}
         >
           <Calendar size={20} className="text-accent" />
-          <span>Escalas</span>
+          <span>Escalas de Trabalho</span>
+          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-accent/20 text-accent text-[8px] font-bold uppercase tracking-tighter">Smart</span>
         </div>
 
-        <div className="nav-item opacity-50 cursor-not-allowed">
-          <Sparkles size={20} />
-          <span>Rondas</span>
+        <div className={`nav-group ${expandedGroups.activities ? 'expanded' : ''}`}>
+          <div className="nav-item" onClick={() => toggleGroup('activities')}>
+            <ClipboardList size={20} />
+            <span>Atividades</span>
+            {!isCollapsed && (
+              <ChevronDown size={14} className={`ml-auto transition-transform ${expandedGroups.activities ? 'rotate-180' : ''}`} />
+            )}
+          </div>
+          <div className="nav-submenu">
+            <div
+              className={`submenu-item ${currentView === 'activities' ? 'active' : ''}`}
+              onClick={() => onViewChange('activities')}
+            >Lista de atividades</div>
+            <div
+              className={`submenu-item ${currentView === 'calendar' ? 'active' : ''}`}
+              onClick={() => onViewChange('calendar')}
+            >Atividades do dia</div>
+            <div
+              className={`submenu-item ${currentView === 'service_center' ? 'active' : ''}`}
+              onClick={() => onViewChange('service_center')}
+            >Central de Atendimento</div>
+          </div>
+        </div>
+
+        {/* Reports Group */}
+        <div className={`nav-group ${expandedGroups.reports ? 'expanded' : ''}`}>
+          <div className="nav-item" onClick={() => toggleGroup('reports')}>
+            <BarChart2 size={20} />
+            <span>Relatórios</span>
+            {!isCollapsed && (
+              <ChevronDown size={14} className={`ml-auto transition-transform ${expandedGroups.reports ? 'rotate-180' : ''}`} />
+            )}
+          </div>
+          <div className="nav-submenu">
+            <div
+              className={`submenu-item ${currentView === 'reports' ? 'active' : ''}`}
+              onClick={() => onViewChange('reports')}
+            >Dashboard Geral</div>
+            
+            <div
+              className={`submenu-item ${currentView === 'business_history' ? 'active' : ''}`}
+              onClick={() => onViewChange('business_history')}
+            >Histórico de Atividades</div>
+            <div
+              className={`submenu-item ${currentView === 'business_export' ? 'active' : ''}`}
+              onClick={() => onViewChange('business_export')}
+            >Exportar Relatórios</div>
+          </div>
         </div>
 
         <div
-          className={`nav-item ${currentView === 'service_center' ? 'active' : ''}`}
-          onClick={() => onViewChange('service_center')}
+          className={`nav-item ${currentView === 'ai_insights' ? 'active' : ''}`}
+          onClick={() => onViewChange('ai_insights')}
         >
-          <MessageSquare size={20} />
-          <span>Chamados</span>
-        </div>
-
-        <div className="nav-item opacity-50 cursor-not-allowed">
-          <FileText size={20} />
-          <span>Contratos</span>
+          <Lightbulb size={20} />
+          <span>Insights de IA</span>
         </div>
 
         <div
-          className={`nav-item ${currentView === 'reports' ? 'active' : ''}`}
-          onClick={() => onViewChange('reports')}
+          className={`nav-item ${currentView === 'knowledge' ? 'active' : ''}`}
+          onClick={() => onViewChange('knowledge')}
         >
-          <BarChart2 size={20} />
-          <span>Equipamentos (EPI)</span>
-        </div>
-
-        <div className="nav-item opacity-50 cursor-not-allowed">
-          <Building2 size={20} />
-          <span>Estoque</span>
+          <BookOpen size={20} />
+          <span>Base de Conhecimento</span>
         </div>
 
         <div
-          className={`nav-item ${currentView === 'settings' ? 'active' : ''}`}
-          onClick={() => onViewChange('settings')}
+          className={`nav-item ${currentView === 'support' ? 'active' : ''}`}
+          onClick={() => onViewChange('support')}
         >
-          <Settings size={20} />
-          <span>Preferências</span>
+          <LifeBuoy size={20} className="text-accent" />
+          <span>Central de Suporte</span>
         </div>
 
-        <div className="nav-item opacity-50 cursor-not-allowed">
-          <LifeBuoy size={20} />
-          <span>Manutenção</span>
-        </div>
-
-        <div
-          className={`nav-item ${currentView === 'company' ? 'active' : ''}`}
-          onClick={() => onViewChange('company')}
-        >
-          <Shield size={20} />
-          <span>Configurações</span>
-        </div>
-
-        <div className="nav-item opacity-50 cursor-not-allowed">
-          <Crown size={20} />
-          <span>Administração</span>
-        </div>
-
-        <div className="nav-divider"></div>
-
-        <div className="nav-item text-accent font-bold">
-          <BrainCircuit size={20} />
-          <span>Iniciar Aplicativo</span>
-        </div>
+        {/* Admin Settings */}
+        {userRole === 'admin' && (
+          <div
+            className={`nav-item ${currentView === 'company' ? 'active' : ''}`}
+            onClick={() => onViewChange('company')}
+          >
+            <Building2 size={20} />
+            <span>Dados da Empresa</span>
+            {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
+          </div>
+        )}
       </nav>
 
       <div className="sidebar-footer">
