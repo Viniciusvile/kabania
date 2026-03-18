@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, MapPin, MessageSquare, Phone, Mail, Star, Home, Info, Plus, Sparkles, AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { X, ChevronDown, MapPin, MessageSquare, Phone, Mail, Star, Home, Info, Plus, Sparkles, AlertCircle, ExternalLink, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { analyzeServiceRequest, checkActivityDuplicates } from '../services/geminiService';
 import { supabase } from '../supabaseClient';
 import './NewActivityModal.css';
@@ -352,7 +352,7 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                 </label>
                 {form.directToShift && (
                   <div className="sync-note animate-fade-in text-accent/80">
-                    <Calendar size={14} /> 
+                    <CalendarIcon size={14} /> 
                     <span>Esta atividade será agendada automaticamente na grade de escalas.</span>
                   </div>
                 )}

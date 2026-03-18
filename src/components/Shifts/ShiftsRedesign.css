@@ -43,6 +43,14 @@
     border-radius: 16px;
     font-weight: 700;
     color: var(--escala-accent);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.loading-overlay-pixel.active {
+    opacity: 1;
+    pointer-events: all;
 }
 
 /* 📊 STATS CARDS */
