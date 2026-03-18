@@ -16,44 +16,52 @@ export default function ShiftsDashboard({ companyId }) {
   }, [companyId]);
 
   const loadStats = async () => {
-      try {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-        const end = new Date();
-        end.setHours(23, 59, 59, 999);
+    if (!companyId) {
+      console.warn('Dashboard: Missing companyId');
+      return;
+    }
+    
+    try {
+      console.log('Dashboard: Loading stats for', companyId);
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
 
-        const [shifts, employees, envs] = await Promise.all([
-          getShifts(companyId, start.toISOString(), end.toISOString()),
-          getEmployeeProfiles(companyId),
-          getWorkEnvironments(companyId)
-        ]);
+      const [shifts, employees, envs] = await Promise.all([
+        getShifts(companyId, start.toISOString(), end.toISOString()),
+        getEmployeeProfiles(companyId),
+        getWorkEnvironments(companyId)
+      ]);
 
-        const inProgress = shifts.filter(s => {
-            const now = new Date();
-            return now >= new Date(s.start_time) && now <= new Date(s.end_time);
-        }).length;
+      console.log('Dashboard Data Loaded:', { shifts: shifts.length, employees: employees.length, envs: envs.length });
 
-        const open = envs.reduce((acc, env) => {
-            const covered = shifts.filter(s => s.environment_id === env.id).length;
-            return acc + Math.max(0, env.min_coverage - covered);
-        }, 0);
+      const inProgress = shifts.filter(s => {
+          const now = new Date();
+          return now >= new Date(s.start_time) && now <= new Date(s.end_time);
+      }).length;
 
-        setStats({
-            totalShifts: shifts.length,
-            openShifts: open,
-            inProgressShifts: inProgress,
-            concludedShifts: `${shifts.filter(s => new Date(s.end_time) < new Date()).length}/${shifts.length}`
-        });
-      } catch(e) {
-          console.error(e);
-      }
+      const open = envs.reduce((acc, env) => {
+          const covered = shifts.filter(s => s.environment_id === env.id).length;
+          return acc + Math.max(0, env.min_coverage - covered);
+      }, 0);
+
+      setStats({
+          totalShifts: shifts.length,
+          openShifts: open,
+          inProgressShifts: inProgress,
+          concludedShifts: `${shifts.filter(s => new Date(s.end_time) < new Date()).length}/${shifts.length}`
+      });
+    } catch(e) {
+        console.error('Dashboard Load Error:', e);
+    }
   };
 
   return (
     <div className="stats-container-pixel animate-fade-in">
         <div className="stat-item-pixel">
             <div className="stat-icon-pixel">
-                <Calendar size={20} className="text-blue-500" />
+                <Calendar size={24} />
             </div>
             <div className="stat-info-pixel">
                 <p>Total Escalas</p>
@@ -62,18 +70,18 @@ export default function ShiftsDashboard({ companyId }) {
         </div>
 
         <div className="stat-item-pixel">
-            <div className="stat-icon-pixel bg-amber-50">
-                <Clock size={20} className="text-amber-500" />
+            <div className="stat-icon-pixel">
+                <Clock size={24} />
             </div>
             <div className="stat-info-pixel">
                 <p>Escalas Abertas</p>
-                <p className="text-amber-600">{stats.openShifts}</p>
+                <p>{stats.openShifts}</p>
             </div>
         </div>
 
         <div className="stat-item-pixel">
-            <div className="stat-icon-pixel bg-indigo-50">
-                <Briefcase size={20} className="text-indigo-500" />
+            <div className="stat-icon-pixel">
+                <Briefcase size={24} />
             </div>
             <div className="stat-info-pixel">
                 <p>Escalas Em Curso</p>
@@ -82,8 +90,8 @@ export default function ShiftsDashboard({ companyId }) {
         </div>
 
         <div className="stat-item-pixel">
-            <div className="stat-icon-pixel bg-emerald-50">
-                <CheckCircle size={20} className="text-emerald-500" />
+            <div className="stat-icon-pixel">
+                <CheckCircle size={24} />
             </div>
             <div className="stat-info-pixel">
                 <p>Escalas Concluídas</p>

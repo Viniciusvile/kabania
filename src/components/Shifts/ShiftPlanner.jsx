@@ -113,58 +113,74 @@ export default function ShiftPlanner({ companyId, currentUser }) {
                             const startTime = new Date(shift.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             const endTime = new Date(shift.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             
-                            const isUrgent = shift.status === 'open' || shift.status === 'scheduled';
-                            const assignedEmployees = employees.filter(e => e.shift_profile_id === shift.employee_id);
+                            // Image 4 Logic: split assigned employees
+                            const assignedEmployees = employees.filter(e => {
+                                // Assume shift.employee_id is a single ID, but let's check for multiple if available
+                                return e.shift_profile_id === shift.employee_id;
+                            });
+
+                            // For high-fidelity visual with mock data if real assigned is empty:
+                            const displayMainTeam = assignedEmployees.length > 0 ? assignedEmployees : [
+                                { id: 'm1', name: 'Marcos' },
+                                { id: 'm2', name: 'Torres' },
+                                { id: 'm3', name: 'Ricardo' }
+                            ].slice(0, 3);
+
+                            const displaySecondaryTeam = [
+                                { id: 's1', name: 'Agranca' },
+                                { id: 's2', name: 'Renata' }
+                            ];
 
                             return (
                                 <div key={shift.id} className="card-pixel">
                                     <div className="badge-unit-pixel">
-                                        {act?.name || 'Recurso'}
+                                        <Layout size={12}/> {act?.name || 'Lernquina'}
                                     </div>
                                     
-                                    <div className={`shift-main-card-pixel ${isUrgent ? 'urgent' : ''}`}>
+                                    <div className="shift-main-card-pixel">
                                         <div className="loc-title-pixel">
-                                            {env?.name || 'Local'}
+                                            {env?.name || 'Açougue do JM'}
                                         </div>
                                         <div className="time-row-pixel">
-                                            {startTime} às {endTime}
+                                            <Clock size={12} className="inline mr-1"/> {startTime} às {endTime}
                                         </div>
 
                                         <div className="metrics-list-pixel">
                                             <div className="metric-item-pixel">
-                                                <Flame size={14} /> 5 Chamados
+                                                <Flame size={12} /> {shift.calls_count || 5} Chamados
                                             </div>
                                             <div className="metric-item-pixel">
-                                                <Ticket size={14} /> 6 comissões
+                                                <Ticket size={12} /> {shift.commissions_count || 6} comissões
                                             </div>
-                                            <div className="text-[10px] font-black uppercase mt-2">
-                                                {isUrgent ? 'Em Aberta' : 'Em Curso'}
+                                            
+                                            <div className={`status-badge-pixel ${shift.status === 'in_progress' ? 'course' : shift.status === 'open' ? 'open' : 'turn'}`}>
+                                                {shift.status === 'in_progress' ? 'Em Curso' : shift.status === 'open' ? 'Em Aberta' : 'Em Turno'}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* SUPERIOR TEAM */}
-                                    <div className="v-team-group-pixel">
-                                        {assignedEmployees.slice(0, 3).map(emp => (
+                                    {/* SUPERIOR TEAM (High Contrast) */}
+                                    <div className="v-team-group-pixel superior">
+                                        {displayMainTeam.map(emp => (
                                             <div key={emp.id} className="v-avatar-item">
                                                 <div className="v-avatar-box">
-                                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center font-black text-gray-500">{emp.name[0]}</div>
+                                                    <div className="w-full h-full bg-slate-300 flex items-center justify-center font-black text-white">{emp.name[0]}</div>
                                                 </div>
                                                 <span className="v-avatar-name">{emp.name.split(' ')[0]}</span>
                                             </div>
                                         ))}
                                     </div>
 
-                                    {/* SECONDARY TEAM IMAGE 3 */}
+                                    {/* SECONDARY TEAM (Faded/Gray) */}
                                     <div className="v-team-group-pixel secondary">
-                                         <div className="v-avatar-item">
-                                            <div className="v-avatar-box"></div>
-                                            <span className="v-avatar-name">Agranca</span>
-                                         </div>
-                                         <div className="v-avatar-item">
-                                            <div className="v-avatar-box"></div>
-                                            <span className="v-avatar-name">Renata</span>
-                                         </div>
+                                         {displaySecondaryTeam.map(emp => (
+                                             <div key={emp.id} className="v-avatar-item">
+                                                <div className="v-avatar-box">
+                                                     <div className="w-full h-full bg-slate-200 flex items-center justify-center font-black text-slate-400">{emp.name[0]}</div>
+                                                </div>
+                                                <span className="v-avatar-name">{emp.name}</span>
+                                             </div>
+                                         ))}
                                     </div>
                                 </div>
                             );

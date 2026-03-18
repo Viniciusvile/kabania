@@ -145,7 +145,17 @@ export const getShifts = async (companyId, startDate, endDate) => {
             *,
             work_environments ( name ),
             work_activities ( name, required_role ),
-            employee_profiles ( role, profile_id )
+            shift_assignments ( 
+                id, 
+                status, 
+                employee_profiles ( 
+                    id, 
+                    role, 
+                    profile_id,
+                    profiles:profile_id ( name, avatar_url )
+                ) 
+            ),
+            shift_calls ( id, status )
         `)
         .eq('company_id', companyId)
         .order('start_time');
@@ -155,7 +165,20 @@ export const getShifts = async (companyId, startDate, endDate) => {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+    
+    // Transform to include helpful counts
+    return data.map(shift => ({
+        ...shift,
+        assigned_employees: shift.shift_assignments?.map(a => ({
+            ...a.employee_profiles,
+            assignment_id: a.id,
+            assignment_status: a.status,
+            name: a.employee_profiles?.profiles?.name,
+            avatar_url: a.employee_profiles?.profiles?.avatar_url
+        })) || [],
+        calls_count: shift.shift_calls?.length || 0,
+        open_calls_count: shift.shift_calls?.filter(c => c.status === 'open').length || 0
+    }));
 };
 
 export const createShift = async (shiftData, userId) => {
@@ -186,4 +209,60 @@ export const batchCreateShifts = async (shiftsData, companyId, userId) => {
     if (error) throw error;
     logEvent(companyId, userId, 'SHIFTS_GENERATED', `${shiftsData.length} escalas geradas automaticamente.`);
     return data;
+};
+
+// ==========================================
+// SHIFT ASSIGNMENTS & CALLS (V2)
+// ==========================================
+
+export const addEmployeeToShift = async (shiftId, employeeProfileId) => {
+    const { data, error } = await supabase
+        .from('shift_assignments')
+        .insert([{ shift_id: shiftId, employee_id: employeeProfileId }])
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+};
+
+export const removeEmployeeFromShift = async (assignmentId) => {
+    const { error } = await supabase
+        .from('shift_assignments')
+        .delete()
+        .eq('id', assignmentId);
+    if (error) throw error;
+};
+
+export const updateAssignmentStatus = async (assignmentId, status) => {
+    const { data, error } = await supabase
+        .from('shift_assignments')
+        .update({ status })
+        .eq('id', assignmentId)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+};
+
+export const getShiftStats = async (companyId) => {
+    if (!companyId) return { total: 0, open: 0, inProgress: 0, concluded: '0/0' };
+    
+    const { data: shifts, error } = await supabase
+        .from('shifts')
+        .select('id, status, end_time')
+        .eq('company_id', companyId);
+        
+    if (error) throw error;
+    
+    const total = shifts.length;
+    const open = shifts.filter(s => s.status === 'open' || s.status === 'scheduled').length;
+    const inProgress = shifts.filter(s => s.status === 'in_progress' || s.status === 'active').length;
+    const concludedCount = shifts.filter(s => s.status === 'completed' || new Date(s.end_time) < new Date()).length;
+    
+    return {
+        total,
+        open,
+        inProgress,
+        concluded: `${concludedCount}/${total}`
+    };
 };
