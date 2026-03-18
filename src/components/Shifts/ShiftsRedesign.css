@@ -32,13 +32,20 @@
 
 .stat-card-pixel {
     background: white;
-    padding: 20px;
-    border-radius: 16px;
+    padding: 24px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    border: 1px solid var(--escala-border);
+    gap: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.3s ease;
+}
+
+.stat-card-pixel:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+    border-color: var(--escala-accent);
 }
 
 .stat-icon-wrapper {
@@ -154,9 +161,16 @@
 .weekly-grid-pixel {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 12px;
+    gap: 16px;
     overflow-x: auto;
-    padding-bottom: 20px;
+    padding-bottom: 40px;
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    /* Hide scrollbar for IE, Edge and Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 .grid-column-pixel {
@@ -233,17 +247,18 @@
 
 .pending-act-card {
   background: white;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem;
-  transition: all 0.2s ease;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: default;
+  position: relative;
 }
 
 .pending-act-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.1);
+  border-color: var(--escala-accent);
+  transform: translateX(4px);
+  box-shadow: 4px 8px 16px rgba(0, 0, 0, 0.05);
 }
 
 .act-header {
@@ -505,13 +520,28 @@
 }
 
 .empty-day-pixel {
-    padding: 20px;
+    padding: 32px 16px;
     text-align: center;
-    color: #cbd5e1;
-    font-size: 13px;
-    font-weight: 500;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     border: 2px dashed #f1f5f9;
-    border-radius: 12px;
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.empty-day-pixel:hover {
+    opacity: 1;
+    border-color: #e2e8f0;
+    background: #f8fafc;
 }
 
 /* 🧾 ESCALA CARD */

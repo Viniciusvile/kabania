@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, CheckCircle, Briefcase, ChevronLeft, ChevronRight, Plus, Search, Filter, Layout, Flame, Ticket, Users, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { getShifts, getShiftStats, getEmployeeProfiles, addEmployeeToShift, removeEmployeeFromShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
+import ShiftStats from './ShiftStats';
+import ShiftSidebar from './ShiftSidebar';
+import ShiftControls from './ShiftControls';
+import ShiftGrid from './ShiftGrid';
 import './ShiftsRedesign.css';
 
 export default function ShiftsModule({ companyId, currentUser, userRole }) {
@@ -17,11 +21,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('todos');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingActivities, setPendingActivities] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
+  const [environments, setEnvironments] = useState([]);
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     loadAllData();
-
-    // 🔁 REAL-TIME SUBSCRIPTION
     const shiftsChannel = supabase.channel('realtime-escalas')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts', filter: `company_id=eq.${companyId}` }, () => loadAllData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_assignments' }, () => loadAllData())
@@ -33,13 +40,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     };
   }, [companyId, weekStart]);
 
-  const [pendingActivities, setPendingActivities] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
-  const [environments, setEnvironments] = useState([]);
-  const [activities, setActivities] = useState([]);
-
-  // 📝 Derived values for logic and display
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
@@ -71,7 +71,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      // Attempt multi-table recovery
       const [resActivities, resServiceRequests] = await Promise.all([
         supabase.from('activities').select('*').eq('company_id', companyId),
         supabase.from('service_requests').select('*').eq('company_id', companyId)
@@ -88,14 +87,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       ];
 
       const [statsData, shiftsData, employeesData, envsData, workActsData] = await Promise.all([
-        getShiftStats(companyId).catch(err => { console.error('Stats fail:', err); return { total:0, open:0, inProgress:0, concluded:'0/0' }; }),
-        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(err => { console.error('Shifts fail:', err); return []; }),
-        getEmployeeProfiles(companyId).catch(err => { console.error('Employees fail:', err); return []; }),
+        getShiftStats(companyId).catch(() => ({ total: 0, open: 0, inProgress: 0, concluded: '0/0' })),
+        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(() => []),
+        getEmployeeProfiles(companyId).catch(() => []),
         supabase.from('work_environments').select('*').eq('company_id', companyId),
         supabase.from('work_activities').select('*').eq('company_id', companyId)
       ]);
 
-      if (statsData) setStats(statsData);
+      setStats(statsData || { total: 0, open: 0, inProgress: 0, concluded: '0/0' });
       
       const enrichedShifts = (shiftsData || []).map(shift => {
         if (!shift.service_request_id) return shift;
@@ -115,7 +114,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       setActivities(workActsData.data || []);
       
       const linkedIds = new Set(enrichedShifts.map(s => String(s.service_request_id)).filter(Boolean));
-      
       const pending = rawActivities.filter(a => {
         const status = (a.status || '').toLowerCase();
         const isCompleted = status.includes('conclu') || status.includes('finalized');
@@ -123,13 +121,10 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         return !isCompleted && !isLinked;
       }).sort((a, b) => new Date(b.created || b.created_at) - new Date(a.created || a.created_at));
 
-      console.log(`DEBUG: Loaded ${rawActivities.length} activities, ${pending.length} pending.`);
       setPendingActivities(pending);
-
     } catch (err) {
-      console.error('Error loading Escalas data (Main):', err);
+      console.error('Error loading data:', err);
     } finally {
-      console.log('Shifts Load Complete (State cleared)');
       setLoading(false);
     }
   };
@@ -143,18 +138,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       await loadAllData();
     } catch (err) {
       alert("Erro ao adicionar colaborador: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveEmployee = async (shiftId, profileId) => {
-    try {
-      setLoading(true);
-      await removeEmployeeFromShift(shiftId, profileId);
-      await loadAllData();
-    } catch (err) {
-      alert("Erro ao remover colaborador: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -213,71 +196,26 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
   return (
     <div className="escalas-page animate-fade-in">
-      {/* 📊 INDICATOR CARDS */}
-      <div className="stats-grid-pixel">
-        <div className="stat-card-pixel">
-          <div className="stat-icon-wrapper blue"><Calendar size={20} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Total de Escalas</span>
-            <span className="stat-value">{stats.total}</span>
-          </div>
-        </div>
-        <div className="stat-card-pixel">
-          <div className="stat-icon-wrapper red"><Clock size={20} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Escalas Abertas</span>
-            <span className="stat-value">{stats.open}</span>
-          </div>
-        </div>
-        <div className="stat-card-pixel">
-          <div className="stat-icon-wrapper green"><Briefcase size={20} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Escalas em Curso</span>
-            <span className="stat-value">{stats.inProgress}</span>
-          </div>
-        </div>
-        <div className="stat-card-pixel">
-          <div className="stat-icon-wrapper purple"><CheckCircle size={20} /></div>
-          <div className="stat-content">
-            <span className="stat-label">Escalas Concluídas</span>
-            <span className="stat-value">{stats.concluded}</span>
-          </div>
-        </div>
-      </div>
+      <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout">
         <div className="shifts-grid-area">
-          {/* 🔎 FILTERS & CONTROLS */}
-          <div className="controls-bar-pixel">
-            <div className="flex items-center gap-4">
-              <div className="filter-pills-pixel">
-                <button className={filterStatus === 'todos' ? 'active' : ''} onClick={() => setFilterStatus('todos')}>Todos</button>
-                <button className={filterStatus === 'ativos' ? 'active' : ''} onClick={() => setFilterStatus('ativos')}>Ativos</button>
-                <button className={filterStatus === 'concluidos' ? 'active' : ''} onClick={() => setFilterStatus('concluidos')}>Concluídos</button>
-              </div>
-              
-              <div className="period-selector-pixel">
-                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))}><ChevronLeft size={16} /></button>
-                <span className="font-bold text-sm">
-                  {weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}
-                </span>
-                <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))}><ChevronRight size={16} /></button>
-              </div>
-            </div>
+          <ShiftControls 
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            weekStart={weekStart}
+            setWeekStart={setWeekStart}
+            weekDays={weekDays}
+            setIsModalOpen={setIsModalOpen}
+          />
 
-            <button className="new-escala-btn" onClick={() => setIsModalOpen(true)}>
-              <Plus size={18} /> Nova Escala
-            </button>
-          </div>
-
-          {/* 📅 WEEKLY GRID */}
           {loading ? (
             <div className="loading-area-pixel">
                <Loader2 className="animate-spin text-accent" size={40} />
                <p>Sincronizando Escalas...</p>
             </div>
           ) : (
-            <EscalaGrid 
+            <ShiftGrid 
               shifts={filteredShifts} 
               weekDays={weekDays} 
               onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
@@ -285,64 +223,10 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           )}
         </div>
 
-        {/* 📋 PENDING ACTIVITIES SIDEBAR */}
-        <aside className="pending-activities-sidebar">
-          <header className="sidebar-header">
-            <h3><Briefcase size={18} /> Solicitações Pendentes</h3>
-            <span className="pending-count">{pendingActivities.length}</span>
-          </header>
-          
-          <div className="pending-list">
-            {pendingActivities.map(act => {
-              const isUrgent = act.type?.toLowerCase().includes('urgente');
-              const statusLabel = act.status || 'Pendente';
-              const displayDate = new Date(act.created || act.created_at).toLocaleDateString('pt-BR');
-
-              return (
-                <div key={act.id} className="pending-act-card animate-slide-right">
-                  <div className="act-header">
-                    <span className="act-id">#{act.id}</span>
-                    <div className="act-badges">
-                      {isUrgent && <span className="priority-tag alta">Urgente</span>}
-                      <span className={`status-badge-simple ${statusLabel.toLowerCase().replace(' ', '-')}`}>
-                        {statusLabel}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <h4 className="act-location">{act.location}</h4>
-                  
-                  <div className="act-info-row">
-                    <Briefcase size={12} className="text-accent" />
-                    <span className="act-text-small">{act.type}</span>
-                  </div>
-
-                  {act.description && (
-                    <div className="act-desc-box">
-                      <p>{act.description.length > 80 ? act.description.substring(0, 80) + '...' : act.description}</p>
-                    </div>
-                  )}
-
-                  <div className="act-card-footer">
-                    <div className="act-date">
-                       <Clock size={12} />
-                       <span>{displayDate}</span>
-                    </div>
-                    <button className="btn-schedule-quick-pixel" onClick={() => handleQuickSchedule(act)}>
-                      <Plus size={14} /> Agendar
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            {pendingActivities.length === 0 && (
-              <div className="empty-pending">
-                <CheckCircle size={32} className="text-muted opacity-20" />
-                <p>Tudo em escala!</p>
-              </div>
-            )}
-          </div>
-        </aside>
+        <ShiftSidebar 
+          pendingActivities={pendingActivities} 
+          onQuickSchedule={handleQuickSchedule} 
+        />
       </div>
 
       {/* 🤝 ASSIGNMENT MODAL */}
@@ -434,89 +318,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function EscalaGrid({ shifts, weekDays, onAddEmployee }) {
-  return (
-    <div className="weekly-grid-pixel">
-      {weekDays.map(day => {
-        const dayShifts = shifts.filter(s => {
-          const d = new Date(s.start_time);
-          return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
-        });
-
-        return (
-          <div key={day.label} className="grid-column-pixel">
-            <header className="day-header-pixel">
-              <span className="day-number">{day.dayNum}</span>
-              <span className="day-name">{day.label}</span>
-            </header>
-
-            <div className="day-content-pixel">
-              {dayShifts.map(shift => (
-                <EscalaCard key={shift.id} shift={shift} onAddEmployee={() => onAddEmployee(shift.id)} />
-              ))}
-              {dayShifts.length === 0 && <div className="empty-day-pixel">Sem escalas</div>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function EscalaCard({ shift, onAddEmployee }) {
-  const isProblem = shift.status === 'open' || shift.open_calls_count > 0;
-  const inProgress = shift.status === 'in_progress' || shift.status === 'active';
-  
-  const startTime = new Date(shift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  const locationName = shift.service_request?.location || shift.work_environments?.name || 'Local Não Definido';
-  const activityName = shift.service_request?.type || shift.work_activities?.name || 'Atividade';
-
-  return (
-    <div className={`escala-card-pixel ${isProblem ? 'problem' : inProgress ? 'progress' : 'normal'}`}>
-      <div className="card-header">
-        <div className="location-name">{locationName}</div>
-        <div className="shift-time">{startTime} às {endTime}</div>
-      </div>
-
-      <div className="card-indicators">
-        <div className="indicator-chip" title={activityName}>
-          <Briefcase size={12} /> {activityName}
-        </div>
-        <div className="indicator-chip">
-          <Flame size={12} /> {shift.calls_count} chamados
-        </div>
-        <div className="indicator-chip">
-          <Ticket size={12} /> {shift.commissions_count || 0} pendências
-        </div>
-        <div className={`status-tag ${shift.status}`}>
-          {shift.status === 'in_progress' ? 'Em curso' : shift.status === 'open' ? 'Em aberto' : 'Concluído'}
-        </div>
-      </div>
-
-      <div className="employee-list-pixel">
-        {shift.assigned_employees?.map(emp => (
-          <div key={emp.id} className="employee-item-pixel">
-            <div className="employee-avatar">
-              {emp.avatar_url ? (
-                <img src={emp.avatar_url} alt={emp.name} />
-              ) : (
-                <span>{emp.name?.[0]}</span>
-              )}
-              <span className={`status-dot ${emp.assignment_status}`}></span>
-            </div>
-            <div className="employee-name">{emp.name}</div>
-          </div>
-        ))}
-        <button className="add-employee-trigger" onClick={onAddEmployee}>
-          <Plus size={14} /> Adicionar
-        </button>
-      </div>
     </div>
   );
 }
