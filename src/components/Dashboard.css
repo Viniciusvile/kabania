@@ -1,6 +1,6 @@
 .sidebar {
   width: 280px;
-  background-color: var(--bg-sidebar);
+  background-color: #ff0000 !important; /* HIGH VISIBILITY TEST */
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
