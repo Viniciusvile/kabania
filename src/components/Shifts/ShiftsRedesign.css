@@ -15,12 +15,34 @@
 }
 
 .escalas-page {
-    padding: 24px;
+    padding: 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 32px;
     background: var(--escala-bg);
     min-height: 100%;
+}
+
+.relative { position: relative; }
+.opacity-50 { opacity: 0.5; }
+.pointer-events-none { pointer-events: none; }
+
+.loading-overlay-pixel {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(2px);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    border-radius: 16px;
+    font-weight: 700;
+    color: var(--escala-accent);
 }
 
 /* 📊 STATS CARDS */

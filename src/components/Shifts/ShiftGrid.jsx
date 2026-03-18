@@ -11,7 +11,7 @@ export default function ShiftGrid({ shifts, weekDays, onAddEmployee }) {
         });
 
         return (
-          <div key={day.label} className="grid-column-pixel">
+          <div key={day.date.toISOString()} className="grid-column-pixel">
             <header className="day-header-pixel">
               <span className="day-number">{day.dayNum}</span>
               <span className="day-name">{day.label}</span>

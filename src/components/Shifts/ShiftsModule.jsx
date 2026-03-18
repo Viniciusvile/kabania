@@ -188,8 +188,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     <div className="escalas-page animate-fade-in">
       <ShiftStats stats={stats} />
 
-      <div className="shifts-main-layout">
-        <div className="shifts-grid-area">
+      <div className="shifts-main-layout relative">
+        {loading && (
+          <div className="loading-overlay-pixel">
+             <Loader2 className="animate-spin text-accent" size={40} />
+             <span>Sincronizando...</span>
+          </div>
+        )}
+
+        <div className={`shifts-grid-area ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
           <ShiftControls 
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
@@ -199,24 +206,19 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             setIsModalOpen={setIsModalOpen}
           />
 
-          {loading ? (
-            <div className="loading-area-pixel">
-               <Loader2 className="animate-spin text-accent" size={40} />
-               <p>Sincronizando Escalas...</p>
-            </div>
-          ) : (
-            <ShiftGrid 
-              shifts={filteredShifts} 
-              weekDays={weekDays} 
-              onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
-            />
-          )}
+          <ShiftGrid 
+            shifts={filteredShifts} 
+            weekDays={weekDays} 
+            onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
+          />
         </div>
 
-        <ShiftSidebar 
-          pendingActivities={pendingActivities} 
-          onQuickSchedule={handleQuickSchedule} 
-        />
+        <div className={`${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+          <ShiftSidebar 
+            pendingActivities={pendingActivities} 
+            onQuickSchedule={handleQuickSchedule} 
+          />
+        </div>
       </div>
 
       {/* 🤝 ASSIGNMENT MODAL */}
