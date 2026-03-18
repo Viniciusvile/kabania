@@ -1,4 +1,3 @@
-```javascript
 import React, { useState, useEffect } from 'react';
 import { MapPin, Plus, Trash2, Briefcase, PlusCircle, Loader2 } from 'lucide-react';
 import { getWorkEnvironments, createWorkEnvironment, createWorkActivity, deleteWorkEnvironment, deleteWorkActivity } from '../../services/shiftService';
@@ -23,7 +22,7 @@ export default function EnvironmentsManager({ companyId }) {
     try {
       setLoading(true);
       const [envs, acts] = await Promise.all([
-        getEnvironments(companyId),
+        getWorkEnvironments(companyId),
         getActivities(companyId)
       ]);
       setEnvironments(envs);
@@ -40,7 +39,7 @@ export default function EnvironmentsManager({ companyId }) {
     e.preventDefault();
     if (!newEnv.name) return;
     try {
-      const added = await createEnvironment({ ...newEnv, company_id: companyId });
+      const added = await createWorkEnvironment({ ...newEnv, company_id: companyId });
       setEnvironments([...environments, added]);
       setNewEnv({ name: '', min_coverage: 1 });
       setShowEnvForm(false);
@@ -54,7 +53,7 @@ export default function EnvironmentsManager({ companyId }) {
     e.preventDefault();
     if (!newAct.name || !newAct.environment_id) return;
     try {
-      const added = await createActivity({ ...newAct, company_id: companyId });
+      const added = await createWorkActivity({ ...newAct, company_id: companyId });
       // Reload activities to get joined environment name
       const acts = await getActivities(companyId);
       setActivities(acts);

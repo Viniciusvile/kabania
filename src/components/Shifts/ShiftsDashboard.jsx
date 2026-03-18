@@ -1,4 +1,3 @@
-```javascript
 import React, { useState, useEffect } from 'react';
 import { BarChart3, Users, AlertTriangle, Clock, MapPin } from 'lucide-react';
 import { getShifts, getEmployeeProfiles, getWorkEnvironments } from '../../services/shiftService';
@@ -26,7 +25,7 @@ export default function ShiftsDashboard({ companyId }) {
         const [shifts, employees, envs] = await Promise.all([
           getShifts(companyId, start.toISOString(), end.toISOString()),
           getEmployeeProfiles(companyId),
-          getEnvironments(companyId)
+          getWorkEnvironments(companyId)
         ]);
 
         let hours = 0;

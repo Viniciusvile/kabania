@@ -30,7 +30,10 @@ export default function MyShifts({ companyId, currentUser }) {
       end.setDate(end.getDate() + 7); // Load next 7 days
       end.setHours(23, 59, 59, 999);
 
-      const allShifts = await getShifts(companyId, start.toISOString(), end.toISOString());
+      const [allShifts, envs] = await Promise.all([
+        getShifts(companyId, start.toISOString(), end.toISOString()),
+        getWorkEnvironments(companyId)
+      ]);
       
       // Filter for this specific employee
       const myShifts = allShifts.filter(s => s.employee_id === myProfile.shift_profile_id);
