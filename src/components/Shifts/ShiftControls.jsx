@@ -19,11 +19,19 @@ export default function ShiftControls({
         </div>
         
         <div className="period-selector-pixel">
-          <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() - 7)))}><ChevronLeft size={16} /></button>
+          <button onClick={() => {
+            const d = new Date(weekStart);
+            d.setDate(d.getDate() - 7);
+            setWeekStart(d);
+          }}><ChevronLeft size={16} /></button>
           <span className="font-bold text-sm">
             {weekDays[0].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} a {weekDays[6].date.toLocaleDateString('pt-BR', {day:'numeric', month:'short'})} {weekDays[6].date.getFullYear()}
           </span>
-          <button onClick={() => setWeekStart(new Date(weekStart.setDate(weekStart.getDate() + 7)))}><ChevronRight size={16} /></button>
+          <button onClick={() => {
+            const d = new Date(weekStart);
+            d.setDate(d.getDate() + 7);
+            setWeekStart(d);
+          }}><ChevronRight size={16} /></button>
         </div>
       </div>
 

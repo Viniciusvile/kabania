@@ -26,6 +26,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -65,8 +66,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const staffMembers = employees.filter(e => e.role !== 'field' && e.role !== 'colaborador');
 
   const loadAllData = async () => {
-    if (!companyId) return;
+    if (!companyId || isRefreshing) return;
     try {
+      setIsRefreshing(true);
       setLoading(true);
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
@@ -151,7 +153,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       if (error) throw error;
       setIsModalOpen(false);
       await loadAllData();
-      alert("Escala criada com sucesso!");
+      console.log("Escala criada com sucesso!");
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
     } finally {
@@ -175,7 +177,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
        }]);
 
        await loadAllData();
-       alert("Escala gerada com sucesso!");
+       console.log("Escala gerada com sucesso!");
      } catch (err) {
        console.error("Erro ao agendar atividade:", err);
        alert("Erro ao criar escala: " + err.message);
