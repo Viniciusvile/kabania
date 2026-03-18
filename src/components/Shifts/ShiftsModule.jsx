@@ -77,7 +77,13 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       ]);
 
       const rawActivities = [
-        ...(resActivities.data || []),
+        ...(resActivities.data || []).map(act => ({
+          ...act,
+          location: act.name || 'Atividade Geral',
+          type: 'Rotina',
+          description: act.description,
+          created: act.created_at
+        })),
         ...(resServiceRequests.data || []).map(sr => ({
           ...sr,
           location: sr.customer_name + ' (' + (sr.client_unit || '') + ')',
