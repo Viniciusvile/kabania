@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, CheckCircle, Briefcase, ChevronLeft, ChevronRight, Plus, Search, Filter, Layout, Flame, Ticket, Users, Loader2 } from 'lucide-react';
 import { getShifts, getShiftStats, getEmployeeProfiles, addEmployeeToShift, removeEmployeeFromShift } from '../../services/shiftService';
+import { supabase } from '../../supabaseClient';
 import './ShiftsRedesign.css';
 
 export default function ShiftsModule({ companyId, currentUser, userRole }) {
