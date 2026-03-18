@@ -43,11 +43,13 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
     visitTime: '',
     observation: '',
     status: 'Pendente',
+    directToShift: true,
   };
 
   const [form, setForm] = useState({
     ...emptyForm,
-    syncCalendar: localStorage.getItem('kabania_sync_calendar') === 'true'
+    syncCalendar: localStorage.getItem('kabania_sync_calendar') === 'true',
+    directToShift: true
   });
 
   const [customers, setCustomers] = useState([]);
@@ -189,6 +191,7 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
       collaborator: form.collaborator,
       address: form.address,
       syncCalendar: form.syncCalendar,
+      directToShift: form.directToShift,
     };
     onSave(newActivity);
     setForm(emptyForm);
@@ -333,6 +336,24 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
                   <div className="sync-note animate-fade-in">
                     <Info size={14} /> 
                     <span>Ative para enviar o prazo direto para o Google Agenda.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Shift Integration Toggle */}
+              <div className="shift-integration-options mt-2">
+                <label className="sync-toggle text-accent">
+                  <input 
+                    type="checkbox" 
+                    checked={form.directToShift} 
+                    onChange={handleChange('directToShift')} 
+                  />
+                  <span className="toggle-label font-bold">Direcionar para Escala Operacional</span>
+                </label>
+                {form.directToShift && (
+                  <div className="sync-note animate-fade-in text-accent/80">
+                    <Calendar size={14} /> 
+                    <span>Esta atividade será agendada automaticamente na grade de escalas.</span>
                   </div>
                 )}
               </div>

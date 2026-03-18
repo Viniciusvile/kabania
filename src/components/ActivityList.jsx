@@ -98,6 +98,10 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
         <XCircle size={14} color="#ef4444" /> Cancelar atividade
       </button>
       <div className="context-menu-divider" />
+      <button className="context-menu-item text-accent" onClick={() => { onDirectToShift(); onClose(); }}>
+        <Calendar size={14} /> Direcionar para Escala
+      </button>
+      <div className="context-menu-divider" />
       <button className="context-menu-item context-menu-danger" onClick={() => { onDelete(); onClose(); }}>
         <Trash2 size={14} /> Excluir
       </button>
@@ -109,6 +113,8 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
 import { useGoogleLogin } from '@react-oauth/google';
 import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
 import { createNotification } from '../services/notificationService';
+
+import { createShift } from '../services/shiftService';
 
 export default function ActivityList({ currentUser, currentCompany }) {
   const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
@@ -239,6 +245,29 @@ export default function ActivityList({ currentUser, currentCompany }) {
     const { error } = await supabase.from('activities').insert([supabasePayload]);
 
     if (!error) {
+      // PROSPECTIVE: Create Shift if requested
+      if (activity.directToShift) {
+        try {
+          // Find standard environment and activity type IDs if possible, or just use IDs from the form
+          // For now, we'll create a "scheduled" shift
+          const startDate = activity.lastAppointment ? new Date(activity.lastAppointment) : new Date();
+          const endDate = new Date(startDate.getTime() + (Number(activity.duration || 60) * 60000));
+          
+          await createShift({
+            company_id: currentCompany.id,
+            activity_id: null, // This would be the UUID from work_activities, but here we link to 'activities' (service request)
+            service_request_id: supabasePayload.id, // We should add this column to shifts
+            start_time: startDate.toISOString(),
+            end_time: endDate.toISOString(),
+            status: 'scheduled',
+            notes: `Gerado a partir da atividade de ${activity.location}`
+          }, currentUser);
+        } catch (shiftErr) {
+          console.error("Erro ao criar escala automática:", shiftErr);
+          // Don't block the activity creation if shift fails
+        }
+      }
+
       // For local UI state, we can keep camelCase if needed or just use what we have
       const uiActivity = { 
         ...supabasePayload, 
@@ -403,6 +432,32 @@ export default function ActivityList({ currentUser, currentCompany }) {
       setActivities(prev => prev.map(a =>
         a.id === activityId ? { ...a, rating: stars, updated: nowStr() } : a
       ));
+    }
+  };
+
+  const handleDirectToShiftFromAction = async (activity) => {
+    try {
+      setLoading(true);
+      const startDate = activity.lastAppointment ? new Date(activity.lastAppointment) : new Date();
+      const duration = 60; // Default or calculate from type if possible
+      const endDate = new Date(startDate.getTime() + (duration * 60000));
+      
+      await createShift({
+        company_id: currentCompany.id,
+        activity_id: null,
+        service_request_id: activity.id,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        status: 'scheduled',
+        notes: `Manual: Gerado a partir da atividade de ${activity.location}`
+      }, currentUser);
+      
+      alert("Atividade direcionada para Escalas com sucesso!");
+    } catch (err) {
+      console.error("Erro ao direcionar para escala:", err);
+      alert("Erro ao criar escala: " + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -622,6 +677,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
                                   onDuplicate={() => handleDuplicate(activity)}
                                   onDelete={() => setPendingDeleteId(activity.id)}
                                   onChangeStatus={(s) => handleChangeStatus(activity.id, s)}
+                                  onDirectToShift={() => handleDirectToShiftFromAction(activity)}
                                 />
                               )}
                             </div>

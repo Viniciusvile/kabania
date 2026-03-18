@@ -90,6 +90,20 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
      supabase.from('work_activities').select('*').eq('company_id', companyId).then(({data}) => setActivities(data || []));
   }, [companyId]);
 
+  const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
+
+  const handleAddEmployee = async (employeeId) => {
+    try {
+      await addEmployeeToShift(assignmentModal.shiftId, employeeId);
+      setAssignmentModal({ isOpen: false, shiftId: null });
+    } catch (err) {
+      console.error("Erro ao adicionar funcionário:", err);
+    }
+  };
+
+  const fieldWorkers = employees.filter(e => e.role?.toLowerCase().includes('campo') || e.role?.toLowerCase().includes('técnico'));
+  const staffMembers = employees.filter(e => !fieldWorkers.includes(e));
+
   return (
     <div className="escalas-page animate-fade-in">
       {/* 📊 INDICATOR CARDS */}
@@ -154,29 +168,58 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
            <p>Sincronizando Escalas...</p>
         </div>
       ) : (
-        <div className="weekly-grid-pixel">
-          {weekDays.map(day => {
-            const dayShifts = filteredShifts.filter(s => {
-              const d = new Date(s.start_time);
-              return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
-            });
+        <EscalaGrid 
+          shifts={filteredShifts} 
+          weekDays={weekDays} 
+          onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
+        />
+      )}
 
-            return (
-              <div key={day.label} className="grid-column-pixel">
-                <header className="day-header-pixel">
-                  <span className="day-number">{day.dayNum}</span>
-                  <span className="day-name">{day.label}</span>
-                </header>
-
-                <div className="day-content-pixel">
-                  {dayShifts.map(shift => (
-                    <EscalaCard key={shift.id} shift={shift} />
+      {/* 🤝 ASSIGNMENT MODAL */}
+      {assignmentModal.isOpen && (
+        <div className="modal-overlay-pixel">
+          <div className="modal-content-pixel assignment-modal animate-slide-up">
+            <div className="modal-header">
+              <h3>Direcionar para Colaboradores</h3>
+              <button onClick={() => setAssignmentModal({ isOpen: false, shiftId: null })}>×</button>
+            </div>
+            
+            <div className="assignment-tabs">
+              <div className="role-section">
+                <h4>👷 Colaboradores de Campo</h4>
+                <div className="employee-grid-select">
+                  {fieldWorkers.map(emp => (
+                    <div key={emp.id} className="emp-select-card" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
+                      <div className="emp-avatar-medium">
+                        {emp.avatar_url ? <img src={emp.avatar_url} /> : <span>{emp.name[0]}</span>}
+                      </div>
+                      <div className="emp-info">
+                        <span className="emp-name">{emp.name}</span>
+                        <span className="emp-role">{emp.role}</span>
+                      </div>
+                    </div>
                   ))}
-                  {dayShifts.length === 0 && <div className="empty-day-pixel">Sem escalas</div>}
                 </div>
               </div>
-            );
-          })}
+
+              <div className="role-section mt-4">
+                <h4>👥 Membros da Equipe</h4>
+                <div className="employee-grid-select">
+                  {staffMembers.map(emp => (
+                    <div key={emp.id} className="emp-select-card" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
+                      <div className="emp-avatar-medium">
+                        {emp.avatar_url ? <img src={emp.avatar_url} /> : <span>{emp.name[0]}</span>}
+                      </div>
+                      <div className="emp-info">
+                        <span className="emp-name">{emp.name}</span>
+                        <span className="emp-role">{emp.role}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -225,7 +268,36 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   );
 }
 
-function EscalaCard({ shift }) {
+function EscalaGrid({ shifts, weekDays, onAddEmployee }) {
+  return (
+    <div className="weekly-grid-pixel">
+      {weekDays.map(day => {
+        const dayShifts = shifts.filter(s => {
+          const d = new Date(s.start_time);
+          return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
+        });
+
+        return (
+          <div key={day.label} className="grid-column-pixel">
+            <header className="day-header-pixel">
+              <span className="day-number">{day.dayNum}</span>
+              <span className="day-name">{day.label}</span>
+            </header>
+
+            <div className="day-content-pixel">
+              {dayShifts.map(shift => (
+                <EscalaCard key={shift.id} shift={shift} onAddEmployee={() => onAddEmployee(shift.id)} />
+              ))}
+              {dayShifts.length === 0 && <div className="empty-day-pixel">Sem escalas</div>}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EscalaCard({ shift, onAddEmployee }) {
   const isProblem = shift.status === 'open' || shift.open_calls_count > 0;
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
   
@@ -265,7 +337,7 @@ function EscalaCard({ shift }) {
             <div className="employee-name">{emp.name}</div>
           </div>
         ))}
-        <button className="add-employee-trigger">
+        <button className="add-employee-trigger" onClick={onAddEmployee}>
           <Plus size={14} /> Adicionar
         </button>
       </div>

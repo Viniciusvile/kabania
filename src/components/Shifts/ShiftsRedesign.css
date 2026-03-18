@@ -166,6 +166,90 @@
     min-width: 260px;
 }
 
+/* 🤝 Assignment Modal Specialized Styles */
+.assignment-modal {
+  max-width: 600px !important;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.role-section h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+.employee-grid-select {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.emp-select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.emp-select-card:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.emp-avatar-medium {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.emp-avatar-medium img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.emp-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.emp-role {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.text-accent { color: var(--accent-color) !important; }
+.font-bold { font-weight: 700 !important; }
+
 .day-header-pixel {
     display: flex;
     align-items: baseline;
