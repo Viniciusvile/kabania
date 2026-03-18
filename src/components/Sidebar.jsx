@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy } from 'lucide-react';
+import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
@@ -36,6 +36,15 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           <span>Projetos</span>
         </div>
 
+        <div
+          className={`nav-item ${currentView === 'shifts' ? 'active' : ''}`}
+          onClick={() => onViewChange('shifts')}
+        >
+          <Calendar size={20} className="text-accent" />
+          <span>Escalas de Trabalho</span>
+          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-accent/20 text-accent text-[8px] font-bold uppercase tracking-tighter">Smart</span>
+        </div>
+
         <div className={`nav-group ${expandedGroups.activities ? 'expanded' : ''}`}>
           <div className="nav-item" onClick={() => toggleGroup('activities')}>
             <ClipboardList size={20} />
@@ -49,10 +58,6 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               className={`submenu-item ${currentView === 'activities' ? 'active' : ''}`}
               onClick={() => onViewChange('activities')}
             >Lista de atividades</div>
-            <div
-              className={`submenu-item ${currentView === 'shifts' ? 'active' : ''}`}
-              onClick={() => onViewChange('shifts')}
-            >Escalas de Trabalho</div>
             <div
               className={`submenu-item ${currentView === 'calendar' ? 'active' : ''}`}
               onClick={() => onViewChange('calendar')}
