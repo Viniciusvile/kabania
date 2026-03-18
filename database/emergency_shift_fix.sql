@@ -11,7 +11,7 @@ BEGIN
     ) THEN
         ALTER TABLE public.employee_profiles 
         ADD CONSTRAINT employee_profiles_profile_id_fkey 
-        FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+        FOREIGN KEY (profile_id) REFERENCES public.profiles(user_id) ON DELETE CASCADE;
     END IF;
 END $$;
 
