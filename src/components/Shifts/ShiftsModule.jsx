@@ -193,7 +193,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
-        <div className={`loading-overlay-pixel ${loading || isSyncing ? 'active' : ''}`}>
+        <div className={`loading-overlay-pixel ${(loading && !shifts.length) || isSyncing ? 'active' : ''}`}>
            <Loader2 className="animate-spin text-accent" size={40} />
            <span>Sincronizando Banco de Dados...</span>
         </div>

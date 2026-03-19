@@ -91,15 +91,17 @@ export function useShifts(companyId) {
               required_skills: shift.required_skills || []
           },
           intelligence_metadata: shift.intelligence_metadata || {},
-          assigned_employees: shift.shift_assignments?.map(a => {
+          assigned_employees: (shift.assigned_employees || shift.shift_assignments || []).map(a => {
+              // V3 ja vem com name/role, V2 vem com employee_profiles.profiles.name
               const profile = a.employee_profiles?.profiles || {};
               return {
-                  ...a.employee_profiles,
-                  assignment_id: a.id,
-                  assignment_status: a.status,
-                  name: profile.name || 'Colaborador',
-                  avatar_url: profile.avatar_url || null,
-                  skills: a.employee_profiles?.skills || []
+                  ...(a.employee_profiles || {}),
+                  ...a, // V3 ja tem os campos planos
+                  assignment_id: a.assignment_id || a.id,
+                  assignment_status: a.assignment_status || a.status,
+                  name: a.name || profile.name || 'Colaborador',
+                  avatar_url: a.avatar_url || profile.avatar_url || null,
+                  skills: a.skills || (a.employee_profiles?.skills || [])
               };
           }) || [],
           calls_count: shift.calls_count || 0,
@@ -163,10 +165,10 @@ export function useShifts(companyId) {
   const isRefreshingRef = useRef(false);
 
   useEffect(() => {
-    // STAGGERED LOAD: Wait for App.jsx auth/session to stabilize
+    // STAGGERED LOAD: Reduzido de 1500 para 100ms para resposta instantanea
     const timer = setTimeout(() => {
       loadAllData();
-    }, 1500);
+    }, 100);
 
     const channelName = `realtime-escalas-${companyId}`;
     const shiftsChannel = supabase.channel(channelName)

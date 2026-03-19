@@ -10,9 +10,9 @@ CREATE INDEX IF NOT EXISTS idx_work_environments_company ON public.work_environm
 CREATE INDEX IF NOT EXISTS idx_work_activities_company ON public.work_activities (company_id);
 CREATE INDEX IF NOT EXISTS idx_service_requests_company ON public.service_requests (company_id);
 
--- 2️⃣ RPC REFATORADA (SEM N+1)
+-- 2️⃣ RPC REFATORADA (SEM N+1) - ATUALIZADA PARA ACEITAR TEXT ID
 CREATE OR REPLACE FUNCTION public.get_shifts_dashboard_data_v3(
-    p_company_id uuid,
+    p_company_id text,
     p_start_date timestamptz,
     p_end_date timestamptz
 )
@@ -28,7 +28,7 @@ BEGIN
     filtered_shifts AS (
         SELECT s.*
         FROM view_shifts_standard s
-        WHERE s.company_id = p_company_id
+        WHERE s.company_id::text = p_company_id::text
           AND s.start_time >= p_start_date
           AND s.start_time <= p_end_date
     ),
