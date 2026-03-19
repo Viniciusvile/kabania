@@ -6,6 +6,7 @@ import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { supabase } from '../supabaseClient';
 import { safeQuery, stagger } from '../utils/supabaseSafe';
+import { getWorkEnvironments, createWorkEnvironment, deleteWorkEnvironment, getActivities, createWorkActivity, deleteWorkActivity } from '../services/shiftService';
 import './CompanyPanel.css';
 
 export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
@@ -29,9 +30,14 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   // Loading states
   const [activeTab, setActiveTab] = useState('members');
   
+  // Resources state
+  const [environments, setEnvironments] = useState([]);
+  const [workActivities, setWorkActivities] = useState([]);
+  
   // Loading states
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
+  const [isLoadingResources, setIsLoadingResources] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [showCustModal, setShowCustModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -39,6 +45,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   // Collaborators form state
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
+
+  // Resources form state
+  const [isAddingEnv, setIsAddingEnv] = useState(false);
+  const [newEnvName, setNewEnvName] = useState('');
+  const [isAddingActivity, setIsAddingActivity] = useState(false);
+  const [newActivity, setNewActivity] = useState({ name: '', environment_id: '', duration_minutes: 60 });
 
 
   const loadAllData = async () => {
@@ -51,6 +63,25 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     loadCollaborators();
     await stagger(300);
     loadCustomers();
+    await stagger(400);
+    loadResources();
+  };
+
+  const loadResources = async () => {
+    if (!currentCompany?.id) return;
+    setIsLoadingResources(true);
+    try {
+      const [envs, acts] = await Promise.all([
+        getWorkEnvironments(currentCompany.id),
+        getActivities(currentCompany.id)
+      ]);
+      setEnvironments(envs);
+      setWorkActivities(acts);
+    } catch (err) {
+      console.error('Error loading resources:', err);
+    } finally {
+      setIsLoadingResources(false);
+    }
   };
 
   const loadMembers = async () => {
@@ -211,6 +242,73 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       logEvent(currentCompany.id, currentUser, 'COLLABORATOR_REMOVED', `Colaborador ${name} removido.`);
     } else {
       console.error('Error removing collaborator:', error);
+    }
+  };
+
+  const handleAddEnvironment = async (e) => {
+    e.preventDefault();
+    if (!newEnvName.trim()) return;
+
+    try {
+      const data = await createWorkEnvironment({
+        name: newEnvName.trim(),
+        company_id: currentCompany.id
+      });
+      setEnvironments(prev => [...prev, data]);
+      setNewEnvName('');
+      setIsAddingEnv(false);
+      logEvent(currentCompany.id, currentUser, 'ENVIRONMENT_ADDED', `Ambiente ${data.name} criado.`);
+    } catch (err) {
+      console.error('Error adding environment:', err);
+      alert('Erro ao adicionar ambiente: ' + err.message);
+    }
+  };
+
+  const handleRemoveEnvironment = async (id, name) => {
+    if (!window.confirm(`Remover ambiente ${name}? Todas as atividades vinculadas serão perdidas.`)) return;
+    try {
+      await deleteWorkEnvironment(id);
+      setEnvironments(prev => prev.filter(e => e.id !== id));
+      setWorkActivities(prev => prev.filter(a => a.environment_id !== id));
+      logEvent(currentCompany.id, currentUser, 'ENVIRONMENT_REMOVED', `Ambiente ${name} removido.`);
+    } catch (err) {
+      console.error('Error removing environment:', err);
+    }
+  };
+
+  const handleAddActivity = async (e) => {
+    e.preventDefault();
+    if (!newActivity.name.trim() || !newActivity.environment_id) return;
+
+    try {
+      const data = await createWorkActivity({
+        ...newActivity,
+        name: newActivity.name.trim(),
+        company_id: currentCompany.id
+      });
+      
+      // We need to fetch the env name for the UI list
+      const env = environments.find(e => e.id === data.environment_id);
+      const activityWithEnv = { ...data, work_environments: { name: env?.name } };
+      
+      setWorkActivities(prev => [...prev, activityWithEnv]);
+      setNewActivity({ name: '', environment_id: '', duration_minutes: 60 });
+      setIsAddingActivity(false);
+      logEvent(currentCompany.id, currentUser, 'ACTIVITY_ADDED', `Atividade ${data.name} criada.`);
+    } catch (err) {
+      console.error('Error adding activity:', err);
+      alert('Erro ao adicionar atividade: ' + err.message);
+    }
+  };
+
+  const handleRemoveActivity = async (id, name) => {
+    if (!window.confirm(`Remover atividade ${name}?`)) return;
+    try {
+      await deleteWorkActivity(id);
+      setWorkActivities(prev => prev.filter(a => a.id !== id));
+      logEvent(currentCompany.id, currentUser, 'ACTIVITY_REMOVED', `Atividade ${name} removida.`);
+    } catch (err) {
+      console.error('Error removing activity:', err);
     }
   };
 
@@ -447,6 +545,140 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                     <div className="cp-empty">Nenhum colaborador de campo cadastrado.</div>
                   )}
                 </>
+              )}
+            </div>
+          </div>
+
+          {/* Work Environments Card */}
+          <div className="cp-card">
+            <div className="cp-members-header">
+              <h3 className="cp-card-title">
+                {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#00e5ff' }} /> : <Building2 size={18} />} 
+                Ambientes de Trabalho
+              </h3>
+            </div>
+
+            <div className="cp-members-list">
+              {userRole === 'admin' && (
+                isAddingEnv ? (
+                  <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddEnvironment}>
+                    <input 
+                      type="text" 
+                      placeholder="Nome do Ambiente (ex: Portaria)" 
+                      value={newEnvName} 
+                      onChange={e => setNewEnvName(e.target.value)}
+                      className="cp-input-small"
+                      required
+                      autoFocus
+                    />
+                    <div className="cp-form-actions">
+                      <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingEnv(false)}>Cancelar</button>
+                      <button type="submit" className="cp-btn-save-small">Salvar</button>
+                    </div>
+                  </form>
+                ) : (
+                  <button className="cp-add-btn-dash" onClick={() => setIsAddingEnv(true)}>
+                    <Plus size={16} /> Adicionar Ambiente
+                  </button>
+                )
+              )}
+
+              {environments.map(env => (
+                <div key={env.id} className="cp-member-row">
+                  <div className="cp-member-avatar env">
+                    <Building2 size={14} />
+                  </div>
+                  <div className="cp-member-info">
+                    <span className="cp-member-email">{env.name}</span>
+                    <span className="cp-member-role">Localização / Unidade</span>
+                  </div>
+                  {userRole === 'admin' && (
+                    <div className="cp-member-actions">
+                      <button
+                        className="cp-action-btn danger"
+                        title="Remover ambiente"
+                        onClick={() => handleRemoveEnvironment(env.id, env.name)}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {environments.length === 0 && !isAddingEnv && !isLoadingResources && (
+                <div className="cp-empty">Nenhum ambiente cadastrado.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Work Activities Card */}
+          <div className="cp-card">
+            <div className="cp-members-header">
+              <h3 className="cp-card-title">
+                {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#fbbf24' }} /> : <Calendar size={18} />} 
+                Atividades Recomendadas
+              </h3>
+            </div>
+
+            <div className="cp-members-list">
+              {userRole === 'admin' && (
+                isAddingActivity ? (
+                  <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddActivity}>
+                    <input 
+                      type="text" 
+                      placeholder="Nome da Atividade" 
+                      value={newActivity.name} 
+                      onChange={e => setNewActivity({...newActivity, name: e.target.value})}
+                      className="cp-input-small"
+                      required
+                    />
+                    <select 
+                      value={newActivity.environment_id} 
+                      onChange={e => setNewActivity({...newActivity, environment_id: e.target.value})}
+                      className="cp-input-small"
+                      required
+                    >
+                      <option value="">vincular a um ambiente...</option>
+                      {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                    <div className="cp-form-actions">
+                      <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingActivity(false)}>Cancelar</button>
+                      <button type="submit" className="cp-btn-save-small">Salvar</button>
+                    </div>
+                  </form>
+                ) : (
+                  <button className="cp-add-btn-dash" onClick={() => setIsAddingActivity(true)}>
+                    <Plus size={16} /> Nova Atividade
+                  </button>
+                )
+              )}
+
+              {workActivities.map(act => (
+                <div key={act.id} className="cp-member-row">
+                  <div className="cp-member-avatar activity">
+                    <Calendar size={14} />
+                  </div>
+                  <div className="cp-member-info">
+                    <span className="cp-member-email">{act.name}</span>
+                    <span className="cp-member-role">
+                      {act.work_environments?.name || 'Ambiente não definido'}
+                    </span>
+                  </div>
+                  {userRole === 'admin' && (
+                    <div className="cp-member-actions">
+                      <button
+                        className="cp-action-btn danger"
+                        title="Remover atividade"
+                        onClick={() => handleRemoveActivity(act.id, act.name)}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {workActivities.length === 0 && !isAddingActivity && !isLoadingResources && (
+                <div className="cp-empty">Nenhuma atividade cadastrada.</div>
               )}
             </div>
           </div>

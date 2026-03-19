@@ -435,6 +435,18 @@
   border-color: rgba(34, 197, 94, 0.2);
 }
 
+.cp-member-avatar.env {
+  background: rgba(6, 182, 212, 0.1);
+  color: #06b6d4;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+
+.cp-member-avatar.activity {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
 .cp-grid-loading {
   grid-column: 1 / -1;
   display: flex;
