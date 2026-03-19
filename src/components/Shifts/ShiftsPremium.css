@@ -1,10 +1,10 @@
 /* 💎 SHIFTS PREMIUM DESIGN SYSTEM */
 
 :root {
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #2dd4bf 100%);
-  --premium-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --glass-bg: rgba(24, 26, 32, 0.8);
+  --glass-border: var(--border-light);
+  --accent-gradient: linear-gradient(135deg, var(--accent-cyan) 0%, var(--color-purple) 100%);
+  --premium-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .glass-morphism {
@@ -175,8 +175,8 @@
 .prio-tag.blue { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
 
 .btn-quick-schedule-premium {
-  background: #0ea5e9;
-  color: white;
+  background: var(--accent-cyan);
+  color: var(--bg-app);
   border: none;
   padding: 6px 14px;
   border-radius: 8px;
@@ -187,7 +187,7 @@
   align-items: center;
   gap: 0.4rem;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px var(--accent-cyan-dim);
 }
 
 .btn-quick-schedule-premium:hover {

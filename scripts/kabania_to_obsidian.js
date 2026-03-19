@@ -8,7 +8,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 
 // 1. Configurações
-const OBSIDIAN_BASE = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste';
+const OBSIDIAN_BASE = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/06_ECOSYSTEM';
 const MAP = {
   INDEX: path.join(OBSIDIAN_BASE, 'Index_Kabania.md'),
   SECURITY: path.join(OBSIDIAN_BASE, 'Kabania_Seguranca_e_Arquitetura.md'),

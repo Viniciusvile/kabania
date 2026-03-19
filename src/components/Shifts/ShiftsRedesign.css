@@ -3,15 +3,15 @@
    ========================================================================== */
 
 :root {
-    --escala-bg: #f8fafc;
-    --escala-card-bg: #ffffff;
-    --escala-border: #e2e8f0;
-    --escala-text-primary: #0f172a;
-    --escala-text-secondary: #64748b;
-    --escala-accent: #3b82f6;
-    --escala-success: #22c55e;
-    --escala-danger: #ef4444;
-    --escala-warning: #f59e0b;
+    --escala-bg: var(--bg-app);
+    --escala-card-bg: var(--bg-panel);
+    --escala-border: var(--border-color);
+    --escala-text-primary: var(--text-main);
+    --escala-text-secondary: var(--text-muted);
+    --escala-accent: var(--accent-cyan);
+    --escala-success: var(--color-green);
+    --escala-danger: var(--color-red);
+    --escala-warning: var(--color-orange);
 }
 
 .escalas-page {
@@ -32,8 +32,8 @@
 .loading-overlay-pixel {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -61,14 +61,14 @@
 }
 
 .stat-card-pixel {
-    background: white;
+    background: var(--bg-panel);
     padding: 24px;
     border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-light);
     transition: all 0.3s ease;
 }
 
@@ -119,11 +119,12 @@
 }
 
 .filter-pills-pixel {
-    background: #f1f5f9;
+    background: var(--bg-app);
     padding: 4px;
     border-radius: 12px;
     display: flex;
     gap: 4px;
+    border: 1px solid var(--border-light);
 }
 
 .filter-pills-pixel button {
@@ -139,20 +140,20 @@
 }
 
 .filter-pills-pixel button.active {
-    background: white;
-    color: var(--escala-text-primary);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background: var(--accent-cyan);
+    color: var(--bg-app);
+    box-shadow: 0 0 15px var(--accent-cyan-dim);
 }
 
 .period-selector-pixel {
-    background: white;
+    background: var(--bg-panel);
     padding: 8px 16px;
     border-radius: 12px;
     border: 1px solid var(--escala-border);
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .period-selector-pixel button {
@@ -293,8 +294,8 @@
 }
 
 .pending-act-card {
-  background: white;
-  border: 1px solid #eef2f6;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-light);
   border-radius: 14px;
   padding: 1.25rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -593,7 +594,7 @@
 
 /* 🧾 ESCALA CARD */
 .escala-card-pixel {
-    background: white;
+    background: var(--bg-panel);
     border-radius: 16px;
     padding: 16px;
     border: 1px solid var(--escala-border);
@@ -748,11 +749,12 @@
 }
 
 .modal-content-pixel {
-    background: white;
+    background: var(--bg-panel);
     width: 100%;
     max-width: 500px;
     border-radius: 20px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-light);
     overflow: hidden;
 }
 

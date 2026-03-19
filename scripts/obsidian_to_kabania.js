@@ -45,42 +45,46 @@ async function syncObsidianToKabania() {
 
     for (const filePath of files) {
       const fileName = path.basename(filePath);
-      const content = fs.readFileSync(filePath, 'utf8');
+      const rawContent = fs.readFileSync(filePath, 'utf8');
 
-      if (!content.trim() || content.length < 10) {
-        console.log(`⏩ Ignorando ${fileName} (vazio ou muito curto).`);
+      if (!rawContent.trim() || rawContent.length < 10) continue;
+
+      const { data: metadata, content } = parseFrontmatter(rawContent);
+      
+      // 🛡️ REGRAS DE SINCRONIZAÇÃO
+      // Apenas sincroniza se 'sync: true' estiver no YAML ou se for um Hub da pasta 06_ECOSYSTEM
+      const isEcosystemFile = filePath.includes('06_ECOSYSTEM');
+      const shouldSync = metadata.sync === 'true' || isEcosystemFile;
+
+      if (!shouldSync) {
+        console.log(`⏩ Ignorando ${fileName} (sem flag sync: true).`);
         continue;
       }
 
       console.log(`\n🔍 Analisando: ${fileName}...`);
       
-      // Perguntar ao Gemini sobre a categoria e tags
-      const analysis = await analyzeWithAI(content, fileName);
+      const analysis = await analyzeWithAI(content, fileName, metadata);
       
-      if (!analysis) {
-        console.error(`❌ Falha ao processar IA para ${fileName}`);
-        continue;
-      }
+      if (!analysis) continue;
 
-      // Inserir no Supabase (ignoramos se já existir pelo título para evitar duplicatas simples)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('knowledge_base')
         .insert([
           {
             id: `kb-obs-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             title: analysis.title || fileName.replace('.md', ''),
             description: analysis.description,
-            section: analysis.section,
+            section: metadata.category || analysis.section,
             tags: analysis.tags,
             enabled: true,
-            company_id: 'co-1773688319348' // ID identificado na base real
+            company_id: 'co-1773688319348'
           }
         ]);
 
       if (error) {
         console.error(`❌ Erro ao salvar ${fileName}:`, error.message);
       } else {
-        console.log(`✅ Sincronizado com sucesso: [${analysis.section}] ${analysis.title}`);
+        console.log(`✅ [${analysis.section}] ${analysis.title} sincronizado!`);
       }
     }
 
@@ -99,12 +103,33 @@ function getMarkdownFiles(dir, files_ = []) {
   for (const i in files) {
     const name = path.join(dir, files[i]);
     if (fs.statSync(name).isDirectory()) {
-      if (files[i] !== '.obsidian') getMarkdownFiles(name, files_);
+      if (!files[i].startsWith('.')) getMarkdownFiles(name, files_);
     } else {
       if (name.endsWith('.md')) files_.push(name);
     }
   }
   return files_;
+}
+
+/**
+ * Parser simples de Frontmatter (YAML)
+ */
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]+?)\r?\n---/);
+  if (!match) return { data: {}, content };
+  
+  const yaml = match[1];
+  const data = {};
+  yaml.split(/\r?\n/).forEach(line => {
+    const parts = line.split(':');
+    if (parts.length >= 2) {
+      const key = parts[0].trim();
+      const val = parts.slice(1).join(':').trim();
+      data[key] = val;
+    }
+  });
+  
+  return { data, content: content.replace(match[0], '').trim() };
 }
 
 /**
