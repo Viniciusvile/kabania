@@ -22,7 +22,11 @@ export function useShifts(companyId) {
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
   const [pendingActivities, setPendingActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Instant Load: Se temos cache, não bloqueamos a tela com o overlay central
+  const hasCache = shifts.length > 0;
+  const [loading, setLoading] = useState(!hasCache);
+  const isInitialLoad = useRef(true);
   
   const [weekStart, setWeekStart] = useState(() => {
     const d = new Date();
@@ -36,7 +40,11 @@ export function useShifts(companyId) {
     if (!companyId || isRefreshingRef.current) return;
     try {
       isRefreshingRef.current = true;
-      setLoading(true);
+      
+      // Só mostramos o overlay central se for o primeiro carregamento SEM cache
+      if (!hasCache && isInitialLoad.current) {
+        setLoading(true);
+      }
       
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
@@ -148,6 +156,7 @@ export function useShifts(companyId) {
     } finally {
       setLoading(false);
       isRefreshingRef.current = false;
+      isInitialLoad.current = false;
     }
   }, [companyId, weekStart]);
 

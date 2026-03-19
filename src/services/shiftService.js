@@ -274,15 +274,25 @@ export const updateAssignmentStatus = async (assignmentId, status) => {
 export const getShiftsDashboardData = async (companyId, startDate, endDate) => {
     if (!companyId) return null;
     
-    const { data, error } = await supabase.rpc('get_shifts_dashboard_data_v2', {
+    // First, try V3 (Optimized CTE approach)
+    const { data, error } = await supabase.rpc('get_shifts_dashboard_data_v3', {
         p_company_id: companyId,
-        p_start_time: startDate,
-        p_end_time: endDate
+        p_start_date: startDate,
+        p_end_date: endDate
     });
     
     if (error) {
-        console.error('getShiftsDashboardData Error:', error);
-        throw error;
+        console.warn('getShiftsDashboardData V3 failed, falling back to V2:', error.message);
+        
+        // Fallback to V2 if V3 is not yet deployed
+        const { data: v2Data, error: v2Error } = await supabase.rpc('get_shifts_dashboard_data_v2', {
+            p_company_id: companyId,
+            p_start_time: startDate,
+            p_end_time: endDate
+        });
+        
+        if (v2Error) throw v2Error;
+        return v2Data;
     }
     
     return data;
