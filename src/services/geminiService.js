@@ -477,29 +477,6 @@ export async function processKnowledgeRow(rowData, existingKnowledge = []) {
   }
 }
 
-export async function analyzeCompanyStructure(members, collaborators, companyId) {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    const authorizedTags = await getAuthorizedTags(companyId, 'company_data');
-
-    const prompt = `Você é um consultor de RH e estrutura organizacional. Analise a composição da equipe do Kabania:
-    - MEMBROS (Gestão/Admin): ${members.length}
-    - COLABORADORES (Campo/Operacional): ${collaborators.length}
-    - LISTA DE ESPECIALIDADES: ${JSON.stringify(collaborators.map(c => c.specialty))}
-    
-    ${authorizedTags}
-
-    REGRAS:
-    1. Analise se a proporção Gestão vs Campo está equilibrada.
-    2. Com base nas TAGS de "company_data", sugira 1 especialidade que pode estar faltando.
-    3. Responda em no máximo 3 frases curtas e diretas.`;
-    
-    const result = await model.generateContent(prompt);
-    return result.response.text();
-  } catch (error) {
-    return `Erro na análise estrutural: ${error.message}`;
-  }
-}
 
 export async function analyzeCompanyPerformance(metrics, companyId) {
   try {
