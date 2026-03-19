@@ -609,6 +609,16 @@
 
 .mt-8 { margin-top: 2rem; }
 
+/* Premium Fade-In Animation */
+@keyframes gridFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.shifts-main-layout {
+    animation: gridFadeIn 0.5s ease-out forwards;
+}
+
 .activity-pill-premium {
   background: rgba(0, 229, 255, 0.15); /* More visible cyan tint */
   border: 1px solid rgba(0, 229, 255, 0.4); /* Stronger border */

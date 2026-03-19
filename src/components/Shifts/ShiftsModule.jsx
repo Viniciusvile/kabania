@@ -177,6 +177,13 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const newEnd = new Date(newStart.getTime() + durationMs);
 
       console.log("[MoveShift] Updating shift via service:", shiftId, "to", newStart.toISOString());
+      
+      // Optimistic local update
+      updateShiftLocally(shiftId, { 
+        start_time: newStart.toISOString(), 
+        end_time: newEnd.toISOString() 
+      });
+
       await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
       console.log("[MoveShift] Shift updated successfully, refreshing...");
       await refresh();
