@@ -17,9 +17,14 @@ export default function ShiftGrid({ shifts, weekDays, onAddEmployee, onDropActiv
             onDragOver={(e) => {
               e.preventDefault();
               e.dataTransfer.dropEffect = 'copy';
+              e.currentTarget.classList.add('drag-over');
+            }}
+            onDragLeave={(e) => {
+              e.currentTarget.classList.remove('drag-over');
             }}
             onDrop={(e) => {
               e.preventDefault();
+              e.currentTarget.classList.remove('drag-over');
               const activityData = e.dataTransfer.getData('activity');
               if (activityData) {
                 const activity = JSON.parse(activityData);
