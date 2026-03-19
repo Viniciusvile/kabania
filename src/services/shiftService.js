@@ -17,13 +17,40 @@ export const getWorkEnvironments = async (companyId) => {
 };
 
 export const createWorkEnvironment = async (envData) => {
-  const { data, error } = await supabase
-    .from('work_environments')
-    .insert([envData])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('work_environments')
+      .insert([envData])
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === '42703' && error.message.includes('id')) {
+        console.warn('Fallback: Column id missing on select, retrying with minimal insert');
+        const { error: insertError } = await supabase
+          .from('work_environments')
+          .insert([envData]);
+        if (insertError) throw insertError;
+        
+        // Fetch it back
+        const { data: fetchBack, error: fetchError } = await supabase
+          .from('work_environments')
+          .select('*')
+          .eq('name', envData.name)
+          .eq('company_id', envData.company_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (fetchError) throw fetchError;
+        return fetchBack;
+      }
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error('Error creating work environment:', err);
+    throw err;
+  }
 };
 
 export const deleteWorkEnvironment = async (id) => {
@@ -52,13 +79,40 @@ export const getActivities = async (companyId) => {
 };
 
 export const createWorkActivity = async (activityData) => {
-  const { data, error } = await supabase
-    .from('work_activities')
-    .insert([activityData])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('work_activities')
+      .insert([activityData])
+      .select()
+      .single();
+    
+    if (error) {
+      if (error.code === '42703' && error.message.includes('id')) {
+        console.warn('Fallback: Column id missing on activity select, retrying with minimal insert');
+        const { error: insertError } = await supabase
+          .from('work_activities')
+          .insert([activityData]);
+        if (insertError) throw insertError;
+        
+        // Fetch it back
+        const { data: fetchBack, error: fetchError } = await supabase
+          .from('work_activities')
+          .select('*')
+          .eq('name', activityData.name)
+          .eq('company_id', activityData.company_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (fetchError) throw fetchError;
+        return fetchBack;
+      }
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    console.error('Error creating work activity:', err);
+    throw err;
+  }
 };
 
 export const deleteWorkActivity = async (id) => {
