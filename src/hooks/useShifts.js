@@ -219,10 +219,11 @@ export function useShifts(companyId) {
   const isRefreshingRef = useRef(false);
 
   useEffect(() => {
-    // STAGGERED LOAD: Reduzido de 1500 para 100ms para resposta instantanea
+    // STAGGERED LOAD: Adicionando jitter aleatório para evitar conflitos de tab
+    const jitter = Math.random() * 200;
     const timer = setTimeout(() => {
       loadAllData();
-    }, 100);
+    }, 100 + jitter);
 
     const channelName = `realtime-escalas-${companyId}`;
     const shiftsChannel = supabase.channel(channelName)

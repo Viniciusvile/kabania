@@ -41,9 +41,13 @@ export const safeQuery = async (queryFn, retries = 5, delay = 1000, description 
         continue;
       }
       
+      // Se chegamos aqui e ainda é um erro de lock, retornamos o erro estruturado em vez de dar throw
+      // Isso evita o pop-up de "Promise Rejection" que incomoda o usuário
       if (isLockError) {
-        console.error("[Supabase Safe] Erro de Lock persistente. Sistema pode estar travado.");
+        console.error("[Supabase Safe] Erro de Lock persistente após retentativas. Ignorando throw para evitar alerta na UI.");
+        return { data: null, error: err, isLockFailure: true };
       }
+      
       throw err;
     }
   }
