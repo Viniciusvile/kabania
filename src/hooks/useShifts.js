@@ -6,19 +6,22 @@ import { safeQuery } from '../utils/supabaseSafe';
 export function useShifts(companyId) {
   const cacheKey = `kabania_shifts_cache_${companyId}`;
   
+  // SAFE PARSE HELPER
+  const safeParse = (key, fallback) => {
+    try {
+      const saved = localStorage.getItem(key);
+      if (!saved || saved === 'undefined') return fallback;
+      return JSON.parse(saved);
+    } catch (e) {
+      console.warn(`[useShifts] Falha ao ler cache ${key}:`, e);
+      return fallback;
+    }
+  };
+
   // INITIAL STATE FROM CACHE (Obsidian Optimistic UI)
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem(`${cacheKey}_stats`);
-    return saved ? JSON.parse(saved) : { total: 0, open: 0, inProgress: 0, concluded: '0/0' };
-  });
-  const [shifts, setShifts] = useState(() => {
-    const saved = localStorage.getItem(`${cacheKey}_shifts`);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [employees, setEmployees] = useState(() => {
-    const saved = localStorage.getItem(`${cacheKey}_employees`);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [stats, setStats] = useState(() => safeParse(`${cacheKey}_stats`, { total: 0, open: 0, inProgress: 0, concluded: '0/0' }));
+  const [shifts, setShifts] = useState(() => safeParse(`${cacheKey}_shifts`, []));
+  const [employees, setEmployees] = useState(() => safeParse(`${cacheKey}_employees`, []));
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
   const [pendingActivities, setPendingActivities] = useState([]);
