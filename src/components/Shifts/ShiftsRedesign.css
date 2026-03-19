@@ -192,9 +192,11 @@
 .weekly-grid-pixel {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 16px;
+    gap: 20px;
     overflow-x: auto;
-    padding-bottom: 40px;
+    padding: 10px 10px 40px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 20px;
     /* Hide scrollbar for Chrome, Safari and Opera */
     &::-webkit-scrollbar {
         display: none;
@@ -575,22 +577,23 @@
 }
 
 .empty-day-pixel {
-    padding: 32px 16px;
+    padding: 48px 16px;
     text-align: center;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border: 2px dashed #f1f5f9;
-    border-radius: 16px;
-    background: rgba(248, 250, 252, 0.5);
+    letter-spacing: 1px;
+    border: 2px dashed rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.01);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    opacity: 0.6;
-    transition: all 0.3s ease;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0.4;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .empty-day-pixel:hover {
@@ -602,14 +605,20 @@
 /* 🧾 ESCALA CARD */
 .escala-card-pixel {
     background: var(--bg-panel);
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid var(--escala-border);
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 14px;
+    box-shadow: var(--premium-shadow);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: grab;
+}
+
+.escala-card-pixel:active {
+    cursor: grabbing;
+    transform: scale(0.98);
 }
 
 .escala-card-pixel:hover {

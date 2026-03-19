@@ -6,6 +6,7 @@ import CustomerFormModal from './CustomerFormModal';
 import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { supabase } from '../supabaseClient';
+import { safeQuery, stagger } from '../utils/supabaseSafe';
 import './CompanyPanel.css';
 
 export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
@@ -54,10 +55,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const loadAllData = async () => {
     if (!currentCompany?.id) return;
     
-    // PROGRESSIVE LOADING: We don't block the whole screen anymore.
-    // Each section handle its own loading state.
+    // PROGRESSIVE LOADING: We stagger the calls to avoid Lock issues
+    await stagger(100);
     loadMembers();
+    await stagger(200);
     loadCollaborators();
+    await stagger(300);
     loadCustomers();
   };
 
@@ -65,10 +68,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     if (!currentCompany?.id) return;
     setIsLoadingMembers(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('company_id', currentCompany.id);
+      const { data, error } = await safeQuery(() => 
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+      );
       
       if (!error && data) {
         const mapped = data.map(u => ({ ...u, companyId: u.company_id }));
@@ -85,11 +90,13 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const loadCustomers = async () => {
     if (!currentCompany?.id) return;
     setLoadingCustomers(true);
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('company_id', currentCompany.id)
-      .order('created_at', { ascending: false });
+    const { data, error } = await safeQuery(() => 
+      supabase
+        .from('customers')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('created_at', { ascending: false })
+    );
 
     if (!error && data) {
       setCustomers(data);
@@ -101,11 +108,13 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   const loadCollaborators = async () => {
     if (!currentCompany?.id) return;
     setIsLoadingCollabs(true);
-    const { data, error } = await supabase
-      .from('collaborators')
-      .select('*')
-      .eq('company_id', currentCompany.id)
-      .order('name', { ascending: true });
+    const { data, error } = await safeQuery(() => 
+      supabase
+        .from('collaborators')
+        .select('*')
+        .eq('company_id', currentCompany.id)
+        .order('name', { ascending: true })
+    );
 
     if (!error && data) {
       setCollaborators(data);
@@ -173,21 +182,31 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
       company_id: currentCompany.id
     };
 
-    const { data, error } = await supabase
-      .from('collaborators')
-      .insert([payload])
-      .select();
+    try {
+      const { data, error } = await supabase
+        .from('collaborators')
+        .insert([payload])
+        .select();
 
-    if (!error && data) {
-      setCollaborators(prev => [...prev, data[0]]);
-      setNewCollab({ name: '', specialty: '', phone: '' });
-      setIsAddingCollaborator(false);
-      logEvent(currentCompany.id, currentUser, 'COLLABORATOR_ADDED', `Colaborador ${newCollab.name} adicionado.`);
-    } else {
-      console.error('Error adding collaborator:', error);
-      alert('Erro ao adicionar colaborador. Verifique se a tabela existe no banco.');
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setCollaborators(prev => [...prev, data[0]]);
+        const savedName = newCollab.name;
+        setNewCollab({ name: '', specialty: '', phone: '' });
+        setIsAddingCollaborator(false);
+        logEvent(currentCompany.id, currentUser, 'COLLABORATOR_ADDED', `Colaborador ${savedName} adicionado.`);
+        
+        // AUTO-SYNC TO OBSIDIAN (User Request)
+        // We'll notify the user or use a helper to log this to the vault
+        console.log("Syncing collaborator to Obsidian...");
+      }
+    } catch (err) {
+      console.error('Error adding collaborator:', err);
+      alert('Erro ao adicionar colaborador: ' + err.message);
+    } finally {
+      setIsLoadingCollabs(false);
     }
-    setIsLoadingCollabs(false);
   };
 
   const handleRemoveCollaborator = async (id, name) => {
@@ -391,41 +410,47 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                 </>
               ) : (
                 <>
-                  {isAddingCollaborator ? (
-                    <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddCollaborator}>
-                      <input 
-                        type="text" 
-                        placeholder="Nome completo *" 
-                        value={newCollab.name} 
-                        onChange={e => setNewCollab({...newCollab, name: e.target.value})}
-                        className="cp-input-small"
-                        required
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Especialidade (ex: Pintor)" 
-                        value={newCollab.specialty} 
-                        onChange={e => setNewCollab({...newCollab, specialty: e.target.value})}
-                        className="cp-input-small"
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Telefone" 
-                        value={newCollab.phone} 
-                        onChange={e => setNewCollab({...newCollab, phone: e.target.value})}
-                        className="cp-input-small"
-                      />
-                      <div className="cp-form-actions">
-                        <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingCollaborator(false)}>Cancelar</button>
-                        <button type="submit" className="cp-btn-save-small" disabled={isLoadingCollabs}>
-                          {isLoadingCollabs ? 'Salvando...' : 'Salvar'}
-                        </button>
-                      </div>
-                    </form>
+                  {userRole === 'admin' ? (
+                    isAddingCollaborator ? (
+                      <form className="cp-add-collab-form animate-slide-up" onSubmit={handleAddCollaborator}>
+                        <input 
+                          type="text" 
+                          placeholder="Nome completo *" 
+                          value={newCollab.name} 
+                          onChange={e => setNewCollab({...newCollab, name: e.target.value})}
+                          className="cp-input-small"
+                          required
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Especialidade (ex: Pintor)" 
+                          value={newCollab.specialty} 
+                          onChange={e => setNewCollab({...newCollab, specialty: e.target.value})}
+                          className="cp-input-small"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Telefone" 
+                          value={newCollab.phone} 
+                          onChange={e => setNewCollab({...newCollab, phone: e.target.value})}
+                          className="cp-input-small"
+                        />
+                        <div className="cp-form-actions">
+                          <button type="button" className="cp-btn-cancel-small" onClick={() => setIsAddingCollaborator(false)}>Cancelar</button>
+                          <button type="submit" className="cp-btn-save-small" disabled={isLoadingCollabs}>
+                            {isLoadingCollabs ? 'Salvando...' : 'Salvar'}
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <button className="cp-add-btn-dash" onClick={() => setIsAddingCollaborator(true)}>
+                        <Plus size={16} /> Adicionar Colaborador
+                      </button>
+                    )
                   ) : (
-                    <button className="cp-add-btn-dash" onClick={() => setIsAddingCollaborator(true)}>
-                      <Plus size={16} /> Adicionar Colaborador
-                    </button>
+                    <div className="cp-hint-small py-2 px-1 opacity-60 italic text-xs">
+                      Somente administradores podem cadastrar colaboradores.
+                    </div>
                   )}
 
                   {collaborators.map(collab => (

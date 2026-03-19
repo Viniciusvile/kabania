@@ -105,13 +105,12 @@ export const notifyShiftAssignments = async (drafts, employees, companyId) => {
             // we need the base profile.id from the shift_profile_id
             const baseEmp = employees.find(e => e.shift_profile_id === draft.employee_id);
             if (baseEmp && baseEmp.id) {
-                await createNotification({
-                    company_id: companyId,
-                    user_id: baseEmp.id,
-                    type: 'SHIFT_UPDATE',
-                    title: 'Nova Escala de Trabalho',
-                    message: 'Sua agenda de horários foi atualizada pela gestão inteligente.',
-                });
+                await createNotification(
+                    companyId, 
+                    baseEmp.id, 
+                    'SHIFT_UPDATE', 
+                    'Sua agenda de horários foi atualizada pela gestão inteligente.'
+                );
                 notifiedIds.add(draft.employee_id);
             }
         }

@@ -21,6 +21,7 @@ import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
+import { safeQuery, stagger } from './utils/supabaseSafe';
 import { processKnowledgeRow } from './services/geminiService';
 import './App.css';
 import './components/AIChatFab.css';
@@ -121,10 +122,12 @@ function App() {
         return;
       }
       
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('company_id', currentCompany.id);
+      const { data, error } = await safeQuery(() => 
+        supabase
+          .from('projects')
+          .select('*')
+          .eq('company_id', currentCompany.id)
+      );
 
       if (!error && data) {
         if (data.length === 0) {
@@ -134,7 +137,9 @@ function App() {
             name: 'Projeto 1', 
             company_id: currentCompany.id 
           };
-          const { error: insError } = await supabase.from('projects').insert([defaultProj]);
+          const { error: insError } = await safeQuery(() => 
+            supabase.from('projects').insert([defaultProj])
+          );
           if (!insError) {
             setProjects([defaultProj]);
             setSelectedProjectId(defaultProj.id);
@@ -429,8 +434,9 @@ function App() {
 
     const initSession = async () => {
       try {
-        // Removed: setIsSessionLoading(true) to prevent flicker on refresh
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Atraso inicial para evitar conflito com outros componentes
+        await stagger(300);
+        const { data: { session }, error } = await safeQuery(() => supabase.auth.getSession());
         
         if (isMounted) {
           if (session) {
