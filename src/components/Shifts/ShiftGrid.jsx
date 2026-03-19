@@ -120,9 +120,9 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
       </div>
 
       <div className="mb-4">
-        <div className="bg-white text-slate-900 px-3 py-1.5 rounded-lg inline-flex items-center gap-2 text-xs font-bold shadow-lg">
-          <Briefcase size={14} /> 
-          {activityName}
+        <div className="activity-pill-premium">
+          <Briefcase size={14} className="icon-accent" /> 
+          {activityName || 'Atividade'}
         </div>
       </div>
 
