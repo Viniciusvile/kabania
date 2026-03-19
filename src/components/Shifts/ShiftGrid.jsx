@@ -1,7 +1,7 @@
 import React from 'react';
 import { Briefcase, Flame, Ticket, Plus, Layout } from 'lucide-react';
 
-export default function ShiftGrid({ shifts, weekDays, onAddEmployee }) {
+export default function ShiftGrid({ shifts, weekDays, onAddEmployee, onDropActivity }) {
   return (
     <div className="weekly-grid-pixel">
       {weekDays.map(day => {
@@ -11,7 +11,22 @@ export default function ShiftGrid({ shifts, weekDays, onAddEmployee }) {
         });
 
         return (
-          <div key={day.date.toISOString()} className="grid-column-pixel">
+          <div 
+            key={day.date.toISOString()} 
+            className="grid-column-pixel"
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'copy';
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const activityData = e.dataTransfer.getData('activity');
+              if (activityData) {
+                const activity = JSON.parse(activityData);
+                onDropActivity(activity, day.date);
+              }
+            }}
+          >
             <header className="day-header-pixel">
               <span className="day-number">{day.dayNum}</span>
               <span className="day-name">{day.label}</span>

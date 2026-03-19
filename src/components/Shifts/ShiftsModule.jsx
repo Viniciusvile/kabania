@@ -89,23 +89,44 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   };
 
   const handleQuickSchedule = async (activity) => {
-     try {
-       const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
-       const endDate = new Date(startDate.getTime() + (60 * 60000));
-       
-       await supabase.from('shifts').insert([{
-         company_id: companyId,
-         service_request_id: activity.id,
-         start_time: startDate.toISOString(),
-         end_time: endDate.toISOString(),
-         status: 'scheduled',
-         notes: `Agendado via Inteligência Kabania`
-       }]);
+    try {
+      const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
+      const endDate = new Date(startDate.getTime() + (60 * 60000));
+      
+      await supabase.from('shifts').insert([{
+        company_id: companyId,
+        service_request_id: activity.id,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        status: 'scheduled',
+        notes: `Agendado via Inteligência Kabania`
+      }]);
 
-       await refresh();
-     } catch (err) {
-       alert("Erro ao criar escala: " + err.message);
-     }
+      await refresh();
+    } catch (err) {
+      alert("Erro ao criar escala: " + err.message);
+    }
+  };
+
+  const handleDropActivity = async (activity, date) => {
+    try {
+      const startTime = new Date(date);
+      startTime.setHours(8, 0, 0, 0); 
+      const endTime = new Date(startTime.getTime() + (4 * 60 * 60000));
+      
+      await supabase.from('shifts').insert([{
+        company_id: companyId,
+        service_request_id: activity.id,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        status: 'scheduled',
+        notes: `Agendado via Arrastar e Soltar`
+      }]);
+
+      await refresh();
+    } catch (err) {
+      alert("Erro ao criar escala via drop: " + err.message);
+    }
   };
 
   return (
@@ -132,6 +153,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             shifts={filteredShifts} 
             weekDays={weekDays} 
             onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
+            onDropActivity={handleDropActivity}
           />
         </div>
 
