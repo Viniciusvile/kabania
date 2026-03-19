@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
 import { addEmployeeToShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
@@ -22,13 +22,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     loading, 
     weekStart, 
     setWeekStart, 
-    refresh 
+    refresh,
+    updateShiftLocally
   } = useShifts(companyId);
 
   const [filterStatus, setFilterStatus] = useState('todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategory, setExpandedCategory] = useState('field');
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -51,18 +55,40 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
            s.work_activities?.name?.toLowerCase().includes(q);
   });
 
-  const fieldWorkers = employees.filter(e => e.role === 'field' || e.role === 'colaborador');
-  const staffMembers = employees.filter(e => e.role !== 'field' && e.role !== 'colaborador');
+  const fieldWorkers = employees.filter(e => e.is_external === true);
+  const staffMembers = employees.filter(e => e.is_external !== true);
 
-  const handleAddEmployee = async (profileId, shiftId = null) => {
+  const handleAddEmployee = async (profileId, shiftId = null, isExternal = false) => {
     const targetId = shiftId || assignmentModal.shiftId;
     if (!targetId) return;
     try {
-      await addEmployeeToShift(targetId, profileId);
+      setIsSyncing(true);
+      
+      // Optimistic personnel addition
+      const emp = employees.find(e => (e.shift_profile_id || e.id) === profileId);
+      if (emp) {
+        updateShiftLocally(targetId, {
+          assigned_employees: [
+            ...(shifts.find(s => s.id === targetId)?.assigned_employees || []),
+            { ...emp, name: emp.name }
+          ]
+        });
+      }
+
+      await addEmployeeToShift(targetId, profileId, isExternal);
       setAssignmentModal({ isOpen: false, shiftId: null });
       await refresh();
+      // Optional: success toast could go here
     } catch (err) {
-      alert("Erro ao adicionar colaborador: " + err.message);
+      console.error("Erro detalhado de atribuição:", err);
+      const msg = err.message || "Erro desconhecido";
+      if (msg.includes("collaborator_id")) {
+        alert("🚨 ERRO DE BANCO: A coluna 'collaborator_id' não foi encontrada. Por favor, execute o script 'fix_assignment_external.sql' no seu painel Supabase para ativar esta função.");
+      } else {
+        alert("Erro ao adicionar colaborador: " + msg);
+      }
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -90,6 +116,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
   const handleQuickSchedule = async (activity) => {
     try {
+      setIsSyncing(true);
       const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
       const endDate = new Date(startDate.getTime() + (60 * 60000));
       
@@ -105,11 +132,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       await refresh();
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
   const handleDropActivity = async (activity, date) => {
     try {
+      setIsSyncing(true);
       const startTime = new Date(date);
       startTime.setHours(8, 0, 0, 0); 
       const endTime = new Date(startTime.getTime() + (4 * 60 * 60000));
@@ -126,6 +156,46 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       await refresh();
     } catch (err) {
       alert("Erro ao criar escala via drop: " + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleMoveShift = async (shiftId, newDate) => {
+    try {
+      setIsSyncing(true);
+      const shift = shifts.find(s => s.id === shiftId);
+      if (!shift) return;
+
+      const oldStart = new Date(shift.start_time);
+      const oldEnd = new Date(shift.end_time);
+      const durationMs = oldEnd - oldStart;
+
+      const newStart = new Date(newDate);
+      newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+      
+      const newEnd = new Date(newStart.getTime() + durationMs);
+
+      console.log("[MoveShift] Updating shift:", shiftId, "to", newStart.toISOString());
+      const { error } = await supabase
+        .from('shifts')
+        .update({
+          start_time: newStart.toISOString(),
+          end_time: newEnd.toISOString()
+        })
+        .eq('id', shiftId);
+
+      if (error) {
+        console.error("[MoveShift] Error updating shift:", error);
+        throw error;
+      }
+      console.log("[MoveShift] Shift updated successfully, refreshing...");
+      await refresh();
+    } catch (err) {
+      console.error("[MoveShift] Catch block error:", err);
+      alert("Erro ao mover escala: " + err.message);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -134,12 +204,12 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
-        <div className={`loading-overlay-pixel ${loading ? 'active' : ''}`}>
+        <div className={`loading-overlay-pixel ${loading || isSyncing ? 'active' : ''}`}>
            <Loader2 className="animate-spin text-accent" size={40} />
            <span>Sincronizando Banco de Dados...</span>
         </div>
 
-        <div className={`shifts-grid-area ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`shifts-grid-area ${loading || isSyncing ? 'opacity-50 pointer-events-none' : ''}`}>
           <ShiftControls 
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
@@ -154,6 +224,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             weekDays={weekDays} 
             onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
             onDropActivity={handleDropActivity}
+            onMoveShift={handleMoveShift}
+            onRefresh={refresh}
+            updateShiftLocally={updateShiftLocally}
+            isSyncing={isSyncing}
+            setIsSyncing={setIsSyncing}
           />
         </div>
 
@@ -163,49 +238,114 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         />
       </div>
 
-      {/* 🤝 ASSIGNMENT MODAL */}
+      {/* 🤝 ASSIGNMENT MODAL OVERHAUL */}
       {assignmentModal.isOpen && (
         <div className="modal-overlay-pixel glass-morphism">
-          <div className="modal-content-pixel assignment-modal animate-slide-up">
-            <div className="modal-header">
-              <h3>Direcionar para Colaboradores</h3>
-              <button className="btn-close" onClick={() => setAssignmentModal({ isOpen: false, shiftId: null })}>×</button>
+          <div className="premium-modal-pixel assignment-modal animate-slide-up" style={{ width: '90%', maxWidth: '500px', height: 'auto', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="premium-modal-header">
+              <div className="flex items-center gap-2">
+                <Users className="text-accent" size={20} />
+                <h3>Direcionar para Colaboradores</h3>
+              </div>
+              <button className="premium-close-btn" onClick={() => { setAssignmentModal({ isOpen: false, shiftId: null }); setSearchTerm(''); }}>×</button>
+            </div>
+
+            <div className="assignment-search-container py-4 px-6">
+              <div className="premium-search-input-wrapper">
+                <Search size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar colaborador ou habilidade..." 
+                  className="premium-search-input"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoFocus
+                />
+              </div>
             </div>
             
-            <div className="assignment-tabs">
-              <div className="role-section">
-                <h4>👷 Colaboradores de Campo</h4>
-                <div className="employee-grid-select">
-                  {fieldWorkers.map(emp => (
-                    <div key={emp.id} className="emp-select-card glass-morphism" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
-                      <div className="emp-avatar-medium">
-                        {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
-                      </div>
-                      <div className="emp-info">
-                        <span className="emp-name">{emp.name}</span>
-                        <div className="emp-skills-preview">
-                          {emp.skills?.slice(0, 2).map(s => <span key={s} className="skill-mini-tag">{s}</span>)}
+            <div className="assignment-tabs flex-1 overflow-y-auto custom-scrollbar">
+              {/* SECTION: FIELD WORKERS */}
+              <div className="accordion-section-premium">
+                <button 
+                  className={`accordion-header-premium ${expandedCategory === 'field' ? 'active' : ''}`}
+                  onClick={() => setExpandedCategory(expandedCategory === 'field' ? '' : 'field')}
+                >
+                  <div className="header-left">
+                    <HardHat size={18} />
+                    <h4>Colaboradores de Campo</h4>
+                    <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
+                      {fieldWorkers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length}
+                    </span>
+                  </div>
+                  {expandedCategory === 'field' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                
+                <div className={`accordion-content-premium ${expandedCategory === 'field' ? 'active' : ''}`}>
+                  <div className="employee-grid-select">
+                    {fieldWorkers
+                      .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || e.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
+                      .map(emp => (
+                      <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
+                        <div className="emp-avatar-premium">
+                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
+                        </div>
+                        <div className="emp-details-premium">
+                          <span className="emp-name-premium">{emp.name}</span>
+                          <div className="emp-skills-preview flex gap-1 mt-1">
+                            {emp.skills?.slice(0, 2).map(s => <span key={s} className="skill-mini-tag">{s}</span>)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    {fieldWorkers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                      <div className="empty-state-premium">
+                        <UserX className="empty-state-icon" size={32} />
+                        <p>Nenhum colaborador de campo encontrado.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="role-section mt-4">
-                <h4>👥 Membros da Equipe</h4>
-                <div className="employee-grid-select">
-                  {staffMembers.map(emp => (
-                    <div key={emp.id} className="emp-select-card glass-morphism" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
-                      <div className="emp-avatar-medium">
-                        {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
+              {/* SECTION: STAFF MEMBERS */}
+              <div className="accordion-section-premium">
+                <button 
+                  className={`accordion-header-premium ${expandedCategory === 'staff' ? 'active' : ''}`}
+                  onClick={() => setExpandedCategory(expandedCategory === 'staff' ? '' : 'staff')}
+                >
+                  <div className="header-left">
+                    <Users size={18} />
+                    <h4>Membros da Equipe</h4>
+                    <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
+                      {staffMembers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length}
+                    </span>
+                  </div>
+                  {expandedCategory === 'staff' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+                
+                <div className={`accordion-content-premium ${expandedCategory === 'staff' ? 'active' : ''}`}>
+                  <div className="employee-grid-select">
+                    {staffMembers
+                      .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .map(emp => (
+                      <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
+                        <div className="emp-avatar-premium">
+                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
+                        </div>
+                        <div className="emp-details-premium">
+                          <span className="emp-name-premium">{emp.name}</span>
+                          <span className="emp-role-premium">{emp.role}</span>
+                        </div>
                       </div>
-                      <div className="emp-info">
-                        <span className="emp-name">{emp.name}</span>
-                        <span className="emp-role">{emp.role}</span>
+                    ))}
+                    {staffMembers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                      <div className="empty-state-premium">
+                        <UserX className="empty-state-icon" size={32} />
+                        <p>Nenhum membro da equipe encontrado.</p>
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -216,39 +356,39 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       {/* 📝 NEW SHIFT MODAL */}
       {isModalOpen && (
         <div className="modal-overlay-pixel glass-morphism">
-          <div className="modal-content-pixel animate-fade-in">
-            <div className="modal-header">
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '500px' }}>
+            <div className="premium-modal-header">
               <h3>Agendar Nova Escala Inteligente</h3>
               <button className="btn-close" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <form className="modal-form" onSubmit={handleCreateShift}>
-              <div className="form-group">
-                <label>Ambiente de Trabalho</label>
-                <select name="environment_id" required className="premium-input">
+            <form className="modal-form p-6" onSubmit={handleCreateShift}>
+              <div className="form-group mb-4">
+                <label className="premium-label">Ambiente de Trabalho</label>
+                <select name="environment_id" required className="premium-input-field w-full">
                   <option value="">Selecione o local</option>
                   {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
-              <div className="form-group">
-                <label>Atividade Recomendada</label>
-                <select name="activity_id" required className="premium-input">
+              <div className="form-group mb-4">
+                <label className="premium-label">Atividade Recomendada</label>
+                <select name="activity_id" required className="premium-input-field w-full">
                   <option value="">Selecione a atividade</option>
                   {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="form-group">
-                  <label>Início</label>
-                  <input name="start_time" type="datetime-local" required className="premium-input" />
+              <div className="flex gap-4 mb-6">
+                <div className="form-group flex-1">
+                  <label className="premium-label">Início</label>
+                  <input name="start_time" type="datetime-local" required className="premium-input-field w-full" />
                 </div>
-                <div className="form-group">
-                  <label>Fim Estimado</label>
-                  <input name="end_time" type="datetime-local" required className="premium-input" />
+                <div className="form-group flex-1">
+                  <label className="premium-label">Fim Estimado</label>
+                  <input name="end_time" type="datetime-local" required className="premium-input-field w-full" />
                 </div>
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-save premium-btn">Criar Escala</button>
+              <div className="modal-actions flex justify-end gap-3 pt-4 border-t border-white/5">
+                <button type="button" className="glow-btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+                <button type="submit" className="glow-btn-primary">Criar Escala</button>
               </div>
             </form>
           </div>

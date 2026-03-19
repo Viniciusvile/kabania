@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getShiftsDashboardData, createShift, getShifts } from '../services/shiftService';
 import { supabase } from '../supabaseClient';
+import { safeQuery } from '../utils/supabaseSafe';
 
 export function useShifts(companyId) {
   const cacheKey = `kabania_shifts_cache_${companyId}`;
@@ -30,27 +31,6 @@ export function useShifts(companyId) {
     return d;
   });
 
-  // SAFE FETCHER (Obsidian Performance & Stability)
-  // Handles the "Lock broken" error by retrying with exponential backoff
-  const safeRemoteCall = async (callFn, retries = 4, delay = 800) => {
-    try {
-      return await callFn();
-    } catch (err) {
-      const isLockError = err.message?.includes('Lock broken') || err.name === 'AbortError' || err.message?.includes('timeout');
-      
-      if (isLockError && retries > 0) {
-        const nextDelay = delay * 2 + Math.random() * 1000;
-        console.warn(`[Supabase Lock/Timeout] Conflito detectado. Tentando novamente em ${Math.round(nextDelay)}ms... (${retries} restantes)`);
-        await new Promise(resolve => setTimeout(resolve, nextDelay));
-        return safeRemoteCall(callFn, retries - 1, delay * 1.5);
-      }
-      
-      console.error("[Supabase Error] Falha crítica após retentativas:", err);
-      // Fallback: Se for erro de lock, retornamos um objeto vazio em vez de estourar a tela
-      if (isLockError) return null;
-      throw err;
-    }
-  };
 
   const loadAllData = useCallback(async () => {
     if (!companyId || isRefreshingRef.current) return;
@@ -64,9 +44,10 @@ export function useShifts(companyId) {
       // SINGLE TURBO REQUEST with Safe Fetcher
       let data;
       try {
-        data = await safeRemoteCall(() => 
+        const response = await safeQuery(() => 
           getShiftsDashboardData(companyId, weekStart.toISOString(), end.toISOString())
         );
+        data = response;
       } catch (rpcErr) {
         console.error("Erro fatal no Turbo Loader:", rpcErr);
         return;
@@ -85,9 +66,19 @@ export function useShifts(companyId) {
       // Transform shifts for component compatibility
       const transformedShifts = (data.shifts || []).map(shift => ({
           ...shift,
-          work_environments: { name: shift.environment_name },
+          work_environments: { 
+              name: shift.environment_name || 
+                    (shift.service_customer ? `${shift.service_customer}${shift.service_unit ? ' (' + shift.service_unit + ')' : ''}` : null) ||
+                    (() => {
+                        const sr = (data.service_requests || []).find(r => String(r.id) === String(shift.service_request_id));
+                        return sr ? (sr.customer_name + (sr.client_unit ? ` (${sr.client_unit})` : '')) : 'Local Não Definido';
+                    })()
+          },
           work_activities: { 
-              name: shift.activity_name, 
+              name: shift.activity_name || shift.service_type || (() => {
+                  const sr = (data.service_requests || []).find(r => String(r.id) === String(shift.service_request_id));
+                  return sr ? sr.service_type : 'Atividade';
+              })(),
               required_role: shift.required_role,
               required_skills: shift.required_skills || []
           },
@@ -111,8 +102,10 @@ export function useShifts(companyId) {
       // Transform employees
       const transformedEmployees = (data.employees || []).map(e => ({
           ...e,
-          shift_profile_id: e.id,
+          shift_profile_id: e.shift_profile_id || e.id,
+          profile_id: e.profile_id || e.id,
           role: e.role || 'Não definido',
+          is_external: e.is_external ?? (e.role === 'field' || !e.id?.includes('ep_')),
           skills: e.skills || []
       }));
       setEmployees(transformedEmployees);
@@ -188,6 +181,9 @@ export function useShifts(companyId) {
     loading,
     weekStart,
     setWeekStart,
-    refresh: loadAllData
+    refresh: loadAllData,
+    updateShiftLocally: (shiftId, updates) => {
+        setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, ...updates } : s));
+    }
   };
 }

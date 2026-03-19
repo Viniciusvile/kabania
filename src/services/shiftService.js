@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { logEvent } from './historyService';
+import { safeQuery } from '../utils/supabaseSafe';
 
 // ==========================================
 // WORK ENVIRONMENTS
@@ -197,6 +198,13 @@ export const createShift = async (shiftData, userId) => {
     return data;
 };
 
+export const updateShiftStatus = async (shiftId, status) => {
+    return await safeQuery(
+        () => supabase.from('shifts').update({ status }).eq('id', shiftId).select().single(),
+        `Atualizando status da escala ${shiftId} para ${status}`
+    );
+};
+
 export const deleteShift = async (shiftId) => {
     const { error } = await supabase
         .from('shifts')
@@ -219,14 +227,18 @@ export const batchCreateShifts = async (shiftsData, companyId, userId) => {
 // SHIFT ASSIGNMENTS & CALLS (V2)
 // ==========================================
 
-export const addEmployeeToShift = async (shiftId, employeeProfileId) => {
-    const { data, error } = await supabase
-        .from('shift_assignments')
-        .insert([{ shift_id: shiftId, employee_id: employeeProfileId }])
-        .select()
-        .single();
-    if (error) throw error;
-    return data;
+export const addEmployeeToShift = async (shiftId, personId, isExternal = false) => {
+    const payload = { shift_id: shiftId };
+    if (isExternal) {
+        payload.collaborator_id = personId;
+    } else {
+        payload.employee_id = personId;
+    }
+
+    return await safeQuery(
+        () => supabase.from('shift_assignments').insert([payload]).select().single(),
+        `Adicionando ${isExternal ? 'colaborador' : 'membro'} à escala ${shiftId}`
+    );
 };
 
 export const removeEmployeeFromShift = async (assignmentId) => {
