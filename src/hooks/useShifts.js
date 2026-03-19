@@ -172,6 +172,11 @@ export function useShifts(companyId) {
       setEnvironments(data.environments || []);
       setActivities(data.activities || []);
       
+      // Ensure local state is updated even if RPC returns null for these (though it shouldn't now)
+      if (!data.environments || !data.activities) {
+        console.warn('[useShifts] Resources missing in RPC data. Consider running UPDATE_RPC_RESOURCES.sql');
+      }
+      
       // Merge Pending Activities and Service Requests
       const rawActivities = [
         ...(data.raw_activities || []).map(act => ({
