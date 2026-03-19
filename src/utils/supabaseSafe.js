@@ -3,16 +3,17 @@
  * Este erro ocorre quando múltiplas requisições tentam acessar o IndexedDB ao mesmo tempo.
  */
 
-export const safeQuery = async (queryFn, retries = 3, delay = 1000) => {
+export const safeQuery = async (queryFn, retries = 5, delay = 1000) => {
   for (let i = 0; i < retries; i++) {
     try {
-      // Garantir que chamamos a função se for uma função, ou apenas await se for promessa direta
       const result = typeof queryFn === 'function' ? await queryFn() : await queryFn;
       
+      const errorMessage = result?.error?.message || "";
       if (result?.error && (
-          result.error.message?.includes('Lock broken') || 
-          result.error.message?.includes('5000ms') ||
-          result.error.message?.includes('indexedDB')
+          errorMessage.includes('Lock broken') || 
+          errorMessage.includes('5000ms') ||
+          errorMessage.includes('steal') ||
+          errorMessage.includes('indexedDB')
       )) {
         throw result.error;
       }
@@ -21,12 +22,19 @@ export const safeQuery = async (queryFn, retries = 3, delay = 1000) => {
       const errorMsg = err.message || "";
       const isLockError = errorMsg.includes('Lock broken') || 
                           errorMsg.includes('indexedDB') || 
+                          errorMsg.includes('steal') ||
                           errorMsg.includes('5000ms');
       
       if (isLockError && i < retries - 1) {
-        console.warn(`[Supabase Safe] Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries}...`);
-        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        const backoff = delay * Math.pow(2, i); // Exponential backoff
+        console.warn(`[Supabase Safe] Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries} em ${backoff}ms...`);
+        await new Promise(resolve => setTimeout(resolve, backoff));
         continue;
+      }
+      
+      // Se chegamos no limite de erros de lock, sugerir refresh
+      if (isLockError) {
+        console.error("[Supabase Safe] Erro de Lock persistente. Sistema pode estar travado.");
       }
       throw err;
     }
