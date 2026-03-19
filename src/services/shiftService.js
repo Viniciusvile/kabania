@@ -213,15 +213,38 @@ export const deleteShift = async (shiftId) => {
 };
 
 export const moveShift = async (shiftId, startTime, endTime) => {
-    return await safeQuery(
-        () => supabase
-            .from('shifts')
-            .update({ start_time: startTime, end_time: endTime })
-            .eq('id', shiftId)
-            .select()
-            .single(),
-        `Movendo escala ${shiftId} para ${startTime}`
-    );
+    // Tentar via RPC (SECURITY DEFINER - bypassa RLS do PostgREST)
+    const { data: rpcData, error: rpcError } = await supabase.rpc('move_shift_rpc', {
+        p_shift_id: shiftId,
+        p_start_time: startTime,
+        p_end_time: endTime
+    });
+
+    if (!rpcError && rpcData?.success) {
+        console.log('[moveShift] ✅ RPC bem-sucedida');
+        return { id: shiftId, start_time: startTime, end_time: endTime };
+    }
+
+    // Fallback: update direto (pode falhar com RLS em alguns ambientes)
+    if (rpcError) {
+        console.warn('[moveShift] RPC indisponível, tentando update direto:', rpcError.message);
+    } else if (rpcData && !rpcData.success) {
+        throw new Error(rpcData.error || 'Erro ao mover escala via RPC');
+    }
+
+    // Fallback: UPDATE direto SEM .select().single() para evitar erro PostgREST 'column id does not exist'
+    const { error: updateError, count } = await supabase
+        .from('shifts')
+        .update({ start_time: startTime, end_time: endTime, updated_at: new Date().toISOString() })
+        .eq('id', shiftId);
+
+    if (updateError) {
+        console.error('[moveShift] ❌ Erro no UPDATE direto:', updateError);
+        throw new Error(updateError.message || 'Erro ao mover escala. Verifique as permissões no Supabase.');
+    }
+
+    console.log('[moveShift] ✅ UPDATE direto bem-sucedido');
+    return { id: shiftId, start_time: startTime, end_time: endTime };
 };
 
 export const batchCreateShifts = async (shiftsData, companyId, userId) => {

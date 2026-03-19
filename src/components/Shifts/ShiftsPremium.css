@@ -649,3 +649,59 @@
   color: var(--accent-cyan);
   filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.4));
 }
+
+/* 🧠 AI BRAIN BUTTON PREMIUM */
+.btn-ask-brain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.08), rgba(167, 139, 250, 0.12));
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  color: var(--accent-cyan);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.btn-ask-brain:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(167, 139, 250, 0.2));
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.25), inset 0 0 10px rgba(167, 139, 250, 0.15);
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+.btn-ask-brain:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-ask-brain:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.btn-ask-brain::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: 0.5s;
+}
+
+.btn-ask-brain:hover::before {
+  left: 100%;
+}
+

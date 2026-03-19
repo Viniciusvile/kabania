@@ -162,36 +162,39 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   };
 
   const handleMoveShift = async (shiftId, newDate) => {
+    const shift = shifts.find(s => s.id === shiftId);
+    if (!shift) return;
+
+    const oldStart = new Date(shift.start_time);
+    const oldEnd = new Date(shift.end_time);
+    const durationMs = oldEnd - oldStart;
+
+    const newStart = new Date(newDate);
+    newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+    const newEnd = new Date(newStart.getTime() + durationMs);
+
+    const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
+
+    // Update otimista IMEDIATO — card se move sem esperar o banco
+    updateShiftLocally(shiftId, { 
+      start_time: newStart.toISOString(), 
+      end_time: newEnd.toISOString() 
+    });
+
+    // Badge discreto "Salvando..."
+    setIsSyncing(true);
+
     try {
-      setIsSyncing(true);
-      const shift = shifts.find(s => s.id === shiftId);
-      if (!shift) return;
-
-      const oldStart = new Date(shift.start_time);
-      const oldEnd = new Date(shift.end_time);
-      const durationMs = oldEnd - oldStart;
-
-      const newStart = new Date(newDate);
-      newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
-      
-      const newEnd = new Date(newStart.getTime() + durationMs);
-
-      console.log("[MoveShift] Updating shift via service:", shiftId, "to", newStart.toISOString());
-      
-      // Optimistic local update
-      updateShiftLocally(shiftId, { 
-        start_time: newStart.toISOString(), 
-        end_time: newEnd.toISOString() 
-      });
-
       await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
-      console.log("[MoveShift] Shift updated successfully, refreshing...");
-      await refresh();
+      console.log("[MoveShift] ✅ Banco salvo.");
     } catch (err) {
-      console.error("[MoveShift] Catch block error:", err);
+      console.error("[MoveShift] ❌ Falha:", err);
+      updateShiftLocally(shiftId, originalTimes); // rollback
       alert("Erro ao mover escala: " + err.message);
     } finally {
       setIsSyncing(false);
+      // Refresh silencioso em background
+      refresh().catch(() => {});
     }
   };
 
@@ -200,12 +203,27 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
-        <div className={`loading-overlay-pixel ${(loading && !shifts.length) || isSyncing ? 'active' : ''}`}>
+        <div className={`loading-overlay-pixel ${loading && !shifts.length ? 'active' : ''}`}>
            <Loader2 className="animate-spin text-accent" size={40} />
-           <span>Sincronizando Banco de Dados...</span>
+           <span>Carregando Escalas...</span>
         </div>
 
-        <div className={`shifts-grid-area ${loading || isSyncing ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* Badge discreto de sync — não bloqueia a UI */}
+        {isSyncing && (
+          <div style={{
+            position: 'absolute', top: '8px', right: '12px', zIndex: 10,
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(0, 212, 255, 0.12)',
+            border: '1px solid rgba(0, 212, 255, 0.3)',
+            color: 'var(--accent-cyan)',
+            padding: '4px 10px', borderRadius: '20px',
+            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em'
+          }}>
+            <Loader2 size={11} className="animate-spin" /> Salvando...
+          </div>
+        )}
+
+        <div className={`shifts-grid-area ${loading && !shifts.length ? 'opacity-50 pointer-events-none' : ''}`}>
           <ShiftControls 
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}

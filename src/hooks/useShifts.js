@@ -57,12 +57,61 @@ export function useShifts(companyId) {
         );
         data = response;
       } catch (rpcErr) {
-        console.error("Erro fatal no Turbo Loader:", rpcErr);
-        return;
+        console.warn("[useShifts] RPC Turbo falhou, usando fallback direto na tabela:", rpcErr?.message);
+        data = null;
       }
       
+      // FALLBACK: Se RPCs falharam, buscar shifts diretamente da tabela
       if (!data) {
-        console.warn("Nenhum dado retornado pelo Turbo Loader (possível timeout ou conflito de lock persistente).");
+        console.warn("[useShifts] Ativando fallback direto na tabela shifts...");
+        try {
+          const { data: rawShifts, error: fallbackErr } = await supabase
+            .from('view_shifts_standard')
+            .select('*')
+            .eq('company_id', companyId)
+            .gte('start_time', weekStart.toISOString())
+            .lte('end_time', end.toISOString())
+            .order('start_time');
+
+          if (fallbackErr || !rawShifts) {
+            // Último recurso: buscar direto da tabela shifts
+            const { data: directShifts } = await supabase
+              .from('shifts')
+              .select('*')
+              .eq('company_id', companyId)
+              .gte('start_time', weekStart.toISOString())
+              .order('start_time');
+
+            if (directShifts) {
+              const mapped = directShifts.map(s => ({
+                ...s,
+                work_environments: { name: 'Local' },
+                work_activities: { name: 'Atividade' },
+                assigned_employees: [],
+                calls_count: 0,
+                open_calls_count: 0
+              }));
+              setShifts(mapped);
+              localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(mapped));
+              console.log('[useShifts] ✅ Fallback último recurso: shifts atualizados da tabela direta.');
+            }
+            return;
+          }
+
+          const mapped = rawShifts.map(s => ({
+            ...s,
+            work_environments: { name: s.environment_name || 'Local' },
+            work_activities: { name: s.activity_name || 'Atividade', required_role: s.required_role, required_skills: s.required_skills || [] },
+            assigned_employees: [],
+            calls_count: s.calls_count || 0,
+            open_calls_count: s.open_calls_count || 0
+          }));
+          setShifts(mapped);
+          localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(mapped));
+          console.log('[useShifts] ✅ Fallback via view_shifts_standard bem-sucedido.');
+        } catch (fbErr) {
+          console.error('[useShifts] Todos os fallbacks falharam:', fbErr);
+        }
         return;
       }
       

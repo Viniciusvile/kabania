@@ -1,9 +1,18 @@
 /**
  * Utilitário para evitar o erro "Lock broken by another request" do Supabase.
- * Este erro ocorre quando múltiplas requisições tentam acessar o IndexedDB ao mesmo tempo.
+ * 
+ * ⚠️ ATENÇÃO: O segundo argumento deve ser um NÚMERO (retries).
+ * Se uma string for passada (padrão legado), é tratada como descrição de log
+ * e os defaults são usados para retries e delay.
  */
+export const safeQuery = async (queryFn, retries = 5, delay = 1000, description = '') => {
+  // Compatibilidade com chamadas legadas: safeQuery(fn, "descrição")
+  if (typeof retries === 'string') {
+    description = retries;
+    retries = 5;
+    delay = 1000;
+  }
 
-export const safeQuery = async (queryFn, retries = 5, delay = 1000) => {
   for (let i = 0; i < retries; i++) {
     try {
       const result = typeof queryFn === 'function' ? await queryFn() : await queryFn;
@@ -26,13 +35,12 @@ export const safeQuery = async (queryFn, retries = 5, delay = 1000) => {
                           errorMsg.includes('5000ms');
       
       if (isLockError && i < retries - 1) {
-        const backoff = delay * Math.pow(2, i); // Exponential backoff
-        console.warn(`[Supabase Safe] Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries} em ${backoff}ms...`);
+        const backoff = delay * Math.pow(2, i);
+        console.warn(`[Supabase Safe]${description ? ` (${description})` : ''} Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries} em ${backoff}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoff));
         continue;
       }
       
-      // Se chegamos no limite de erros de lock, sugerir refresh
       if (isLockError) {
         console.error("[Supabase Safe] Erro de Lock persistente. Sistema pode estar travado.");
       }

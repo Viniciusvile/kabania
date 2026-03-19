@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 
 export default function ShiftControls({ 
   filterStatus, 
@@ -35,8 +35,9 @@ export default function ShiftControls({
         </div>
       </div>
 
-      <button className="new-escala-btn" onClick={() => setIsModalOpen(true)}>
-        <Plus size={18} /> Nova Escala
+      <button className="glow-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
+        <Wand2 size={16} />
+        Agendar Nova Escala
       </button>
     </div>
   );

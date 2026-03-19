@@ -104,6 +104,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
         e.dataTransfer.effectAllowed = 'move';
       }}
     >
+      {/* 📍 HEADER: Location + Time */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
           <div className="location-name flex items-center gap-2 text-white font-bold text-lg">
@@ -119,6 +120,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
         </div>
       </div>
 
+      {/* 🏷️ ACTIVITY PILL */}
       <div className="mb-4">
         <div className="activity-pill-premium">
           <Briefcase size={14} className="icon-accent" /> 
@@ -126,8 +128,8 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
         </div>
       </div>
 
+      {/* 👥 PERSONNEL LIST */}
       <div className="border-t border-dashed border-white/10 pt-4 mb-4">
-        {/* 👥 PERSONNEL LIST */}
         <div className="employee-list-pixel">
           {shift.assigned_employees?.map(emp => (
             <div key={emp.assignment_id || emp.id} className="employee-item-premium p-2 rounded-lg bg-white/5 flex items-center gap-3 mb-2 last:mb-0">
@@ -149,16 +151,57 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
       </div>
 
       {/* ⚙️ STATUS CONTROLS */}
-      <div className="flex justify-between items-center mt-auto pt-2">
-        <button 
-          className={`flex items-center gap-2 font-black uppercase tracking-tighter transition-all ${isConcluded ? 'text-white/20' : 'text-white/40 hover:text-white cursor-pointer'}`}
-          onClick={() => !isConcluded && onUpdateStatus('completed')}
-          disabled={isConcluded}
-        >
-          <CheckCircle size={18} className={inProgress ? 'text-green-400' : ''} /> {isConcluded ? 'CONCLUÍDO' : 'CONCLUIR'}
-        </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {isConcluded ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(16, 185, 129, 0.15)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            color: '#10b981',
+            padding: '5px 12px',
+            borderRadius: '8px',
+            fontSize: '0.7rem',
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase'
+          }}>
+            <CheckCircle size={14} /> Concluído
+          </div>
+        ) : (
+          <button
+            onClick={() => onUpdateStatus('completed')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: inProgress ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
+              border: inProgress ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(255,255,255,0.1)',
+              color: inProgress ? '#10b981' : 'rgba(255,255,255,0.4)',
+              padding: '5px 12px',
+              borderRadius: '8px',
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)';
+              e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+              e.currentTarget.style.color = '#10b981';
+              e.currentTarget.style.boxShadow = '0 0 12px rgba(16, 185, 129, 0.2)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = inProgress ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)';
+              e.currentTarget.style.borderColor = inProgress ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(255,255,255,0.1)';
+              e.currentTarget.style.color = inProgress ? '#10b981' : 'rgba(255,255,255,0.4)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <CheckCircle size={14} /> Concluir
+          </button>
+        )}
         
-        <div className="text-[10px] font-black italic opacity-60 uppercase tracking-widest text-accent">
+        <div style={{ fontSize: '0.65rem', fontWeight: 800, fontStyle: 'italic', opacity: 0.45, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-cyan)' }}>
           {shift.status}
         </div>
       </div>

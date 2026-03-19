@@ -602,7 +602,14 @@ function App() {
             <div className="content-scroll" key={currentView}>
               {currentView === 'kanban' ? (
                 <>
-                  <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />
+                  <DashboardHeader 
+                    projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'}
+                    searchQuery={searchQuery}
+                    onSearchChange={(e) => setSearchQuery(e.target.value)}
+                    onRefresh={() => window.location.reload()}
+                    viewMode="grid"
+                    onFilterToggle={() => {}}
+                  />
                   <KanbanBoard
                     searchQuery={searchQuery}
                     currentUser={currentUser}
