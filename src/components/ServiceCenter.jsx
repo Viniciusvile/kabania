@@ -13,12 +13,30 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { createNotification } from '../services/notificationService';
+import { analyzeServiceRequest } from '../services/geminiService';
 import './ServiceCenter.css'; 
 
 export default function ServiceCenter({ currentCompany, currentUser }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState({});
+
+  const performAiTriage = async (request) => {
+    if (aiSuggestions[request.id]) return;
+    
+    const suggestion = await analyzeServiceRequest(request.description, currentCompany.id);
+    if (suggestion) {
+      setAiSuggestions(prev => ({ ...prev, [request.id]: suggestion }));
+    }
+  };
+
+  useEffect(() => {
+    if (requests.length > 0) {
+      // Trigger AI triage for the first few visible requests to save tokens but provide immediate value
+      requests.slice(0, 5).forEach(r => performAiTriage(r));
+    }
+  }, [requests]);
 
   const fetchRequests = async (silent = false) => {
     if (!currentCompany?.id) return;
@@ -153,48 +171,75 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
             <span className="text-sm opacity-50">Novos chamados aparecerão aqui automaticamente.</span>
           </div>
         ) : (
-          filteredRequests.map(request => (
-            <div key={request.id} className="service-card">
-              <div className="service-card-header">
-                <span className="service-id-badge">Protocolo #{request.id.slice(0, 8)}</span>
-                <span className="service-status-pill">Aguardando</span>
-              </div>
-              
+          filteredRequests.map(request => {
+            const ai = aiSuggestions[request.id];
+            
+            return (
+              <div key={request.id} className="service-card animate-slide-up">
+                <div className="service-card-header">
+                  <span className="service-id-badge">Protocolo #{request.id.slice(0, 8)}</span>
+                  <div className="service-badges">
+                    {ai?.priority === 'Urgente' && <span className="service-badge-urgent">🔥 Urgente</span>}
+                    <span className="service-status-pill">Pendente</span>
+                  </div>
+                </div>
+                
                 <div className="service-card-main">
                   <h3 className="service-card-title">
                     <User size={18} className="text-accent" /> {request.customer_name}
                   </h3>
-                  <p className="service-card-subtitle">{request.service_type}</p>
+                  <div className="service-type-row">
+                    <p className="service-card-subtitle">{request.service_type}</p>
+                    {ai?.duration && <span className="service-duration-badge"><Clock size={12} /> {ai.duration} min</span>}
+                  </div>
                 </div>
 
-              <div className="service-description-box">
-                <p>{request.description || 'Sem descrição detalhada.'}</p>
-              </div>
+                <div className="service-description-box">
+                  <p>{request.description || 'Sem descrição detalhada.'}</p>
+                </div>
 
-              <div className="service-contact-info">
-                <Mail size={14} /> {request.contact_info || 'Sem e-mail'}
-              </div>
+                {ai && (
+                  <div className="service-ai-triage-box">
+                    <div className="ai-triage-header">
+                      <Sparkles size={14} className="text-cyan-400" />
+                      <span>Sugestão da IA</span>
+                    </div>
+                    <div className="ai-triage-content">
+                      {ai.kb_suggested_tag ? (
+                        <span className="ai-tag-pill">🏷️ {ai.kb_suggested_tag}</span>
+                      ) : (
+                        <span className="ai-tag-pill opacity-50">Sem tag autorizada</span>
+                      )}
+                      <p className="ai-triage-summary">"{ai.short_summary}"</p>
+                    </div>
+                  </div>
+                )}
 
-              <span className="service-card-date">
-                Recebido em: {new Date(request.created_at).toLocaleString('pt-BR')}
-              </span>
+                <div className="service-contact-info">
+                  <Mail size={14} /> {request.contact_info || 'Sem e-mail'}
+                </div>
 
-              <div className="service-actions">
-                <button 
-                  className="btn-service btn-service-accept"
-                  onClick={() => handleAccept(request)}
-                >
-                  <CheckCircle size={18} /> Aceitar
-                </button>
-                <button 
-                  className="btn-service btn-service-reject"
-                  onClick={() => handleReject(request)}
-                >
-                  <RotateCcw size={18} style={{ transform: 'rotate(-45deg)' }} /> Recusar
-                </button>
+                <span className="service-card-date">
+                  Recebido em: {new Date(request.created_at).toLocaleString('pt-BR')}
+                </span>
+
+                <div className="service-actions">
+                  <button 
+                    className="btn-service btn-service-accept"
+                    onClick={() => handleAccept(request)}
+                  >
+                    <CheckCircle size={18} /> Aceitar
+                  </button>
+                  <button 
+                    className="btn-service btn-service-reject"
+                    onClick={() => handleReject(request)}
+                  >
+                    <RotateCcw size={18} style={{ transform: 'rotate(-45deg)' }} /> Recusar
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

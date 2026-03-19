@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, MapPin, Mail, Phone, Trash2, Edit2, X, Calendar, UserPlus } from 'lucide-react';
+import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, MapPin, Mail, Phone, Trash2, Edit2, X, Calendar, UserPlus, Sparkles, Loader2 } from 'lucide-react';
+import { analyzeCompanyStructure } from '../services/geminiService';
 import CustomerCard from './CustomerCard';
 import CustomerFormModal from './CustomerFormModal';
 import { logEvent } from '../services/historyService';
@@ -38,6 +39,17 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
   // Collaborators form state
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
   const [newCollab, setNewCollab] = useState({ name: '', specialty: '', phone: '' });
+
+  // AI Insights state
+  const [aiInsight, setAiInsight] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const runStructuralAnalysis = async () => {
+    setIsAnalyzing(true);
+    const result = await analyzeCompanyStructure(members, collaborators, currentCompany.id);
+    setAiInsight(result);
+    setIsAnalyzing(false);
+  };
 
   const loadAllData = async () => {
     if (!currentCompany?.id) return;
@@ -258,6 +270,30 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             </div>
 
             <div className="cp-divider" />
+
+            {/* AI Structural Insight */}
+            <div className="cp-ai-insight-box">
+              <div className="cp-ai-insight-header">
+                <Sparkles size={16} className="text-cyan-400" />
+                <span>Análise de Estrutura IA</span>
+              </div>
+              {aiInsight ? (
+                <div className="cp-ai-insight-text animate-slide-up">
+                  <p>{aiInsight}</p>
+                  <button className="cp-ai-insight-retry" onClick={runStructuralAnalysis}>
+                    <RefreshCcw size={12} /> Recalcular
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  className="cp-ai-insight-btn" 
+                  onClick={runStructuralAnalysis}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? <><Loader2 size={16} className="animate-spin" /> Analisando...</> : 'Analisar Composição da Equipe'}
+                </button>
+              )}
+            </div>
 
             <div className="cp-invite-section">
               <label>

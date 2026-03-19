@@ -593,7 +593,7 @@ function App() {
               onAddProject={handleAddProject}
               onRemoveProject={handleRemoveProject}
             />
-            <div className="content-scroll">
+            <div className="content-scroll" key={currentView}>
               {currentView === 'kanban' ? (
                 <>
                   <DashboardHeader projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'} />

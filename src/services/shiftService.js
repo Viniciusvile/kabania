@@ -90,7 +90,9 @@ export const getEmployeeProfiles = async (companyId) => {
       role: sData.role || 'Não definido',
       max_daily_hours: sData.max_daily_hours || 8,
       max_weekly_hours: sData.max_weekly_hours || 44,
-      availability_schedule: sData.availability_schedule || {}
+      availability_schedule: sData.availability_schedule || {},
+      skills: sData.skills || [],
+      performance_notes: sData.performance_notes || ''
   }));
 };
 
@@ -161,7 +163,12 @@ export const getShifts = async (companyId, startDate, endDate) => {
     return data.map(shift => ({
         ...shift,
         work_environments: { name: shift.environment_name },
-        work_activities: { name: shift.activity_name, required_role: shift.required_role },
+        work_activities: { 
+            name: shift.activity_name, 
+            required_role: shift.required_role,
+            required_skills: shift.required_skills || []
+        },
+        intelligence_metadata: shift.intelligence_metadata || {},
         assigned_employees: shift.shift_assignments?.map(a => {
             const profile = a.employee_profiles?.profiles || {};
             return {
@@ -169,7 +176,8 @@ export const getShifts = async (companyId, startDate, endDate) => {
                 assignment_id: a.id,
                 assignment_status: a.status,
                 name: profile.name || 'Colaborador',
-                avatar_url: profile.avatar_url || null
+                avatar_url: profile.avatar_url || null,
+                skills: a.employee_profiles?.skills || []
             };
         }) || [],
         calls_count: shift.calls_count || 0,
@@ -237,6 +245,23 @@ export const updateAssignmentStatus = async (assignmentId, status) => {
         .select()
         .single();
     if (error) throw error;
+    return data;
+};
+
+export const getShiftsDashboardData = async (companyId, startDate, endDate) => {
+    if (!companyId) return null;
+    
+    const { data, error } = await supabase.rpc('get_shifts_dashboard_data_v2', {
+        p_company_id: companyId,
+        p_start_time: startDate,
+        p_end_time: endDate
+    });
+    
+    if (error) {
+        console.error('getShiftsDashboardData Error:', error);
+        throw error;
+    }
+    
     return data;
 };
 

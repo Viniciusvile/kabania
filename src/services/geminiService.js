@@ -13,22 +13,30 @@ const tagsCache = {
   TTL: 1000 * 60 * 5 // 5 minutes
 };
 
-async function getAuthorizedTags(companyId) {
+async function getAuthorizedTags(companyId, hub = null) {
   if (!companyId) return 'NENHUMA TAG AUTORIZADA';
 
-  // Check cache first
-  const cached = tagsCache.data[companyId];
+  // Check cache first (Key includes hub to avoid pollution)
+  const cacheKey = hub ? `${companyId}_${hub}` : companyId;
+  const cached = tagsCache.data[cacheKey];
   if (cached && (Date.now() - cached.timestamp < tagsCache.TTL)) {
-    console.log("Using cached tags for IA triage");
+    console.log(`Using cached tags for IA triage (${hub || 'all'})`);
     return cached.tags;
   }
 
   try {
-    const { data: items, error } = await supabase
+    let query = supabase
       .from('knowledge_base')
       .select('title, tags')
       .eq('company_id', companyId)
       .eq('enabled', true);
+    
+    // Filtro Temático (Thematic Scoping)
+    if (hub) {
+      query = query.eq('section', hub);
+    }
+
+    const { data: items, error } = await query;
 
     if (error || !items || items.length === 0) return 'NENHUMA TAG AUTORIZADA';
 
@@ -40,13 +48,13 @@ async function getAuthorizedTags(companyId) {
       }
     });
 
-    let tagsString = 'TAGS AUTORIZADAS DISPONÍVEIS:\n';
+    let tagsString = `TAGS AUTORIZADAS DISPONÍVEIS (${hub || 'GERAL'}):\n`;
     allTags.forEach(tag => {
       tagsString += `[TAG: ${tag}]\n`;
     });
 
     // Update cache
-    tagsCache.data[companyId] = {
+    tagsCache.data[cacheKey] = {
       tags: tagsString,
       timestamp: Date.now()
     };
@@ -59,10 +67,10 @@ async function getAuthorizedTags(companyId) {
 }
 
 
-export async function processTaskWithAI(taskDescription, companyId, isConcise = false) {
+export async function processTaskWithAI(taskDescription, companyId, isConcise = false, hub = null) {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    const authorizedTags = await getAuthorizedTags(companyId);
+    const authorizedTags = await getAuthorizedTags(companyId, hub);
     
     const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
 
@@ -104,20 +112,25 @@ Resposta curta:`;
   }
 }
 
-export async function analyzeProductivity(data, companyName = "Empresa") {
+export async function analyzeProductivity(data, companyName = "Empresa", companyId = null, hub = 'corporativo') {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = companyId ? await getAuthorizedTags(companyId, hub) : '';
+
     const prompt = `Você é um consultor executivo de performance para a empresa ${companyName}.
     Analise estes dados de produtividade (Kanban e Atividades):
     ${JSON.stringify(data)}
     
-    REGRAS:
-    1. Seja extremamente conciso.
-    2. Liste 3-4 pontos acionáveis em forma de tópicos curtos.
-    3. Use um tom executivo e personalizado para a ${companyName}.
-    4. Se identificar itens parados (WIP), sugira "Reunião diária focada em desobstrução".
-    5. Se identificar excesso em testes, sugira "Swarming da equipe para acelerar testes".
-    6. Não use introduções longas.`;
+    ${authorizedTags}
+
+    REGRAS DE ANÁLISE:
+    1. Se houver "TAGS AUTORIZADAS", sua análise deve obrigatoriamente alinhar-se aos temas autorizados.
+    2. Seja extremamente conciso.
+    3. Liste 3-4 pontos acionáveis em forma de tópicos curtos.
+    4. Use um tom executivo e personalizado para a ${companyName}.
+    5. Se identificar itens parados (WIP), sugira "Reunião diária focada em desobstrução".
+    6. Se identificar excesso em testes, sugira "Swarming da equipe para acelerar testes".
+    7. Não use introduções longas.`;
     
     const result = await model.generateContent(prompt);
     return result.response.text();
@@ -126,13 +139,18 @@ export async function analyzeProductivity(data, companyName = "Empresa") {
   }
 }
 
-export async function generateWeeklySummary(data, companyName = "Empresa") {
+export async function generateWeeklySummary(data, companyName = "Empresa", companyId = null, hub = 'corporativo') {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = companyId ? await getAuthorizedTags(companyId, hub) : '';
+
     const prompt = `Gere um Resumo Executivo Semanal personalizado para ${companyName} baseado nestas atividades:
     ${JSON.stringify(data)}
     
+    ${authorizedTags}
+
     FORMATO:
+    - Se houver "TAGS AUTORIZADAS", foque nos temas listados nelas.
     - Um parágrafo curto de 3 linhas com o status geral.
     - 3 destaques principais em tópicos.
     - Tom profissional e direto.`;
@@ -162,13 +180,17 @@ export async function generateOperationFeedSummary(notifications, companyName = 
   }
 }
 
-export async function suggestPrioritization(tasks, companyName = "Empresa") {
+export async function suggestPrioritization(tasks, companyName = "Empresa", companyId = null, hub = 'corporativo') {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = companyId ? await getAuthorizedTags(companyId, hub) : '';
+
     const prompt = `Como consultor da ${companyName}, qual deve ser a prioridade #1 deste usuário hoje?
     Dados: ${JSON.stringify(tasks)}
     
-    REPOSTA: Máximo 3 sentenças curtas e motivadoras, focadas no impacto para a ${companyName}.`;
+    ${authorizedTags}
+
+    REPOSTA: Máximo 3 sentenças curtas e motivadoras, focadas no impacto para a ${companyName} e respeitando os temas autorizados.`;
     
     const result = await model.generateContent(prompt);
     return result.response.text();
@@ -177,13 +199,18 @@ export async function suggestPrioritization(tasks, companyName = "Empresa") {
   }
 }
 
-export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
+export async function detectBottlenecks(kanbanData, companyName = "Empresa", companyId = null, hub = 'corporativo') {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = companyId ? await getAuthorizedTags(companyId, hub) : '';
+
     const prompt = `Identifique 2 gargalos críticos no Kanban da ${companyName} e sugira a solução imediata:
     ${JSON.stringify(kanbanData)}
     
+    ${authorizedTags}
+
     DIRETRIZES DE SOLUÇÃO:
+    - Use as TAGS autorizadas para entender o contexto do negócio.
     - Para Itens Bloqueados (WIP paralisado): Sugira "Reunião diária focada exclusivamente em desobstrução e dependências".
     - Para Fila de Testes Saturada: Sugira "Aplique swarming (equipe ajuda nos testes) para acelerar o fluxo".
     
@@ -196,10 +223,11 @@ export async function detectBottlenecks(kanbanData, companyName = "Empresa") {
   }
 }
 
-export async function predictDemand(activities, companyName = "Empresa") {
+export async function predictDemand(activities, companyName = "Empresa", companyId = null, hub = 'operacional') {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    
+    const authorizedTags = companyId ? await getAuthorizedTags(companyId, hub) : '';
+
     // Simplificar os dados contextuais para os últimos 30 dias se possível
     const recentActivities = activities.slice(0, 50).map(a => ({
       type: a.type,
@@ -210,7 +238,10 @@ export async function predictDemand(activities, companyName = "Empresa") {
     Dados recentes (máximo 50 itens):
     ${JSON.stringify(recentActivities)}
     
+    ${authorizedTags}
+
     DIRETRIZES:
+    - Utilize as categorias autorizadas nas TAGS para fundamentar a previsão.
     - Identifique qual "Tipo de Serviço" sofrerá maior demanda.
     - Dê uma explicação curta do motivo (padrões observados).
     - Sugira 1 ação preventiva (ex: "Alocar mais técnicos para X").
@@ -229,7 +260,7 @@ export async function predictDemand(activities, companyName = "Empresa") {
 export async function analyzeServiceRequest(description, companyId) {
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    const authorizedTags = await getAuthorizedTags(companyId);
+    const authorizedTags = await getAuthorizedTags(companyId, 'operacional');
 
     const prompt = `Você é um assistente de triagem inteligente para uma plataforma de gestão de serviços.
     Analise a descrição da solicitação de serviço abaixo e retorne um objeto JSON com sugestões de preenchimento.
@@ -443,5 +474,140 @@ export async function processKnowledgeRow(rowData, existingKnowledge = []) {
   } catch (error) {
     console.error("Erro ao processar linha:", error);
     return null;
+  }
+}
+
+export async function analyzeCompanyStructure(members, collaborators, companyId) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = await getAuthorizedTags(companyId, 'company_data');
+
+    const prompt = `Você é um consultor de RH e estrutura organizacional. Analise a composição da equipe do Kabania:
+    - MEMBROS (Gestão/Admin): ${members.length}
+    - COLABORADORES (Campo/Operacional): ${collaborators.length}
+    - LISTA DE ESPECIALIDADES: ${JSON.stringify(collaborators.map(c => c.specialty))}
+    
+    ${authorizedTags}
+
+    REGRAS:
+    1. Analise se a proporção Gestão vs Campo está equilibrada.
+    2. Com base nas TAGS de "company_data", sugira 1 especialidade que pode estar faltando.
+    3. Responda em no máximo 3 frases curtas e diretas.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na análise estrutural: ${error.message}`;
+  }
+}
+
+export async function analyzeCompanyPerformance(metrics, companyId) {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const authorizedTags = await getAuthorizedTags(companyId, 'corporativo');
+
+    const prompt = `Você é um gestor de operações sênior. Analise as métricas de desempenho da empresa:
+    - TOTAL DE TAREFAS: ${metrics.totalTasks}
+    - TAXA DE CONCLUSÃO: ${metrics.completionRate}%
+    - TAREFAS EM PROGRESSO: ${metrics.inProgress}
+    - ALERTAS DE PRAZO: ${metrics.deadlineAlerts}
+    
+    ${authorizedTags}
+
+    REGRAS:
+    1. Interprete os números em relação ao contexto das TAGS corporativas.
+    2. Identifique o maior risco atual.
+    3. Sugira uma ação imediata para o gestor.
+    4. Responda em no máximo 150 palavras, tom profissional e encorajador.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro na análise de desempenho: ${error.message}`;
+  }
+}
+
+export async function suggestShiftAssignments(shift, availableEmployees, companyName = "Empresa") {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    
+    const context = {
+      shift: {
+        id: shift.id,
+        activity: shift.activity_name,
+        environment: shift.environment_name,
+        required_role: shift.required_role,
+        required_skills: shift.required_skills || []
+      },
+      candidates: availableEmployees.map(e => ({
+        id: e.id,
+        name: e.name,
+        role: e.role,
+        skills: e.skills || [],
+        performance: e.performance_notes
+      }))
+    };
+
+    const prompt = `Como assistente inteligente da ${companyName}, analise qual colaborador é o melhor "Match" para esta escala.
+    
+    ESCALA: ${JSON.stringify(context.shift)}
+    CANDIDATOS: ${JSON.stringify(context.candidates)}
+    
+    REGRAS:
+    1. Priorize quem tem as "required_skills" da atividade.
+    2. Verifique se o "role" coincide.
+    3. Retorne um ranking dos TOP 3 no formato JSON.
+    
+    FORMATO DE RETORNO (JSON APENAS):
+    {
+      "suggestions": [
+        {
+          "employeeId": "uuid",
+          "name": "Nome",
+          "matchScore": 0-100,
+          "reason": "Explicação curta em português"
+        }
+      ],
+      "strategic_insight": "Uma frase sobre a alocação ideal."
+    }
+    
+    RESPOSTA JSON:`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+  } catch (error) {
+    console.error("Erro na sugestão de escalas:", error);
+    return null;
+  }
+}
+
+export async function generateShiftInsights(shifts, employees, companyName = "Empresa") {
+  try {
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    
+    const context = {
+      totalShifts: shifts.length,
+      unassigned: shifts.filter(s => s.assigned_count === 0).length,
+      distribution: shifts.reduce((acc, s) => {
+        acc[s.environment_name] = (acc[s.environment_name] || 0) + 1;
+        return acc;
+      }, {})
+    };
+
+    const prompt = `Gere um Insight de Gestão para a escala de trabalho da ${companyName}.
+    DADOS RESUMIDOS: ${JSON.stringify(context)}
+    
+    REGRAS:
+    1. Identifique se há sobrecarga em algum ambiente.
+    2. Alerte sobre escalas sem colaboradores.
+    3. Responda em no máximo 100 palavras.
+    4. Tom executivo e focado em otimização.`;
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text();
+  } catch (error) {
+    return `Erro ao gerar insights: ${error.message}`;
   }
 }

@@ -1,45 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { getShifts, getShiftStats, getEmployeeProfiles, addEmployeeToShift, removeEmployeeFromShift } from '../../services/shiftService';
+import { addEmployeeToShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
+import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
 import ShiftSidebar from './ShiftSidebar';
 import ShiftControls from './ShiftControls';
 import ShiftGrid from './ShiftGrid';
+import IntelligencePanel from './IntelligencePanel';
 import './ShiftsRedesign.css';
+import './ShiftsPremium.css';
 
 export default function ShiftsModule({ companyId, currentUser, userRole }) {
-  const [stats, setStats] = useState({ total: 0, open: 0, inProgress: 0, concluded: '0/0' });
-  const [shifts, setShifts] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [weekStart, setWeekStart] = useState(() => {
-    const d = new Date();
-    const day = d.getDay() || 7;
-    d.setHours(-24 * (day - 1), 0, 0, 0);
-    return d;
-  });
-  const [loading, setLoading] = useState(true);
+  const { 
+    stats, 
+    shifts, 
+    employees, 
+    environments, 
+    activities, 
+    pendingActivities, 
+    loading, 
+    weekStart, 
+    setWeekStart, 
+    refresh 
+  } = useShifts(companyId);
+
   const [filterStatus, setFilterStatus] = useState('todos');
   const [searchQuery, setSearchQuery] = useState('');
-  const [pendingActivities, setPendingActivities] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
-  const [environments, setEnvironments] = useState([]);
-  const [activities, setActivities] = useState([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  useEffect(() => {
-    loadAllData();
-    const shiftsChannel = supabase.channel('realtime-escalas')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts', filter: `company_id=eq.${companyId}` }, () => loadAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_assignments' }, () => loadAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_calls' }, () => loadAllData())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(shiftsChannel);
-    };
-  }, [companyId, weekStart]);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -65,73 +54,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const fieldWorkers = employees.filter(e => e.role === 'field' || e.role === 'colaborador');
   const staffMembers = employees.filter(e => e.role !== 'field' && e.role !== 'colaborador');
 
-  const loadAllData = async () => {
-    if (!companyId || isRefreshing) return;
+  const handleAddEmployee = async (profileId, shiftId = null) => {
+    const targetId = shiftId || assignmentModal.shiftId;
+    if (!targetId) return;
     try {
-      setIsRefreshing(true);
-      setLoading(true);
-      const end = new Date(weekStart);
-      end.setDate(weekStart.getDate() + 7);
-
-      const [statsData, shiftsData, employeesData, envsData, workActsData, resActivities, resServiceRequests] = await Promise.all([
-        getShiftStats(companyId).catch(() => ({ total: 0, open: 0, inProgress: 0, concluded: '0/0' })),
-        getShifts(companyId, weekStart.toISOString(), end.toISOString()).catch(() => []),
-        getEmployeeProfiles(companyId).catch(() => []),
-        supabase.from('work_environments').select('id, name').eq('company_id', companyId),
-        supabase.from('work_activities').select('id, name, environment_id').eq('company_id', companyId),
-        supabase.from('activities').select('id, name, description, status, created_at').eq('company_id', companyId),
-        supabase.from('service_requests').select('id, customer_name, client_unit, service_type, status, created_at').eq('company_id', companyId)
-      ]);
-
-      setStats(statsData || { total: 0, open: 0, inProgress: 0, concluded: '0/0' });
-      
-      const rawActivities = [
-        ...(resActivities.data || []).map(act => ({
-          ...act,
-          location: act.name || 'Atividade Geral',
-          type: 'Rotina',
-          description: act.description,
-          created: act.created_at
-        })),
-        ...(resServiceRequests.data || []).map(sr => ({
-          ...sr,
-          location: sr.customer_name + ' (' + (sr.client_unit || '') + ')',
-          type: sr.service_type,
-          created: sr.created_at
-        }))
-      ];
-
-      setShifts(shiftsData || []);
-      setEmployees(employeesData || []);
-      setEnvironments(envsData.data || []);
-      setActivities(workActsData.data || []);
-      
-      const linkedIds = new Set((shiftsData || []).map(s => String(s.service_request_id)).filter(Boolean));
-      const pending = rawActivities.filter(a => {
-        const status = (a.status || '').toLowerCase();
-        const isCompleted = status.includes('conclu') || status.includes('finalized');
-        return !isCompleted && !linkedIds.has(String(a.id));
-      }).sort((a, b) => new Date(b.created || b.created_at) - new Date(a.created || a.created_at));
-
-      setPendingActivities(pending);
-    } catch (err) {
-      console.error('Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddEmployee = async (profileId) => {
-    if (!assignmentModal.shiftId) return;
-    try {
-      setLoading(true);
-      await addEmployeeToShift(assignmentModal.shiftId, profileId);
+      await addEmployeeToShift(targetId, profileId);
       setAssignmentModal({ isOpen: false, shiftId: null });
-      await loadAllData();
+      await refresh();
     } catch (err) {
       alert("Erro ao adicionar colaborador: " + err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -148,22 +79,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     };
 
     try {
-      setLoading(true);
       const { error } = await supabase.from('shifts').insert([newShift]);
       if (error) throw error;
       setIsModalOpen(false);
-      await loadAllData();
-      console.log("Escala criada com sucesso!");
+      await refresh();
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleQuickSchedule = async (activity) => {
      try {
-       setLoading(true);
        const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
        const endDate = new Date(startDate.getTime() + (60 * 60000));
        
@@ -173,27 +99,23 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
          start_time: startDate.toISOString(),
          end_time: endDate.toISOString(),
          status: 'scheduled',
-         notes: `Agendado via menu de Escalas`
+         notes: `Agendado via Inteligência Kabania`
        }]);
 
-       await loadAllData();
-       console.log("Escala gerada com sucesso!");
+       await refresh();
      } catch (err) {
-       console.error("Erro ao agendar atividade:", err);
        alert("Erro ao criar escala: " + err.message);
-     } finally {
-       setLoading(false);
      }
   };
 
   return (
-    <div className="escalas-page animate-fade-in">
+    <div className="escalas-page animate-fade-in premium-mode">
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
         <div className={`loading-overlay-pixel ${loading ? 'active' : ''}`}>
            <Loader2 className="animate-spin text-accent" size={40} />
-           <span>Sincronizando...</span>
+           <span>Sincronizando Banco de Dados...</span>
         </div>
 
         <div className={`shifts-grid-area ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -213,21 +135,19 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           />
         </div>
 
-        <div className={`${loading ? 'opacity-50 pointer-events-none' : ''}`}>
-          <ShiftSidebar 
-            pendingActivities={pendingActivities} 
-            onQuickSchedule={handleQuickSchedule} 
-          />
-        </div>
+        <ShiftSidebar 
+          pendingActivities={pendingActivities} 
+          onQuickSchedule={handleQuickSchedule} 
+        />
       </div>
 
       {/* 🤝 ASSIGNMENT MODAL */}
       {assignmentModal.isOpen && (
-        <div className="modal-overlay-pixel">
+        <div className="modal-overlay-pixel glass-morphism">
           <div className="modal-content-pixel assignment-modal animate-slide-up">
             <div className="modal-header">
               <h3>Direcionar para Colaboradores</h3>
-              <button onClick={() => setAssignmentModal({ isOpen: false, shiftId: null })}>×</button>
+              <button className="btn-close" onClick={() => setAssignmentModal({ isOpen: false, shiftId: null })}>×</button>
             </div>
             
             <div className="assignment-tabs">
@@ -235,13 +155,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 <h4>👷 Colaboradores de Campo</h4>
                 <div className="employee-grid-select">
                   {fieldWorkers.map(emp => (
-                    <div key={emp.id} className="emp-select-card" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
+                    <div key={emp.id} className="emp-select-card glass-morphism" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
                       <div className="emp-avatar-medium">
-                        {emp.avatar_url ? <img src={emp.avatar_url} /> : <span>{emp.name[0]}</span>}
+                        {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
                       </div>
                       <div className="emp-info">
                         <span className="emp-name">{emp.name}</span>
-                        <span className="emp-role">{emp.role}</span>
+                        <div className="emp-skills-preview">
+                          {emp.skills?.slice(0, 2).map(s => <span key={s} className="skill-mini-tag">{s}</span>)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -252,9 +174,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 <h4>👥 Membros da Equipe</h4>
                 <div className="employee-grid-select">
                   {staffMembers.map(emp => (
-                    <div key={emp.id} className="emp-select-card" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
+                    <div key={emp.id} className="emp-select-card glass-morphism" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.id)}>
                       <div className="emp-avatar-medium">
-                        {emp.avatar_url ? <img src={emp.avatar_url} /> : <span>{emp.name[0]}</span>}
+                        {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
                       </div>
                       <div className="emp-info">
                         <span className="emp-name">{emp.name}</span>
@@ -271,23 +193,23 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
       {/* 📝 NEW SHIFT MODAL */}
       {isModalOpen && (
-        <div className="modal-overlay-pixel">
+        <div className="modal-overlay-pixel glass-morphism">
           <div className="modal-content-pixel animate-fade-in">
             <div className="modal-header">
-              <h3>Agendar Nova Escala</h3>
-              <button onClick={() => setIsModalOpen(false)}>×</button>
+              <h3>Agendar Nova Escala Inteligente</h3>
+              <button className="btn-close" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
             <form className="modal-form" onSubmit={handleCreateShift}>
               <div className="form-group">
-                <label>Ambiente</label>
-                <select name="environment_id" required>
+                <label>Ambiente de Trabalho</label>
+                <select name="environment_id" required className="premium-input">
                   <option value="">Selecione o local</option>
                   {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                 </select>
               </div>
               <div className="form-group">
-                <label>Atividade</label>
-                <select name="activity_id" required>
+                <label>Atividade Recomendada</label>
+                <select name="activity_id" required className="premium-input">
                   <option value="">Selecione a atividade</option>
                   {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
@@ -295,16 +217,16 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="form-group">
                   <label>Início</label>
-                  <input name="start_time" type="datetime-local" required />
+                  <input name="start_time" type="datetime-local" required className="premium-input" />
                 </div>
                 <div className="form-group">
-                  <label>Fim</label>
-                  <input name="end_time" type="datetime-local" required />
+                  <label>Fim Estimado</label>
+                  <input name="end_time" type="datetime-local" required className="premium-input" />
                 </div>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-save">Criar Escala</button>
+                <button type="submit" className="btn-save premium-btn">Criar Escala</button>
               </div>
             </form>
           </div>

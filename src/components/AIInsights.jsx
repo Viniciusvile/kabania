@@ -31,6 +31,8 @@ export default function AIInsights({ currentUser, currentCompany }) {
     };
   });
 
+  const [selectedHub, setSelectedHub] = useState('corporativo');
+
   const [chartData, setChartData] = useState(() => {
     // Initial load from cache
     const cachedCharts = localStorage.getItem(getCacheKey('charts'));
@@ -115,22 +117,23 @@ export default function AIInsights({ currentUser, currentCompany }) {
     const { data: activities } = await supabase.from('activities').select('*').eq('company_id', currentCompany.id);
 
     const coName = currentCompany?.name || 'Empresa';
+    const coId = currentCompany?.id;
     
     switch(type) {
       case 'productivity':
-        res = await analyzeProductivity({ kanban: tasks || [], activities: activities || [] }, coName);
+        res = await analyzeProductivity({ kanban: tasks || [], activities: activities || [] }, coName, coId, selectedHub);
         break;
       case 'summary':
-        res = await generateWeeklySummary(activities || [], coName);
+        res = await generateWeeklySummary(activities || [], coName, coId, selectedHub);
         break;
       case 'priority':
-        res = await suggestPrioritization(tasks || [], coName);
+        res = await suggestPrioritization(tasks || [], coName, coId, selectedHub);
         break;
       case 'bottlenecks':
-        res = await detectBottlenecks(tasks || [], coName);
+        res = await detectBottlenecks(tasks || [], coName, coId, selectedHub);
         break;
       case 'demand':
-        res = await predictDemand(activities || [], coName);
+        res = await predictDemand(activities || [], coName, coId, selectedHub);
         break;
       default: break;
     }
@@ -199,6 +202,23 @@ export default function AIInsights({ currentUser, currentCompany }) {
           <div className="ai-badge">INTELIGÊNCIA ARTIFICIAL</div>
           <h1>Insights de IA</h1>
           <p>Análise avançada de produtividade e padrões para {currentCompany?.name}</p>
+          
+          <div className="ai-hub-selector">
+            <span className="ai-hub-label">Foco da IA:</span>
+            <div className="ai-hub-options">
+              {['operacional', 'corporativo', 'inteligencia'].map(hub => (
+                <button 
+                  key={hub} 
+                  className={`ai-hub-btn ${selectedHub === hub ? 'active' : ''}`}
+                  onClick={() => setSelectedHub(hub)}
+                >
+                  {hub === 'operacional' && '⚙️ Operacional'}
+                  {hub === 'corporativo' && '💼 Corporativo'}
+                  {hub === 'inteligencia' && '🧠 Inteligência'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="ai-header-stats">
           <div className="ai-mini-stat">

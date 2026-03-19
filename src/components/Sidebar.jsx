@@ -41,8 +41,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           onClick={() => onViewChange('shifts')}
         >
           <Calendar size={20} className="text-accent" />
-          <span>Escalas de Trabalho</span>
-          <span className="ml-auto px-1.5 py-0.5 rounded-full bg-accent/20 text-accent text-[8px] font-bold uppercase tracking-tighter">Smart</span>
+          <span>Gerenciar Escalas</span>
         </div>
 
         <div className={`nav-group ${expandedGroups.activities ? 'expanded' : ''}`}>

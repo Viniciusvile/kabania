@@ -6,8 +6,9 @@ import {
 } from 'recharts';
 import { 
   BarChart2, TrendingUp, Zap, Users, Clock, CheckCircle, 
-  AlertCircle, Layout, ArrowRight 
+  AlertCircle, Layout, ArrowRight, Sparkles, Loader2, RotateCcw 
 } from 'lucide-react';
+import { analyzeCompanyPerformance } from '../services/geminiService';
 import './ReportsDashboard.css';
 
 const COLUMN_COLORS = {
@@ -68,6 +69,24 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
     const cached = localStorage.getItem(`reports_charts_${currentCompany.id}`);
     return cached ? JSON.parse(cached) : { productivity: [], sectors: [] };
   });
+
+  // AI Narrative Analysis state
+  const [aiReport, setAiReport] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const runAiAnalysis = async () => {
+    if (!currentCompany?.id) return;
+    setIsAnalyzing(true);
+    const metrics = {
+      totalTasks: tasks.length,
+      completionRate,
+      inProgress: tasksByColumn.progress,
+      deadlineAlerts: deadlineAlerts.length
+    };
+    const result = await analyzeCompanyPerformance(metrics, currentCompany.id);
+    setAiReport(result);
+    setIsAnalyzing(false);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -233,6 +252,29 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
           <div className="rd-kpi-value">{deadlineAlerts.length}</div>
           <div className="rd-kpi-label">Alertas de Prazo</div>
         </div>
+      </div>
+
+      {/* AI Narrative Analysis Section */}
+      <div className="rd-ai-analysis-box animate-slide-up">
+        <div className="rd-ai-header">
+          <Sparkles size={18} className="text-cyan-400" />
+          <h2>Análise Estratégica da IA</h2>
+        </div>
+        {aiReport ? (
+          <div className="rd-ai-content text-main">
+            <p>{aiReport}</p>
+            <button className="rd-ai-retry-btn" onClick={runAiAnalysis} disabled={isAnalyzing}>
+               <RotateCcw size={14} className={isAnalyzing ? 'animate-spin' : ''} /> Refazer Análise
+            </button>
+          </div>
+        ) : (
+          <div className="rd-ai-cta">
+            <p className="text-muted">A IA pode analisar esses números e sugerir ações de melhoria baseadas no Hub Corporativo.</p>
+            <button className="rd-ai-gen-btn" onClick={runAiAnalysis} disabled={isAnalyzing}>
+              {isAnalyzing ? <><Loader2 size={16} className="animate-spin" /> Analisando métricas...</> : 'Gerar Insight Estratégico'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* NEW: Visual Charts Section */}

@@ -7,30 +7,32 @@
 
 .service-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 2rem;
     margin-top: 2rem;
 }
 
-/* Premium Card Design */
+/* Premium Card Design: Glassmorphism */
 .service-card {
-    background: linear-gradient(145deg, #1e293b, #0f172a);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    padding: 1.5rem;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    gap: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     position: relative;
     overflow: hidden;
 }
 
 .service-card:hover {
     transform: translateY(-8px);
-    border-color: var(--accent-cyan);
-    box-shadow: 0 20px 40px -15px rgba(0, 229, 255, 0.15);
+    border-color: rgba(0, 229, 255, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .service-card::before {
@@ -47,19 +49,25 @@
 .service-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .service-id-badge {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     font-weight: 800;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
 
+.service-badges {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .service-status-pill {
-    padding: 0.35rem 0.75rem;
+    padding: 0.4rem 0.8rem;
     border-radius: 30px;
     font-size: 0.7rem;
     font-weight: 700;
@@ -69,34 +77,111 @@
     border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+.service-badge-urgent {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: 0.4rem 0.8rem;
+    border-radius: 30px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.service-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
 .service-card-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-main);
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
+.service-type-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .service-card-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--accent-cyan);
-    font-weight: 600;
-    margin-top: 0.25rem;
+    font-weight: 700;
+}
+
+.service-duration-badge {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .service-description-box {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    padding: 1.25rem;
     font-size: 0.9rem;
     line-height: 1.6;
     color: var(--text-main);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+/* AI Triage Box */
+.service-ai-triage-box {
+    background: rgba(0, 229, 255, 0.03);
+    border: 1px solid rgba(0, 229, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.ai-triage-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    letter-spacing: 0.05em;
+}
+
+.ai-triage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ai-tag-pill {
+    background: rgba(0, 229, 255, 0.1);
+    color: var(--accent-cyan);
+    padding: 0.25rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    width: fit-content;
+}
+
+.ai-triage-summary {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
 .service-contact-info {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -104,8 +189,9 @@
 }
 
 .service-card-date {
-    font-size: 0.7rem;
-    color: #475569;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
     margin-top: auto;
 }
 
@@ -118,39 +204,40 @@
 
 .btn-service {
     flex: 1;
-    padding: 0.75rem;
-    border-radius: 12px;
+    padding: 0.85rem;
+    border-radius: 14px;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
+    gap: 0.6rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    border: none;
 }
 
 .btn-service-accept {
     background: var(--accent-cyan);
     color: #000;
-    border: none;
 }
 
 .btn-service-accept:hover {
     background: #00e5ff;
-    transform: scale(1.02);
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 229, 255, 0.3);
 }
 
 .btn-service-reject {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
     color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .btn-service-reject:hover {
     background: rgba(239, 68, 68, 0.1);
     border-color: #ef4444;
+    transform: translateY(-2px);
 }
 
 @keyframes fade-in {
@@ -158,7 +245,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .service-grid {
         grid-template-columns: 1fr;
     }
