@@ -206,11 +206,22 @@ export const updateShiftStatus = async (shiftId, status) => {
 };
 
 export const deleteShift = async (shiftId) => {
-    const { error } = await supabase
-        .from('shifts')
-        .delete()
-        .eq('id', shiftId);
-    if (error) throw error;
+    return await safeQuery(
+        () => supabase.from('shifts').delete().eq('id', shiftId),
+        `Deletando escala ${shiftId}`
+    );
+};
+
+export const moveShift = async (shiftId, startTime, endTime) => {
+    return await safeQuery(
+        () => supabase
+            .from('shifts')
+            .update({ start_time: startTime, end_time: endTime })
+            .eq('id', shiftId)
+            .select()
+            .single(),
+        `Movendo escala ${shiftId} para ${startTime}`
+    );
 };
 
 export const batchCreateShifts = async (shiftsData, companyId, userId) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
-import { addEmployeeToShift } from '../../services/shiftService';
+import { addEmployeeToShift, moveShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
@@ -176,19 +176,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       
       const newEnd = new Date(newStart.getTime() + durationMs);
 
-      console.log("[MoveShift] Updating shift:", shiftId, "to", newStart.toISOString());
-      const { error } = await supabase
-        .from('shifts')
-        .update({
-          start_time: newStart.toISOString(),
-          end_time: newEnd.toISOString()
-        })
-        .eq('id', shiftId);
-
-      if (error) {
-        console.error("[MoveShift] Error updating shift:", error);
-        throw error;
-      }
+      console.log("[MoveShift] Updating shift via service:", shiftId, "to", newStart.toISOString());
+      await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
       console.log("[MoveShift] Shift updated successfully, refreshing...");
       await refresh();
     } catch (err) {
