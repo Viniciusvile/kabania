@@ -92,26 +92,63 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
+  const [newShiftData, setNewShiftData] = useState({
+    environment_id: '',
+    activity_id: '',
+    start_time: '',
+    end_time: ''
+  });
+
+  const availableActivitiesByEnvironment = newShiftData.environment_id 
+    ? activities.filter(a => !a.environment_id || a.environment_id === newShiftData.environment_id)
+    : activities;
+
   const handleCreateShift = async (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const newShift = {
-      company_id: companyId,
-      environment_id: formData.get('environment_id'),
-      activity_id: formData.get('activity_id'),
-      start_time: new Date(formData.get('start_time')).toISOString(),
-      end_time: new Date(formData.get('end_time')).toISOString(),
-      status: 'scheduled'
-    };
+    if (!newShiftData.environment_id || !newShiftData.activity_id || !newShiftData.start_time || !newShiftData.end_time) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
 
     try {
-      const { error } = await supabase.from('shifts').insert([newShift]);
+      setIsSyncing(true);
+      const { error } = await supabase.from('shifts').insert([{
+        company_id: companyId,
+        environment_id: newShiftData.environment_id,
+        activity_id: newShiftData.activity_id,
+        start_time: new Date(newShiftData.start_time).toISOString(),
+        end_time: new Date(newShiftData.end_time).toISOString(),
+        status: 'scheduled'
+      }]);
+
       if (error) throw error;
+      
       setIsModalOpen(false);
+      setNewShiftData({ environment_id: '', activity_id: '', start_time: '', end_time: '' });
       await refresh();
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
+    } finally {
+      setIsSyncing(false);
     }
+  };
+
+  const handleSuggestTimes = () => {
+    const start = new Date();
+    start.setMinutes(start.getMinutes() > 30 ? 60 : 30, 0, 0);
+    const end = new Date(start.getTime() + (4 * 60 * 60000));
+    
+    // Format to YYYY-MM-DDTHH:mm for datetime-local
+    const format = (d) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    setNewShiftData(prev => ({
+      ...prev,
+      start_time: format(start),
+      end_time: format(end)
+    }));
   };
 
   const handleQuickSchedule = async (activity) => {
@@ -374,42 +411,116 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         </div>
       )}
 
-      {/* 📝 NEW SHIFT MODAL */}
+      {/* 📝 NEW SHIFT MODAL DESIGN REVOLUTION */}
       {isModalOpen && (
         <div className="modal-overlay-pixel glass-morphism">
-          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '500px' }}>
-            <div className="premium-modal-header">
-              <h3>Agendar Nova Escala Inteligente</h3>
-              <button className="btn-close" onClick={() => setIsModalOpen(false)}>×</button>
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '550px' }}>
+            <div className="premium-modal-header border-vibrant">
+              <div className="flex items-center gap-3">
+                <div className="icon-badge-premium bg-blue-glow">
+                   <Users className="text-accent-cyan" size={18} />
+                </div>
+                <h3>Agendar Nova Escala Inteligente</h3>
+              </div>
+              <button className="premium-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <form className="modal-form p-6" onSubmit={handleCreateShift}>
-              <div className="form-group mb-4">
-                <label className="premium-label">Ambiente de Trabalho</label>
-                <select name="environment_id" required className="premium-input-field w-full">
-                  <option value="">Selecione o local</option>
-                  {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group mb-4">
-                <label className="premium-label">Atividade Recomendada</label>
-                <select name="activity_id" required className="premium-input-field w-full">
-                  <option value="">Selecione a atividade</option>
-                  {activities.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-              </div>
-              <div className="flex gap-4 mb-6">
-                <div className="form-group flex-1">
-                  <label className="premium-label">Início</label>
-                  <input name="start_time" type="datetime-local" required className="premium-input-field w-full" />
+            
+            <form className="modal-form p-8" onSubmit={handleCreateShift}>
+              <div className="form-grid-premium mb-8">
+                <div className="form-group-premium full-width">
+                  <label className="premium-label flex items-center gap-2">
+                    <Search size={14} className="text-accent-cyan" /> AMBIENTE DE TRABALHO
+                  </label>
+                  <div className="premium-input-wrapper">
+                    <select 
+                      name="environment_id" 
+                      required 
+                      className="premium-input-field w-full"
+                      value={newShiftData.environment_id}
+                      onChange={(e) => setNewShiftData({...newShiftData, environment_id: e.target.value})}
+                    >
+                      <option value="">Selecione o local</option>
+                      {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    </select>
+                    <ChevronDown className="input-icon-right" size={16} />
+                  </div>
                 </div>
-                <div className="form-group flex-1">
-                  <label className="premium-label">Fim Estimado</label>
-                  <input name="end_time" type="datetime-local" required className="premium-input-field w-full" />
+
+                <div className="form-group-premium full-width">
+                  <label className="premium-label flex items-center gap-2">
+                    <HardHat size={14} className="text-accent-cyan" /> ATIVIDADE RECOMENDADA
+                  </label>
+                  <div className="premium-input-wrapper">
+                    <select 
+                      name="activity_id" 
+                      required 
+                      className="premium-input-field w-full"
+                      value={newShiftData.activity_id}
+                      onChange={(e) => setNewShiftData({...newShiftData, activity_id: e.target.value})}
+                    >
+                      <option value="">Selecione a atividade</option>
+                      {availableActivitiesByEnvironment.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    <ChevronDown className="input-icon-right" size={16} />
+                  </div>
+                </div>
+
+                <div className="date-time-flex flex gap-4">
+                  <div className="form-group-premium flex-1">
+                    <label className="premium-label">INÍCIO</label>
+                    <input 
+                      name="start_time" 
+                      type="datetime-local" 
+                      required 
+                      className="premium-input-field w-full"
+                      value={newShiftData.start_time}
+                      onChange={(e) => setNewShiftData({...newShiftData, start_time: e.target.value})}
+                    />
+                  </div>
+                  <div className="form-group-premium flex-1">
+                    <label className="premium-label">FIM ESTIMADO</label>
+                    <input 
+                      name="end_time" 
+                      type="datetime-local" 
+                      required 
+                      className="premium-input-field w-full"
+                      value={newShiftData.end_time}
+                      onChange={(e) => setNewShiftData({...newShiftData, end_time: e.target.value})}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="modal-actions flex justify-end gap-3 pt-4 border-t border-white/5">
-                <button type="button" className="glow-btn-ghost" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="glow-btn-primary">Criar Escala</button>
+
+              <div className="ai-suggestion-box mb-8 p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="pulse-ai-dot"></div>
+                  <p className="text-xs text-white/60">Deseja que a IA sugira o melhor horário?</p>
+                </div>
+                <button 
+                  type="button" 
+                  className="btn-ask-brain mt-0"
+                  onClick={handleSuggestTimes}
+                >
+                  Sugerir Horários
+                </button>
+              </div>
+
+              <div className="modal-actions-premium flex justify-end gap-3 pt-6 border-t border-white/5">
+                <button 
+                  type="button" 
+                  className="glow-btn-ghost py-3" 
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="glow-btn-primary py-3 px-8 flex items-center gap-2"
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? <Loader2 size={16} className="animate-spin" /> : null}
+                  Criar Escala
+                </button>
               </div>
             </form>
           </div>
