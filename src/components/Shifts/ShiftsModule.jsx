@@ -137,11 +137,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleDropActivity = async (activity, date) => {
+  const handleDropActivity = async (activity, date, time) => {
     try {
       setIsSyncing(true);
       const startTime = new Date(date);
-      startTime.setHours(8, 0, 0, 0); 
+      if (time) {
+        const [hours, minutes] = time.split(':');
+        startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      } else {
+        startTime.setHours(8, 0, 0, 0); 
+      }
+      
       const endTime = new Date(startTime.getTime() + (4 * 60 * 60000));
       
       await supabase.from('shifts').insert([{
@@ -150,7 +156,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: 'scheduled',
-        notes: `Agendado via Arrastar e Soltar`
+        notes: `Agendado via Arrastar e Soltar no horário ${time || '08:00'}`
       }]);
 
       await refresh();
@@ -161,7 +167,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleMoveShift = async (shiftId, newDate) => {
+  const handleMoveShift = async (shiftId, newDate, newTime) => {
     const shift = shifts.find(s => s.id === shiftId);
     if (!shift) return;
 
@@ -170,30 +176,31 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     const durationMs = oldEnd - oldStart;
 
     const newStart = new Date(newDate);
-    newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+    if (newTime) {
+      const [hours, minutes] = newTime.split(':');
+      newStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+    }
     const newEnd = new Date(newStart.getTime() + durationMs);
 
     const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
 
-    // Update otimista IMEDIATO — card se move sem esperar o banco
     updateShiftLocally(shiftId, { 
       start_time: newStart.toISOString(), 
       end_time: newEnd.toISOString() 
     });
 
-    // Badge discreto "Salvando..."
     setIsSyncing(true);
 
     try {
       await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
-      console.log("[MoveShift] ✅ Banco salvo.");
     } catch (err) {
       console.error("[MoveShift] ❌ Falha:", err);
-      updateShiftLocally(shiftId, originalTimes); // rollback
+      updateShiftLocally(shiftId, originalTimes); 
       alert("Erro ao mover escala: " + err.message);
     } finally {
       setIsSyncing(false);
-      // Refresh silencioso em background
       refresh().catch(() => {});
     }
   };

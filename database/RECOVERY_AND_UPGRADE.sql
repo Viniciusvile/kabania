@@ -53,7 +53,7 @@ SELECT
 FROM public.shifts s
 LEFT JOIN public.work_environments we ON s.environment_id = we.id
 LEFT JOIN public.work_activities wa ON s.activity_id = wa.id
-LEFT JOIN public.service_requests sr ON s.service_request_id::uuid = sr.id
+LEFT JOIN public.service_requests sr ON (CASE WHEN s.service_request_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN s.service_request_id::uuid ELSE NULL END) = sr.id
 LEFT JOIN assignment_counts ac ON ac.shift_id = s.id
 LEFT JOIN call_counts cc ON cc.shift_id = s.id;
 
