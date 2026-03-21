@@ -350,7 +350,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
         {activeTab === 'members' ? (
         <div className="cp-grid">
           {/* Info Card */}
-          <div className="cp-card">
+          <div className="cp-card-premium">
             <h3 className="cp-card-title"><Building2 size={18} /> Informações da Empresa</h3>
             <div className="cp-info-list">
               <div className="cp-info-row">
@@ -392,10 +392,10 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           </div>
 
           {/* Members Card */}
-          <div className="cp-card">
+          <div className="cp-card-premium">
             <div className="cp-members-header">
               <h3 className="cp-card-title">
-                {isLoadingMembers ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#00e5ff' }} /> : <Users size={18} />} 
+                {isLoadingMembers ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#22d3ee' }} /> : <Users size={18} />} 
                 Membros da Equipe
               </h3>
               <button className="cp-refresh-btn" onClick={loadMembers} title="Atualizar">
@@ -419,8 +419,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                       </div>
                       <div className="cp-member-info">
                         <span className="cp-member-email">{member.email}</span>
-                        <span className={`cp-member-role ${member.role}`}>
-                          {member.role === 'admin' ? '👑 Admin' : '🔹 Membro'}
+                        <span className="cp-member-role">
+                          {member.role === 'admin' ? (
+                            <><Crown size={12} className="text-amber-400" /> Admin</>
+                          ) : (
+                            <><Star size={12} className="text-cyan-400" /> Membro</>
+                          )}
                           {member.email === currentUser && ' · você'}
                         </span>
                       </div>
@@ -453,60 +457,59 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           </div>
 
           {/* Leaderboard Gamification Card */}
-          <div className="cp-card" style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+          <div className="cp-card-premium">
             <div className="cp-members-header mb-4">
-              <h3 className="cp-card-title text-amber-400" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Trophy size={20} className="text-amber-400" />
+              <h3 className="cp-card-title" style={{ color: '#fbbf24' }}>
+                <Trophy size={18} />
                 Destaques do Mês (Top 3)
               </h3>
             </div>
             
-            <div className="flex flex-col gap-3">
+            <div className="leaderboard-container">
               {[...members]
                 .sort((a,b) => (b.loyalty_points || 0) - (a.loyalty_points || 0))
                 .slice(0, 3)
                 .map((member, index) => {
                   const isTopOne = index === 0;
                   const rankColors = [
-                    'text-amber-400 bg-amber-400/10 border-amber-400/30', // Ouro
-                    'text-slate-300 bg-slate-400/10 border-slate-400/30', // Prata
-                    'text-amber-700 bg-amber-700/10 border-amber-700/30'  // Bronze
+                    'text-amber-400 bg-amber-400/10 border-amber-400/20', // Ouro
+                    'text-slate-300 bg-slate-400/10 border-slate-400/20', // Prata
+                    'text-amber-700 bg-amber-700/10 border-amber-700/20'  // Bronze
                   ];
                   
                   return (
-                    <div key={member.email} className="bg-white/5 border border-white/5 p-3 rounded-2xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/10 transition-colors">
-                      {isTopOne && <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-amber-400/20 to-transparent rounded-bl-full pointer-events-none"></div>}
+                    <div key={member.email} className="cp-member-row leaderboard-row">
+                      {isTopOne && <div className="leaderboard-top-flash"></div>}
                       
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border font-bold ${rankColors[index]} shrink-0`}>
+                      <div className={`rank-badge border ${rankColors[index]}`}>
                         {isTopOne ? <Crown size={16} /> : <Medal size={16} />}
                       </div>
                       
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-slate-200 truncate">{member.email.split('@')[0]}</p>
-                        <p className="text-xs text-slate-400 flex items-center gap-1">
-                          <Check size={12} className="text-green-400" /> {member.monthly_missions_completed || 0} missões
-                        </p>
+                      <div className="cp-member-info">
+                        <span className="cp-member-email">{member.email.split('@')[0]}</span>
+                        <div className="missions-count">
+                          <Check size={12} /> {member.monthly_missions_completed || 0} missões
+                        </div>
                       </div>
                       
                       <div className="text-right">
-                        <div className="flex items-center gap-1 bg-amber-400/10 text-amber-400 px-2 py-1 rounded-lg">
+                        <div className="points-badge">
                           <Star size={12} className="fill-amber-400" />
-                          <span className="font-black text-sm">{member.loyalty_points || 0}</span>
+                          <span>{member.loyalty_points || 0}</span>
                         </div>
-                        <p className="text-[9px] text-slate-500 uppercase tracking-widest mt-1">Pontos</p>
                       </div>
                     </div>
                   );
                 })}
               
               {members.length === 0 && !isLoadingMembers && (
-                <div className="text-center py-4 opacity-50 text-sm">Competição não iniciada.</div>
+                <div className="cp-empty">Competição não iniciada.</div>
               )}
             </div>
           </div>
 
           {/* Collaborators Card */}
-          <div className="cp-card">
+          <div className="cp-card-premium">
             <div className="cp-members-header">
               <h3 className="cp-card-title">
                 {isLoadingCollabs ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#22c55e' }} /> : <UserPlus size={18} />} 
@@ -603,7 +606,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           </div>
 
           {/* Work Environments Card */}
-          <div className="cp-card">
+          <div className="cp-card-premium">
             <div className="cp-members-header">
               <h3 className="cp-card-title">
                 {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#00e5ff' }} /> : <Building2 size={18} />} 
@@ -665,7 +668,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           </div>
 
           {/* Work Activities Card */}
-          <div className="cp-card">
+          <div className="cp-card-premium">
             <div className="cp-members-header">
               <h3 className="cp-card-title">
                 {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#fbbf24' }} /> : <Calendar size={18} />} 
