@@ -16,6 +16,7 @@
     "@google/generative-ai": "^0.24.1",
     "@react-oauth/google": "^0.13.4",
     "@supabase/supabase-js": "^2.99.1",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.577.0",
     "mammoth": "^1.12.0",
     "papaparse": "^5.5.3",

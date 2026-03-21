@@ -10,7 +10,11 @@ import {
   AlertCircle,
   Search,
   RotateCcw,
-  MessageSquare
+  MessageSquare,
+  Link as LinkIcon,
+  Share2,
+  Timer,
+  Flame
 } from 'lucide-react';
 import { createNotification } from '../services/notificationService';
 import { analyzeServiceRequest } from '../services/geminiService';
@@ -133,11 +137,63 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
     }
   };
 
+  const handleGenerateMagicLink = async (request) => {
+    try {
+       // Check if there is already a valid link
+       const { data: existing } = await supabase.from('magic_links').select('token').eq('service_request_id', request.id).single();
+       
+       let tokenStr = existing?.token;
+
+       if (!tokenStr) {
+          // Create new link
+          tokenStr = crypto.randomUUID();
+          
+          // Expiration in 7 days
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7);
+
+          const { error } = await supabase.from('magic_links').insert([{
+             service_request_id: request.id,
+             company_id: currentCompany.id,
+             token: tokenStr,
+             expires_at: expiresAt.toISOString()
+          }]);
+
+          if (error) throw error;
+       }
+
+       const link = `${window.location.origin}/portal/${tokenStr}`;
+       await navigator.clipboard.writeText(link);
+       alert("Link do Portal ao Vivo copiado para a área de transferência!\n\nEnvie para o cliente via WhatsApp:\n" + link);
+
+    } catch (err) {
+       console.error(err);
+       alert("Erro ao gerar link de acompanhamento: " + err.message);
+    }
+  };
+
   const filteredRequests = requests.filter(r => 
     r.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.service_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const getSlaStatus = (deadlineStr) => {
+    if (!deadlineStr) return { color: 'text-slate-400', bg: 'bg-slate-400/10', text: 'SLA Não Definido', icon: <Clock size={12} /> };
+    
+    const now = new Date();
+    const deadline = new Date(deadlineStr);
+    const diffMs = deadline - now;
+    const diffHours = diffMs / 3600000;
+
+    if (diffHours < 0) {
+      return { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', text: 'SLA Estourado!', icon: <Flame size={12} /> };
+    } else if (diffHours <= 1) {
+      return { color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20 animate-pulse', text: `Restam ${Math.floor(diffMs / 60000)} min`, icon: <Timer size={12} /> };
+    } else {
+      return { color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20', text: `Expira em ${Math.floor(diffHours)}h`, icon: <Timer size={12} /> };
+    }
+  };
 
   return (
     <div className="service-center-container">
@@ -219,11 +275,27 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
                   <Mail size={14} /> {request.contact_info || 'Sem e-mail'}
                 </div>
 
-                <span className="service-card-date">
-                  Recebido em: {new Date(request.created_at).toLocaleString('pt-BR')}
-                </span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="service-card-date">
+                    Recebido: {new Date(request.created_at).toLocaleString('pt-BR')}
+                  </span>
+                  
+                  {request.sla_deadline && (
+                    <div className={`px-2 py-1 flex items-center gap-1 rounded text-[10px] font-bold uppercase tracking-wider ${getSlaStatus(request.sla_deadline).bg} ${getSlaStatus(request.sla_deadline).color}`}>
+                      {getSlaStatus(request.sla_deadline).icon}
+                      {getSlaStatus(request.sla_deadline).text}
+                    </div>
+                  )}
+                </div>
 
                 <div className="service-actions">
+                  <button 
+                    className="btn-service flex-1"
+                    style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.2)' }}
+                    onClick={() => handleGenerateMagicLink(request)}
+                  >
+                    <Share2 size={16} /> Compartilhar Link
+                  </button>
                   <button 
                     className="btn-service btn-service-accept"
                     onClick={() => handleAccept(request)}

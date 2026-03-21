@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getShiftsDashboardData, createShift, getShifts } from '../services/shiftService';
+import { getShiftsDashboardData, createShift, getShifts, getWorkEnvironments, getActivities, getEmployeeProfiles, getCollaborators } from '../services/shiftService';
 import { supabase } from '../supabaseClient';
 import { safeQuery } from '../utils/supabaseSafe';
 
@@ -52,22 +52,49 @@ export function useShifts(companyId) {
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      // SINGLE TURBO REQUEST with Safe Fetcher
+      // TURBO REQUEST + PARALLEL ENV/ACT/EMP FETCH
+      // Forçamos a busca de ambientes, atividades e COLABORADORES via API REST porque a RPC pode retornar cache vazio
       let data;
+      let directEnvs = [];
+      let directActs = [];
+      let directEmployees = [];
+      
       try {
-        const response = await safeQuery(() => 
-          getShiftsDashboardData(companyId, weekStart.toISOString(), end.toISOString())
-        );
+        const [response, envs, acts, empProfiles, collabs] = await Promise.all([
+          safeQuery(() => getShiftsDashboardData(companyId, weekStart.toISOString(), end.toISOString())),
+          getWorkEnvironments(companyId).catch(() => []),
+          getActivities(companyId).catch(() => []),
+          getEmployeeProfiles(companyId).catch(() => []),
+          getCollaborators(companyId).catch(() => [])
+        ]);
         data = response;
+        directEnvs = envs;
+        directActs = acts;
+        directEmployees = [...(empProfiles || []), ...(collabs || [])];
+        
+        // Sobrepõe qualquer retorno da RPC forçando a verdade absoluta que veio das tabelas agora
+        if (data) {
+          data.environments = directEnvs;
+          data.activities = directActs;
+          data.employees = directEmployees;
+        }
       } catch (rpcErr) {
         console.warn("[useShifts] RPC Turbo falhou, usando fallback direto na tabela:", rpcErr?.message);
         data = null;
+        directEnvs = await getWorkEnvironments(companyId).catch(() => []);
+        directActs = await getActivities(companyId).catch(() => []);
+        const ep = await getEmployeeProfiles(companyId).catch(() => []);
+        const cl = await getCollaborators(companyId).catch(() => []);
+        directEmployees = [...ep, ...cl];
       }
       
       // FALLBACK: Se RPCs falharam, buscar shifts diretamente da tabela
       if (!data) {
         console.warn("[useShifts] Ativando fallback direto na tabela shifts...");
         try {
+          setEnvironments(directEnvs);
+          setActivities(directActs);
+
           const { data: rawShifts, error: fallbackErr } = await supabase
             .from('view_shifts_standard')
             .select('*')
@@ -161,8 +188,9 @@ export function useShifts(companyId) {
       }));
       setShifts(transformedShifts);
 
-      // Transform employees
-      const transformedEmployees = (data.employees || []).map(e => ({
+      // Transform employees (Já temos direto do REST, apenas aplicar transformações de fallback caso a rpc estivesse mesclada)
+      const rawE = directEmployees.length > 0 ? directEmployees : (data.employees || []);
+      const transformedEmployees = rawE.map(e => ({
           ...e,
           shift_profile_id: e.shift_profile_id || e.id,
           profile_id: e.profile_id || e.id,
@@ -172,13 +200,8 @@ export function useShifts(companyId) {
       }));
       setEmployees(transformedEmployees);
 
-      setEnvironments(data.environments || []);
-      setActivities(data.activities || []);
-      
-      // Ensure local state is updated even if RPC returns null for these (though it shouldn't now)
-      if (!data.environments || !data.activities) {
-        console.warn('[useShifts] Resources missing in RPC data. Consider running UPDATE_RPC_RESOURCES.sql');
-      }
+      setEnvironments(directEnvs || []);
+      setActivities(directActs || []);
       
       // Merge Pending Activities and Service Requests
       const rawActivities = [

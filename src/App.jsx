@@ -16,13 +16,14 @@ import ShiftsModule from './components/Shifts/ShiftsModule';
 import BusinessManagement from './components/BusinessManagement';
 import AIInsights from './components/AIInsights';
 import UserProfile from './components/UserProfile';
-import SupportPortal from './components/SupportPortal';
 import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
+import ClientPortal from './components/Portal/ClientPortal';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
 import { processKnowledgeRow } from './services/geminiService';
+import { syncOfflineQueue } from './services/offlineSyncService';
 import './App.css';
 import './components/AIChatFab.css';
 
@@ -56,6 +57,13 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  // Interceptação de Rota Pública (Client Portal bypassa todo o App Principal)
+  const pathname = window.location.pathname;
+  if (pathname.startsWith('/portal/')) {
+    const token = pathname.split('/portal/')[1];
+    return <ClientPortal token={token} />;
   }
 
   // Changed: Initial state based on localStorage for "Optimistic" UI
@@ -482,6 +490,20 @@ function App() {
     };
   }, []);
 
+  // Sync Offline Queue when returning online
+  useEffect(() => {
+    const handleOnline = async () => {
+      console.log("[PWA] Conexão restaurada. Tentando sincronizar fila offline...");
+      const { processed, failed } = await syncOfflineQueue(supabase);
+      if (processed > 0) {
+        alert(`Sincronização Offline: ${processed} itens enviados com sucesso para a nuvem.`);
+      }
+    };
+    
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   // Persist local auth only for "session" persistence
   useEffect(() => {
     localStorage.setItem('synapseAuth', isAuthenticated);
@@ -649,8 +671,6 @@ function App() {
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
-              ) : currentView === 'support' ? (
-                <SupportPortal currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
               ) : currentView === 'settings' ? (

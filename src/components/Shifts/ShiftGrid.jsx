@@ -21,7 +21,8 @@ export default function ShiftGrid({
   onMoveShift, 
   onRefresh, 
   updateShiftLocally, 
-  setIsSyncing 
+  setIsSyncing,
+  onCheckin
 }) {
   
   const handleUpdateStatus = async (shiftId, status) => {
@@ -117,6 +118,7 @@ export default function ShiftGrid({
                           shift={shift} 
                           onAddEmployee={() => onAddEmployee(shift.id)} 
                           onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
+                          onCheckin={() => onCheckin(shift)}
                         />
                       ))}
                     </div>
@@ -131,7 +133,7 @@ export default function ShiftGrid({
   );
 }
 
-function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
+function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin }) {
   const isProblem = shift.status === 'open' || (shift.open_calls_count > 0);
   const isConcluded = shift.status === 'completed' || shift.status === 'concluded';
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
@@ -206,8 +208,25 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
 
       {/* ⚙️ STATUS CONTROLS (COMPACT) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <button
-          onClick={() => !isConcluded && onUpdateStatus('completed')}
+        
+        {!inProgress && !isConcluded && (
+          <button
+            onClick={onCheckin}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              background: 'rgba(0, 229, 255, 0.1)',
+              border: '1px solid rgba(0, 229, 255, 0.4)',
+              color: 'var(--accent-cyan)',
+              padding: '4px 8px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', cursor: 'pointer'
+            }}
+          >
+            <MapPin size={12} /> Bater Ponto
+          </button>
+        )}
+
+        {inProgress && (
+          <button
+            onClick={() => !isConcluded && onUpdateStatus('completed')}
           style={{
             display: 'flex', alignItems: 'center', gap: '4px',
             background: isConcluded ? 'rgba(16, 185, 129, 0.15)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
@@ -223,6 +242,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus }) {
         >
           <CheckCircle size={12} /> {isConcluded ? 'OK' : 'Concluir'}
         </button>
+        )}
       </div>
     </div>
   );

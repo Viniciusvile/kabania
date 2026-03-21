@@ -8,6 +8,9 @@ import ShiftSidebar from './ShiftSidebar';
 import ShiftControls from './ShiftControls';
 import ShiftGrid from './ShiftGrid';
 import IntelligencePanel from './IntelligencePanel';
+import ShiftCheckinModal from './ShiftCheckinModal';
+import AutoPilotReview from './AutoPilotReview';
+import { generateAutoPilotSchedule } from '../../services/aiSchedulingService';
 import './ShiftsRedesign.css';
 import './ShiftsPremium.css';
 
@@ -30,6 +33,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assignmentModal, setAssignmentModal] = useState({ isOpen: false, shiftId: null });
+  const [checkinModal, setCheckinModal] = useState({ isOpen: false, shift: null });
+  const [autoPilotResult, setAutoPilotResult] = useState(null);
+  const [isAutoPilotLoading, setIsAutoPilotLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState('field');
@@ -92,6 +98,53 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
+  const handleRunAutoPilot = () => {
+    setIsAutoPilotLoading(true);
+    // Simulating a tiny delay for UX (shows the engine "thinking")
+    setTimeout(() => {
+      const result = generateAutoPilotSchedule({ pendingActivities, employees: fieldWorkers, existingShifts: shifts, weekStart });
+      setAutoPilotResult(result);
+      setIsAutoPilotLoading(false);
+    }, 800);
+  };
+
+  const handleConfirmAutoPilot = async (suggestions) => {
+    try {
+      setIsSyncing(true);
+      
+      const insertPayload = suggestions.map(s => ({
+        company_id: companyId,
+        service_request_id: s.service_request_id,
+        start_time: s.start_time,
+        end_time: s.end_time,
+        status: 'scheduled',
+        notes: `Agendado por IA Auto-Pilot: Confiança ${s.confidence}%`
+      }));
+
+      // 1. Inserir Escalas
+      const { data: newShifts, error: shiftErr } = await supabase.from('shifts').insert(insertPayload).select();
+      if (shiftErr) throw shiftErr;
+
+      // 2. Alocar Funcionários Sugeridos
+      if (newShifts && newShifts.length > 0) {
+         for (let i = 0; i < newShifts.length; i++) {
+            const shift = newShifts[i];
+            const suggestion = suggestions[i];
+            await addEmployeeToShift(shift.id, suggestion.assigned_employee_id, true);
+         }
+      }
+
+      setAutoPilotResult(null);
+      await refresh();
+      alert(`Auto-Pilot Concluído! ${suggestions.length} escalas geradas com sucesso.`);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao aplicar lote Auto-Pilot: " + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const [newShiftData, setNewShiftData] = useState({
     environment_id: '',
     activity_id: '',
@@ -105,8 +158,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
   const handleCreateShift = async (e) => {
     e.preventDefault();
-    if (!newShiftData.environment_id || !newShiftData.activity_id || !newShiftData.start_time || !newShiftData.end_time) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+    if (!newShiftData.start_time || !newShiftData.end_time) {
+      alert("Por favor, preencha as datas de início e fim obrigatórias.");
       return;
     }
 
@@ -114,8 +167,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       setIsSyncing(true);
       const { error } = await supabase.from('shifts').insert([{
         company_id: companyId,
-        environment_id: newShiftData.environment_id,
-        activity_id: newShiftData.activity_id,
+        environment_id: newShiftData.environment_id || null,
+        activity_id: newShiftData.activity_id || null,
         start_time: new Date(newShiftData.start_time).toISOString(),
         end_time: new Date(newShiftData.end_time).toISOString(),
         status: 'scheduled'
@@ -287,14 +340,35 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             updateShiftLocally={updateShiftLocally}
             isSyncing={isSyncing}
             setIsSyncing={setIsSyncing}
+            onCheckin={(shift) => setCheckinModal({ isOpen: true, shift })}
           />
         </div>
 
         <ShiftSidebar 
           pendingActivities={pendingActivities} 
           onQuickSchedule={handleQuickSchedule} 
+          onAutoPilot={handleRunAutoPilot}
+          isAutoPilotLoading={isAutoPilotLoading}
         />
       </div>
+
+      {autoPilotResult && (
+        <AutoPilotReview 
+           result={autoPilotResult}
+           onConfirm={handleConfirmAutoPilot}
+           onCancel={() => setAutoPilotResult(null)}
+           isProcessing={isSyncing}
+        />
+      )}
+
+      {checkinModal.isOpen && (
+        <ShiftCheckinModal 
+          shift={checkinModal.shift} 
+          currentUserEmail={currentUser} 
+          onClose={() => setCheckinModal({ isOpen: false, shift: null })} 
+          onSuccess={() => refresh()}
+        />
+      )}
 
       {/* 🤝 ASSIGNMENT MODAL OVERHAUL */}
       {assignmentModal.isOpen && (
@@ -434,12 +508,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                   <div className="premium-input-wrapper">
                     <select 
                       name="environment_id" 
-                      required 
                       className="premium-input-field w-full"
                       value={newShiftData.environment_id}
                       onChange={(e) => setNewShiftData({...newShiftData, environment_id: e.target.value})}
                     >
-                      <option value="">Selecione o local</option>
+                      <option value="">Selecione o local (Opcional)</option>
                       {environments.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                     </select>
                     <ChevronDown className="input-icon-right" size={16} />
@@ -453,12 +526,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                   <div className="premium-input-wrapper">
                     <select 
                       name="activity_id" 
-                      required 
                       className="premium-input-field w-full"
                       value={newShiftData.activity_id}
                       onChange={(e) => setNewShiftData({...newShiftData, activity_id: e.target.value})}
                     >
-                      <option value="">Selecione a atividade</option>
+                      <option value="">Selecione a atividade (Opcional)</option>
                       {availableActivitiesByEnvironment.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </select>
                     <ChevronDown className="input-icon-right" size={16} />

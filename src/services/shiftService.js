@@ -151,6 +151,26 @@ export const getEmployeeProfiles = async (companyId) => {
   }));
 };
 
+export const getCollaborators = async (companyId) => {
+  if (!companyId) return [];
+  const { data, error } = await supabase
+    .from('collaborators')
+    .select('*')
+    .eq('company_id', companyId);
+  
+  if (error) throw error;
+
+  return data.map(c => ({
+      ...c,
+      shift_profile_id: c.id,
+      profile_id: c.id,
+      role: c.specialty || 'Não definido',
+      is_external: true,
+      skills: [],
+      avatar_url: null
+  }));
+};
+
 export const updateEmployeeProfile = async (profileId, companyId, updateData) => {
     // Check if employee_profile exists for this profile_id
     const { data: existing } = await supabase

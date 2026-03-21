@@ -110,14 +110,6 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           <span>Base de Conhecimento</span>
         </div>
 
-        <div
-          className={`nav-item ${currentView === 'support' ? 'active' : ''}`}
-          onClick={() => onViewChange('support')}
-        >
-          <LifeBuoy size={20} className="text-accent" />
-          <span>Central de Suporte</span>
-        </div>
-
         {/* Admin Settings */}
         {userRole === 'admin' && (
           <div

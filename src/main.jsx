@@ -25,6 +25,16 @@ window.addEventListener('error', (event) => {
   }
 });
 
+// Registrar Service Worker para Modo PWA / Offline
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/serviceWorker.js').then(
+      (registration) => console.log('ServiceWorker registrado com sucesso: ', registration.scope),
+      (err) => console.log('Falha ao registrar ServiceWorker: ', err)
+    );
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "505677501484-h3n43t426kbo436gi3fq2s57b3npcqg6.apps.googleusercontent.com"}>
