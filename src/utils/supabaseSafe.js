@@ -35,8 +35,10 @@ export const safeQuery = async (queryFn, retries = 5, delay = 1000, description 
                           errorMsg.includes('5000ms');
       
       if (isLockError && i < retries - 1) {
-        const backoff = delay * Math.pow(2, i);
-        console.warn(`[Supabase Safe]${description ? ` (${description})` : ''} Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries} em ${backoff}ms...`);
+        // Adiciona um jitter aleatório para evitar que múltiplas abas tentem "roubar" o lock ao mesmo tempo
+        const jitter = Math.random() * 200; 
+        const backoff = (delay * Math.pow(2, i)) + jitter;
+        console.warn(`[Supabase Safe]${description ? ` (${description})` : ''} Conflito de Lock (${errorMsg}). Tentativa ${i + 1}/${retries} em ${Math.round(backoff)}ms...`);
         await new Promise(resolve => setTimeout(resolve, backoff));
         continue;
       }

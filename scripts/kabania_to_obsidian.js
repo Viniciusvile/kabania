@@ -48,20 +48,20 @@ async function deepModularSync() {
     fs.writeFileSync(MAP.INDEX, indexContent);
 
     // A. Coletar Dados de Alta Densidade
-    const securityFull = fs.readFileSync(path.join(DATABASE_FOLDER, 'global_security_optimization.sql'), 'utf8');
-    const shiftsSchema = fs.readFileSync(path.join(DATABASE_FOLDER, 'shifts_setup.sql'), 'utf8');
+    const securityFull = fs.readFileSync(path.join(DATABASE_FOLDER, 'inventory_optimization.sql'), 'utf8');
+    const modulesFile = fs.readFileSync(path.join('./src/components/Inventory', 'InventoryModule.jsx'), 'utf8');
     const aiMethods = fs.readFileSync(path.join(SERVICES_FOLDER, 'geminiService.js'), 'utf8');
-    const cssVars = fs.readFileSync(STYLES_FILE, 'utf8');
+    const cssVars = fs.readFileSync(path.join('./src/components/Inventory', 'InventoryModule.css'), 'utf8');
 
     // B. Prompt de Arquiteto para Múltiplas Saídas
     const prompt = `Você é um Analista de Documentação Técnica Sênior. Gere atualizações EXTREMAMENTE TÉCNICAS para as 4 seções abaixo do Projeto Kabania. 
-    Lembre-se: Use detalhes de código, nomes de funções e tabelas.
+    Lembre-se: Use detalhes de código, destaque a Otimização de Performance (RLS STABLE) e o Cache Instantâneo (Instant Hydration via localStorage).
     
     DADOS DE ENTRADA:
-    SEGURANÇA: ${securityFull.substring(0, 1000)}
-    MODULOS (Shifts): ${shiftsSchema.substring(0, 1000)}
-    IA (Methods): ${aiMethods.substring(0, 1500)}
-    DESIGN (CSS): ${cssVars.substring(0, 1000)}
+    SEGURANÇA E BANCO: ${securityFull.substring(0, 1500)}
+    MODULOS (Inventory): ${modulesFile.substring(0, 1500)}
+    IA (Methods): ${aiMethods.substring(0, 1000)}
+    DESIGN (CSS Premium): ${cssVars.substring(0, 1000)}
     
     RETORNE EM BLOCOS SEPARADOS POR '###SEP###' na ordem: SEGURANÇA, DESIGN, MÓDULOS, IA.`;
 

@@ -300,10 +300,20 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
-        <div className={`loading-overlay-pixel ${loading && !shifts.length ? 'active' : ''}`}>
-           <Loader2 className="animate-spin text-accent" size={40} />
-           <span>Carregando Escalas...</span>
-        </div>
+        {/* Badge discreto de carregamento inicial — nunca bloqueia a UI */}
+        {loading && (
+          <div style={{
+            position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', zIndex: 20,
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'rgba(0, 212, 255, 0.12)',
+            border: '1px solid rgba(0, 212, 255, 0.3)',
+            color: 'var(--accent-cyan)',
+            padding: '5px 14px', borderRadius: '20px',
+            fontSize: '0.75rem', fontWeight: 700, backdropFilter: 'blur(8px)'
+          }}>
+            <Loader2 size={13} className="animate-spin" /> Sincronizando...
+          </div>
+        )}
 
         {/* Badge discreto de sync — não bloqueia a UI */}
         {isSyncing && (
@@ -320,7 +330,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           </div>
         )}
 
-        <div className={`shifts-grid-area ${loading && !shifts.length ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="shifts-grid-area">
           <ShiftControls 
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getShiftsDashboardData, createShift, getShifts, getWorkEnvironments, getActivities, getEmployeeProfiles, getCollaborators } from '../services/shiftService';
+import { getWorkEnvironments, getActivities, getEmployeeProfiles, getCollaborators } from '../services/shiftService';
 import { supabase } from '../supabaseClient';
-import { safeQuery } from '../utils/supabaseSafe';
 
 export function useShifts(companyId) {
   const cacheKey = `kabania_shifts_cache_${companyId}`;
@@ -19,16 +18,18 @@ export function useShifts(companyId) {
   };
 
   // INITIAL STATE FROM CACHE (Obsidian Optimistic UI)
+  const cachedShifts = safeParse(`${cacheKey}_shifts`, []);
   const [stats, setStats] = useState(() => safeParse(`${cacheKey}_stats`, { total: 0, open: 0, inProgress: 0, concluded: '0/0' }));
-  const [shifts, setShifts] = useState(() => safeParse(`${cacheKey}_shifts`, []));
+  const [shifts, setShifts] = useState(cachedShifts);
   const [employees, setEmployees] = useState(() => safeParse(`${cacheKey}_employees`, []));
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
   const [pendingActivities, setPendingActivities] = useState([]);
   
-  // Instant Load: Se temos cache, não bloqueamos a tela com o overlay central
-  const hasCache = shifts.length > 0;
-  const [loading, setLoading] = useState(!hasCache);
+  // INSTANT HYDRATION: loading é SEMPRE false — o grid nunca fica bloqueado
+  // O sync acontece em background, sem overlay.
+  const hasCacheRef = useRef(cachedShifts.length > 0);
+  const [loading] = useState(false);  // NUNCA bloqueia a UI
   const isInitialLoad = useRef(true);
   
   const [weekStart, setWeekStart] = useState(() => {
@@ -44,174 +45,123 @@ export function useShifts(companyId) {
     try {
       isRefreshingRef.current = true;
       
-      // Só mostramos o overlay central se for o primeiro carregamento SEM cache
-      if (!hasCache && isInitialLoad.current) {
-        setLoading(true);
-      }
+      // CRITICAL: Nunca bloqueia a UI — sync é silencioso em background
       
       const end = new Date(weekStart);
       end.setDate(weekStart.getDate() + 7);
 
-      // TURBO REQUEST + PARALLEL ENV/ACT/EMP FETCH
-      // Forçamos a busca de ambientes, atividades e COLABORADORES via API REST porque a RPC pode retornar cache vazio
-      let data;
-      let directEnvs = [];
-      let directActs = [];
-      let directEmployees = [];
+      // ═══════════════════════════════════════════════════════════════
+      // ESTRATÉGIA "DIRECT-FIRST" — ZERO RPC, ZERO RETRY CHAIN
+      // Busca TUDO em paralelo diretamente das tabelas REST.
+      // Isso elimina o gargalo de 30+ segundos que ocorria quando os 
+      // RPCs v3/v2 falhavam com 5 retries de backoff exponencial.
+      // ═══════════════════════════════════════════════════════════════
       
-      try {
-        const [response, envs, acts, empProfiles, collabs] = await Promise.all([
-          safeQuery(() => getShiftsDashboardData(companyId, weekStart.toISOString(), end.toISOString())),
-          getWorkEnvironments(companyId).catch(() => []),
-          getActivities(companyId).catch(() => []),
-          getEmployeeProfiles(companyId).catch(() => []),
-          getCollaborators(companyId).catch(() => [])
-        ]);
-        data = response;
-        directEnvs = envs;
-        directActs = acts;
-        directEmployees = [...(empProfiles || []), ...(collabs || [])];
+      const [shiftsResult, envsResult, actsResult, empResult, collabResult, srResult] = await Promise.all([
+        supabase.from('shifts').select('*').eq('company_id', companyId)
+          .gte('start_time', weekStart.toISOString()).lte('start_time', end.toISOString())
+          .order('start_time').then(r => r.data || []).catch(() => []),
+        getWorkEnvironments(companyId).catch(() => []),
+        getActivities(companyId).catch(() => []),
+        getEmployeeProfiles(companyId).catch(() => []),
+        getCollaborators(companyId).catch(() => []),
+        supabase.from('service_requests').select('*').eq('company_id', companyId)
+          .then(r => r.data || []).catch(() => [])
+      ]);
+
+      const directEnvs = envsResult || [];
+      const directActs = actsResult || [];
+      const directEmployees = [...(empResult || []), ...(collabResult || [])];
+      const serviceRequests = srResult || [];
+
+      // Mapear shifts com dados de ambiente/atividade por ID
+      const envMap = Object.fromEntries(directEnvs.map(e => [e.id, e]));
+      const actMap = Object.fromEntries(directActs.map(a => [a.id, a]));
+      const srMap = Object.fromEntries(serviceRequests.map(sr => [String(sr.id), sr]));
+
+      // Buscar assignments para os shifts carregados (1 query extra, mas rápida)
+      const shiftIds = shiftsResult.map(s => s.id);
+      let assignmentsMap = {};
+      if (shiftIds.length > 0) {
+        const { data: assignments } = await supabase
+          .from('shift_assignments')
+          .select('*')
+          .in('shift_id', shiftIds).catch(() => ({ data: [] }));
         
-        // Sobrepõe qualquer retorno da RPC forçando a verdade absoluta que veio das tabelas agora
-        if (data) {
-          data.environments = directEnvs;
-          data.activities = directActs;
-          data.employees = directEmployees;
-        }
-      } catch (rpcErr) {
-        console.warn("[useShifts] RPC Turbo falhou, usando fallback direto na tabela:", rpcErr?.message);
-        data = null;
-        directEnvs = await getWorkEnvironments(companyId).catch(() => []);
-        directActs = await getActivities(companyId).catch(() => []);
-        const ep = await getEmployeeProfiles(companyId).catch(() => []);
-        const cl = await getCollaborators(companyId).catch(() => []);
-        directEmployees = [...ep, ...cl];
-      }
-      
-      // FALLBACK: Se RPCs falharam, buscar shifts diretamente da tabela
-      if (!data) {
-        console.warn("[useShifts] Ativando fallback direto na tabela shifts...");
-        try {
-          setEnvironments(directEnvs);
-          setActivities(directActs);
-
-          const { data: rawShifts, error: fallbackErr } = await supabase
-            .from('view_shifts_standard')
-            .select('*')
-            .eq('company_id', companyId)
-            .gte('start_time', weekStart.toISOString())
-            .lte('end_time', end.toISOString())
-            .order('start_time');
-
-          if (fallbackErr || !rawShifts) {
-            // Último recurso: buscar direto da tabela shifts
-            const { data: directShifts } = await supabase
-              .from('shifts')
-              .select('*')
-              .eq('company_id', companyId)
-              .gte('start_time', weekStart.toISOString())
-              .order('start_time');
-
-            if (directShifts) {
-              const mapped = directShifts.map(s => ({
-                ...s,
-                work_environments: { name: 'Local' },
-                work_activities: { name: 'Atividade' },
-                assigned_employees: [],
-                calls_count: 0,
-                open_calls_count: 0
-              }));
-              setShifts(mapped);
-              localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(mapped));
-              console.log('[useShifts] ✅ Fallback último recurso: shifts atualizados da tabela direta.');
-            }
-            return;
+        if (assignments) {
+          for (const a of assignments) {
+            if (!assignmentsMap[a.shift_id]) assignmentsMap[a.shift_id] = [];
+            const emp = directEmployees.find(e => 
+              (e.shift_profile_id || e.id) === a.employee_id || 
+              (e.shift_profile_id || e.id) === a.collaborator_id
+            );
+            assignmentsMap[a.shift_id].push({
+              ...a,
+              assignment_id: a.id,
+              assignment_status: a.status,
+              name: emp?.name || 'Colaborador',
+              avatar_url: emp?.avatar_url || null,
+              skills: emp?.skills || []
+            });
           }
-
-          const mapped = rawShifts.map(s => ({
-            ...s,
-            work_environments: { name: s.environment_name || 'Local' },
-            work_activities: { name: s.activity_name || 'Atividade', required_role: s.required_role, required_skills: s.required_skills || [] },
-            assigned_employees: [],
-            calls_count: s.calls_count || 0,
-            open_calls_count: s.open_calls_count || 0
-          }));
-          setShifts(mapped);
-          localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(mapped));
-          console.log('[useShifts] ✅ Fallback via view_shifts_standard bem-sucedido.');
-        } catch (fbErr) {
-          console.error('[useShifts] Todos os fallbacks falharam:', fbErr);
         }
-        return;
       }
-      
-// ... (rest of the mapping code)
 
-      // Update Stats
-      setStats(data.stats);
-      
-      // Transform shifts for component compatibility
-      const transformedShifts = (data.shifts || []).map(shift => ({
+      const transformedShifts = shiftsResult.map(shift => {
+        const env = envMap[shift.environment_id];
+        const act = actMap[shift.activity_id];
+        const sr = srMap[String(shift.service_request_id)];
+        return {
           ...shift,
           work_environments: { 
-              name: shift.environment_name || 
-                    (shift.service_customer ? `${shift.service_customer}${shift.service_unit ? ' (' + shift.service_unit + ')' : ''}` : null) ||
-                    (() => {
-                        const sr = (data.service_requests || []).find(r => String(r.id) === String(shift.service_request_id));
-                        return sr ? (sr.customer_name + (sr.client_unit ? ` (${sr.client_unit})` : '')) : 'Local Não Definido';
-                    })()
+            name: env?.name || (sr ? `${sr.customer_name}${sr.client_unit ? ' (' + sr.client_unit + ')' : ''}` : 'Local Não Definido')
           },
           work_activities: { 
-              name: shift.activity_name || shift.service_type || (() => {
-                  const sr = (data.service_requests || []).find(r => String(r.id) === String(shift.service_request_id));
-                  return sr ? sr.service_type : 'Atividade';
-              })(),
-              required_role: shift.required_role,
-              required_skills: shift.required_skills || []
+            name: act?.name || sr?.service_type || 'Atividade',
+            required_role: act?.required_role || shift.required_role,
+            required_skills: act?.required_skills || shift.required_skills || []
           },
           intelligence_metadata: shift.intelligence_metadata || {},
-          assigned_employees: (shift.assigned_employees || shift.shift_assignments || []).map(a => {
-              // V3 ja vem com name/role, V2 vem com employee_profiles.profiles.name
-              const profile = a.employee_profiles?.profiles || {};
-              return {
-                  ...(a.employee_profiles || {}),
-                  ...a, // V3 ja tem os campos planos
-                  assignment_id: a.assignment_id || a.id,
-                  assignment_status: a.assignment_status || a.status,
-                  name: a.name || profile.name || 'Colaborador',
-                  avatar_url: a.avatar_url || profile.avatar_url || null,
-                  skills: a.skills || (a.employee_profiles?.skills || [])
-              };
-          }) || [],
+          assigned_employees: assignmentsMap[shift.id] || [],
           calls_count: shift.calls_count || 0,
           open_calls_count: shift.open_calls_count || 0
-      }));
-      setShifts(transformedShifts);
+        };
+      });
 
-      // Transform employees (Já temos direto do REST, apenas aplicar transformações de fallback caso a rpc estivesse mesclada)
-      const rawE = directEmployees.length > 0 ? directEmployees : (data.employees || []);
-      const transformedEmployees = rawE.map(e => ({
-          ...e,
-          shift_profile_id: e.shift_profile_id || e.id,
-          profile_id: e.profile_id || e.id,
-          role: e.role || 'Não definido',
-          is_external: e.is_external ?? (e.role === 'field' || !e.id?.includes('ep_')),
-          skills: e.skills || []
+      setShifts(transformedShifts);
+      setEnvironments(directEnvs);
+      setActivities(directActs);
+
+      // Stats
+      const total = transformedShifts.length;
+      const computedStats = {
+        total,
+        open: transformedShifts.filter(s => s.status === 'open' || s.status === 'scheduled').length,
+        inProgress: transformedShifts.filter(s => s.status === 'in_progress' || s.status === 'active').length,
+        concluded: `${transformedShifts.filter(s => s.status === 'completed' || s.status === 'concluded').length}/${total}`
+      };
+      setStats(computedStats);
+
+      // Employees
+      const transformedEmployees = directEmployees.map(e => ({
+        ...e,
+        shift_profile_id: e.shift_profile_id || e.id,
+        profile_id: e.profile_id || e.id,
+        role: e.role || 'Não definido',
+        is_external: e.is_external ?? (e.role === 'field' || !e.id?.toString().includes('ep_')),
+        skills: e.skills || []
       }));
       setEmployees(transformedEmployees);
 
-      setEnvironments(directEnvs || []);
-      setActivities(directActs || []);
-      
-      // Merge Pending Activities and Service Requests
+      // Pending Activities
       const rawActivities = [
-        ...(data.raw_activities || []).map(act => ({
+        ...directActs.map(act => ({
           ...act,
           location: act.name || 'Atividade Geral',
           type: 'Rotina',
           created: act.created_at
         })),
-        ...(data.service_requests || []).map(sr => ({
+        ...serviceRequests.map(sr => ({
           ...sr,
           location: sr.customer_name + (sr.client_unit ? ' (' + sr.client_unit + ')' : ''),
           type: sr.service_type,
@@ -228,15 +178,18 @@ export function useShifts(companyId) {
 
       setPendingActivities(pending);
 
-      // Update local cache for Optimistic UI (following Obsidian guidelines)
-      localStorage.setItem(`${cacheKey}_stats`, JSON.stringify(data.stats));
+      // Salvar cache para Instant Hydration
+      localStorage.setItem(`${cacheKey}_stats`, JSON.stringify(computedStats));
       localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(transformedShifts));
       localStorage.setItem(`${cacheKey}_employees`, JSON.stringify(transformedEmployees));
+      hasCacheRef.current = true;
+      
+
+
 
     } catch (err) {
       console.error('Error in useShifts:', err);
     } finally {
-      setLoading(false);
       isRefreshingRef.current = false;
       isInitialLoad.current = false;
     }
@@ -245,11 +198,11 @@ export function useShifts(companyId) {
   const isRefreshingRef = useRef(false);
 
   useEffect(() => {
-    // STAGGERED LOAD: Adicionando jitter aleatório para evitar conflitos de tab
-    const jitter = Math.random() * 200;
+    // OPTIMIZED LOAD: Zero delay se temos cache, jitter mínimo se não
+    const delay = hasCacheRef.current ? 0 : (50 + Math.random() * 80);
     const timer = setTimeout(() => {
       loadAllData();
-    }, 100 + jitter);
+    }, delay);
 
     const channelName = `realtime-escalas-${companyId}`;
     const shiftsChannel = supabase.channel(channelName)

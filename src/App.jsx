@@ -14,6 +14,7 @@ import ReportsDashboard from './components/ReportsDashboard';
 import ServiceCenter from './components/ServiceCenter';
 import ShiftsModule from './components/Shifts/ShiftsModule';
 import BusinessManagement from './components/BusinessManagement';
+import InventoryModule from './components/Inventory/InventoryModule';
 import AIInsights from './components/AIInsights';
 import UserProfile from './components/UserProfile';
 import UserSettings from './components/UserSettings';
@@ -671,6 +672,8 @@ function App() {
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
+              ) : currentView === 'inventory' ? (
+                <InventoryModule companyId={currentCompany?.id} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
               ) : currentView === 'settings' ? (
