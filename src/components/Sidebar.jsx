@@ -68,11 +68,11 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           </div>
         </div>
 
-        {/* Reports Group */}
+        {/* Dados e Relatórios Group (merged Reports + AI Insights) */}
         <div className={`nav-group ${expandedGroups.reports ? 'expanded' : ''}`}>
           <div className="nav-item" onClick={() => toggleGroup('reports')}>
             <BarChart2 size={20} />
-            <span>Relatórios</span>
+            <span>Dados e Relatórios</span>
             {!isCollapsed && (
               <ChevronDown size={14} className={`ml-auto transition-transform ${expandedGroups.reports ? 'rotate-180' : ''}`} />
             )}
@@ -82,7 +82,10 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               className={`submenu-item ${currentView === 'reports' ? 'active' : ''}`}
               onClick={() => onViewChange('reports')}
             >Dashboard Geral</div>
-            
+            <div
+              className={`submenu-item ${currentView === 'ai_insights' ? 'active' : ''}`}
+              onClick={() => onViewChange('ai_insights')}
+            >Insights de IA</div>
             <div
               className={`submenu-item ${currentView === 'business_history' ? 'active' : ''}`}
               onClick={() => onViewChange('business_history')}
@@ -92,14 +95,6 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               onClick={() => onViewChange('business_export')}
             >Exportar Relatórios</div>
           </div>
-        </div>
-
-        <div
-          className={`nav-item ${currentView === 'ai_insights' ? 'active' : ''}`}
-          onClick={() => onViewChange('ai_insights')}
-        >
-          <Lightbulb size={20} />
-          <span>Insights de IA</span>
         </div>
 
         <div
