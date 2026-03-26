@@ -83,27 +83,31 @@ export function useShifts(companyId) {
       const shiftIds = shiftsResult.map(s => s.id);
       let assignmentsMap = {};
       if (shiftIds.length > 0) {
-        const { data: assignments } = await supabase
-          .from('shift_assignments')
-          .select('*')
-          .in('shift_id', shiftIds).catch(() => ({ data: [] }));
-        
-        if (assignments) {
-          for (const a of assignments) {
-            if (!assignmentsMap[a.shift_id]) assignmentsMap[a.shift_id] = [];
-            const emp = directEmployees.find(e => 
-              (e.shift_profile_id || e.id) === a.employee_id || 
-              (e.shift_profile_id || e.id) === a.collaborator_id
-            );
-            assignmentsMap[a.shift_id].push({
-              ...a,
-              assignment_id: a.id,
-              assignment_status: a.status,
-              name: emp?.name || 'Colaborador',
-              avatar_url: emp?.avatar_url || null,
-              skills: emp?.skills || []
-            });
+        try {
+          const { data: assignments } = await supabase
+            .from('shift_assignments')
+            .select('*')
+            .in('shift_id', shiftIds);
+          
+          if (assignments) {
+            for (const a of assignments) {
+              if (!assignmentsMap[a.shift_id]) assignmentsMap[a.shift_id] = [];
+              const emp = directEmployees.find(e => 
+                (e.shift_profile_id || e.id) === a.employee_id || 
+                (e.shift_profile_id || e.id) === a.collaborator_id
+              );
+              assignmentsMap[a.shift_id].push({
+                ...a,
+                assignment_id: a.id,
+                assignment_status: a.status,
+                name: emp?.name || 'Colaborador',
+                avatar_url: emp?.avatar_url || null,
+                skills: emp?.skills || []
+              });
+            }
           }
+        } catch (assignErr) {
+          console.warn('[useShifts] Erro ao buscar assignments:', assignErr?.message);
         }
       }
 
