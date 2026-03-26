@@ -265,16 +265,16 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
       </div>
 
       {/* AI Narrative Analysis Section (Premium) */}
-      <div className="rd-ai-analysis-box cp-card glass-morphism animate-fade-in relative overflow-hidden" style={{ border: '1px solid rgba(0, 229, 255, 0.2)', background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)' }}>
+      <div className="rd-ai-analysis-box cp-card glass-morphism animate-fade-in relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-[50px] pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/10 rounded-full blur-[60px] pointer-events-none"></div>
         
         <div className="rd-ai-header mb-4 flex items-center justify-between border-b border-white/5 pb-3">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-cyan-950/50 border border-cyan-500/20">
-              <Sparkles size={18} className="text-cyan-400" />
+            <div className="p-2 rounded-lg bg-cyan-950/20 border border-cyan-500/20">
+              <Sparkles size={18} className="text-cyan-500" />
             </div>
-            <h2 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">Hub Corporativo (Insight IA)</h2>
+            <h2 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-600 to-purple-600">Hub Corporativo (Insight IA)</h2>
           </div>
           {aiReport && (
             <button className="text-xs flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors bg-white/5 px-2 py-1 rounded-md" onClick={runAiAnalysis} disabled={isAnalyzing}>
@@ -284,15 +284,15 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
         </div>
         
         {aiReport ? (
-          <div className="rd-ai-content text-slate-300 text-sm leading-relaxed whitespace-pre-line relative z-10 animate-fade-in">
-            <div className="pl-4 border-l-2 border-cyan-500/50 italic text-slate-400 mb-4">
+          <div className="rd-ai-content relative z-10 animate-fade-in">
+            <div className="pl-4 border-l-2 border-cyan-500/50 italic opacity-80 mb-4">
               "Analisando seu backlog com <strong>{totalTasks} tarefas</strong> e <strong>{completionRate}% de conclusão</strong>..."
             </div>
             {aiReport}
           </div>
         ) : (
           <div className="rd-ai-cta flex flex-col items-center justify-center py-6 text-center relative z-10">
-            <p className="text-slate-400 mb-4 text-sm max-w-md">Deixe nossa IA cruzar os dados de produtividade, cargas da equipe e alertas de SLA para formular o seu conselho administrativo diário.</p>
+            <p className="opacity-70 mb-4 text-sm max-w-md">Deixe nossa IA cruzar os dados de produtividade, cargas da equipe e alertas de SLA para formular o seu conselho administrativo diário.</p>
             <button className="glow-btn-primary rounded-xl px-6 py-3 font-semibold text-sm transition-all hover:scale-[1.02]" onClick={runAiAnalysis} disabled={isAnalyzing}>
               {isAnalyzing ? <span className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Vasculhando o banco de dados...</span> : 'Gerar Insight Estratégico'}
             </button>

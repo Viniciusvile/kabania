@@ -61,10 +61,10 @@
   align-items: center;
   gap: 1.25rem;
   margin-top: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-card-hover);
   padding: 0.5rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
   width: fit-content;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .ai-hub-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-app);
   color: var(--text-main);
 }
 

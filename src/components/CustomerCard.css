@@ -1,8 +1,8 @@
 /* CustomerCard.css */
 
 .customer-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 1.25rem;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -11,6 +11,13 @@
   flex-direction: column;
   gap: 1rem;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme='dark'] .customer-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .customer-card:hover {
@@ -42,7 +49,7 @@
 .cc-name {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-main);
   margin: 0.5rem 0 0.2rem;
 }
 
@@ -103,18 +110,24 @@
 }
 
 .cfm-modal {
-  background: #0f172a;
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   width: 95%;
   max-width: 550px;
   border-radius: 28px;
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
   animation: cfm-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+}
+
+[data-theme='dark'] .cfm-modal {
+  background: #0f172a;
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.9);
 }
 
 @keyframes cfm-pop {
@@ -135,7 +148,7 @@
 .cfm-header h2 {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-main);
   margin: 0;
   letter-spacing: -0.02em;
 }
@@ -166,13 +179,19 @@
 
 .cfm-field input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
   padding: 0.75rem 1rem;
   border-radius: 12px;
-  color: #fff;
+  color: var(--text-main);
   font-size: 0.9rem;
   transition: all 0.2s;
+}
+
+[data-theme='dark'] .cfm-field input {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 .cfm-field input:focus {

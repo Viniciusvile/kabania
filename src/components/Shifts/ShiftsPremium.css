@@ -71,8 +71,12 @@
 .header-title-row h3 {
   font-size: 0.9rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-main);
   letter-spacing: 0.02em;
+}
+
+[data-theme='dark'] .header-title-row h3 {
+  color: white;
 }
 
 .pending-badge-glow {
@@ -96,22 +100,33 @@
 
 /* 🃏 PREMIUM PENDING CARD */
 .pending-premium-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 1rem;
   padding: 1.25rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   animation: slide-in-right 0.5s ease backwards;
 }
 
+[data-theme='dark'] .pending-premium-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .pending-premium-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(14, 165, 233, 0.4);
+  background: var(--bg-card-hover);
+  border-color: var(--accent-cyan);
   transform: translateX(6px) translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .pending-premium-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(14, 165, 233, 0.4);
 }
 
 .card-top-info {
@@ -259,7 +274,14 @@
   text-align: center;
   padding: 4rem 1rem;
   gap: 1rem;
+}
+
+[data-theme='dark'] .empty-pending-premium {
   opacity: 0.6;
+}
+
+[data-theme='light'] .empty-pending-premium {
+  color: var(--text-muted);
 }
 
 .success-icon-bg {
@@ -406,8 +428,12 @@
 
 .emp-name-premium {
   font-weight: 700;
-  color: white;
+  color: var(--text-main);
   font-size: 0.95rem;
+}
+
+[data-theme='dark'] .emp-name-premium {
+  color: white;
 }
 
 /* 🔍 SEARCH & ACCORDION OVERHAUL */
@@ -723,8 +749,8 @@
     display: flex;
     flex-direction: column;
     padding-top: 54px; /* Matches day-header height + padding */
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(0, 0, 0, 0.15);
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-sidebar);
     position: sticky;
     left: 0;
     z-index: 10;
@@ -732,18 +758,20 @@
 }
 
 .time-label {
-    height: 120px; /* Reduced for 30min slot height later, but let's start with 120px total for 1 hour block? */
-    /* No, let's use 80px per 30min slot to give space for cards */
     height: 80px; 
     display: flex;
     align-items: flex-start;
     justify-content: center;
     font-size: 10px;
     font-weight: 800;
-    color: var(--text-muted);
-    opacity: 0.5;
+    color: var(--text-main);
     padding-top: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border-light);
+}
+
+[data-theme='dark'] .time-label {
+    opacity: 0.5;
+    color: var(--text-muted);
 }
 
 .days-container-pixel {

@@ -28,21 +28,21 @@
 }
 
 [data-theme='light'] {
-  --bg-app: #FBF9F1;      /* Tom amarelado/off-white suave */
-  --bg-sidebar: #FFFFFF;
+  --bg-app: #F8FAFC;      /* Slate 50 - Softer background */
+  --bg-sidebar: #F1F5F9;  /* Slate 100 - Distinct sidebar */
   --bg-panel: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-hover: #FDFCF7;
+  --bg-card-hover: #F8FAFC;
   
-  --border-color: #E8E5D5; /* Borda levemente aquecida */
-  --border-light: rgba(0, 0, 0, 0.05);
+  --border-color: #CBD5E1; /* Slate 300 - More defined borders */
+  --border-light: rgba(0, 0, 0, 0.08);
   
   --accent-cyan: #0052CC; /* Adjusting for light background */
   --accent-cyan-dim: rgba(0, 82, 204, 0.1);
   
-  --text-main: #1E293B;
-  --text-muted: #64748B;
-  --text-dark: #94A3B8;
+  --text-main: #0F172A;   /* Slate 900 - Better readability */
+  --text-muted: #475569;  /* Slate 600 */
+  --text-dark: #94A3B8;   /* Slate 400 */
 
   /* Colors remain similar but can be adjusted if needed */
 }

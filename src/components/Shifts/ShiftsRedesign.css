@@ -235,7 +235,7 @@
 /* 📋 Pending Activities Sidebar */
 .pending-activities-sidebar {
   width: 320px;
-  background: white;
+  background: var(--bg-sidebar);
   border-radius: 16px;
   border: 1px solid var(--border-color);
   display: flex;
@@ -249,8 +249,8 @@
 
 .sidebar-header {
   padding: 1.5rem 1.25rem;
-  background: var(--escala-text-primary);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  background: var(--text-main);
+  border-bottom: 2px solid var(--border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
