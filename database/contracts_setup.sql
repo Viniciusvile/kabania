@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS public.contracts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   client TEXT NOT NULL,
   start_date DATE,

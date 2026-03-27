@@ -5,7 +5,7 @@
 -- Trail (learning path)
 CREATE TABLE IF NOT EXISTS public.academy_trails (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   category TEXT NOT NULL DEFAULT 'geral',
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.academy_trails (
 CREATE TABLE IF NOT EXISTS public.academy_modules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   trail_id UUID NOT NULL REFERENCES public.academy_trails(id) ON DELETE CASCADE,
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   content TEXT NOT NULL DEFAULT '',
   order_index INT NOT NULL DEFAULT 0,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.academy_modules (
 CREATE TABLE IF NOT EXISTS public.academy_progress (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_email TEXT NOT NULL,
-  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  company_id TEXT NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   trail_id UUID NOT NULL REFERENCES public.academy_trails(id) ON DELETE CASCADE,
   module_id UUID NOT NULL REFERENCES public.academy_modules(id) ON DELETE CASCADE,
   completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
