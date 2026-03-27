@@ -62,17 +62,15 @@ const SLATooltip = ({ active, payload, label }) => {
 };
 
 export default function SLADashboard({ currentCompany, currentUser }) {
-  const CONTRACTS_KEY = `kabania_contracts_${currentCompany?.id}`;
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'contracts'
-  const [contracts, setContracts] = useState(() => {
-    const saved = localStorage.getItem(`kabania_contracts_${currentCompany?.id}`);
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeContractId, setActiveContractId] = useState(() => {
-    return localStorage.getItem(`kabania_active_contract_${currentCompany?.id}`) || null;
-  });
+  const [contractsLoading, setContractsLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('analytics');
+  const [contracts, setContracts] = useState([]);
+  const [activeContractId, setActiveContractId] = useState(() =>
+    localStorage.getItem(`kabania_active_contract_${currentCompany?.id}`) || null
+  );
   const [showContractModal, setShowContractModal] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
   const [contractForm, setContractForm] = useState({
@@ -97,9 +95,31 @@ export default function SLADashboard({ currentCompany, currentUser }) {
     return customSLA;
   }, [activeContractId, contracts, customSLA]);
 
-  const saveContracts = (updated) => {
-    setContracts(updated);
-    localStorage.setItem(`kabania_contracts_${currentCompany?.id}`, JSON.stringify(updated));
+  // --- Fetch contracts from Supabase ---
+  const fetchContracts = async () => {
+    if (!currentCompany?.id) return;
+    setContractsLoading(true);
+    const { data, error } = await supabase
+      .from('contracts')
+      .select('*')
+      .eq('company_id', currentCompany.id)
+      .order('created_at', { ascending: false });
+    if (!error && data) {
+      // Map snake_case DB columns to camelCase for UI
+      setContracts(data.map(c => ({
+        id: c.id,
+        name: c.name,
+        client: c.client,
+        startDate: c.start_date || '',
+        endDate: c.end_date || '',
+        status: c.status,
+        notes: c.notes || '',
+        slaThresholds: c.sla_thresholds || DEFAULT_SLA,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      })));
+    }
+    setContractsLoading(false);
   };
 
   const fetchData = async () => {
@@ -115,7 +135,7 @@ export default function SLADashboard({ currentCompany, currentUser }) {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [currentCompany?.id]);
+  useEffect(() => { fetchData(); fetchContracts(); }, [currentCompany?.id]);
 
   // Filter by selected month
   const filteredActivities = useMemo(() => {
@@ -284,23 +304,34 @@ export default function SLADashboard({ currentCompany, currentUser }) {
     setShowContractModal(true);
   };
 
-  const handleSaveContract = () => {
+  const handleSaveContract = async () => {
     if (!contractForm.name.trim() || !contractForm.client.trim()) return;
-    const now = new Date().toISOString();
+    setSaving(true);
+    const payload = {
+      company_id: currentCompany.id,
+      name: contractForm.name.trim(),
+      client: contractForm.client.trim(),
+      start_date: contractForm.startDate || null,
+      end_date: contractForm.endDate || null,
+      status: contractForm.status,
+      notes: contractForm.notes || null,
+      sla_thresholds: contractForm.slaThresholds,
+      created_by: currentUser?.email || null,
+    };
     if (editingContract) {
-      const updated = contracts.map(c => c.id === editingContract.id ? { ...contractForm, id: editingContract.id, updatedAt: now } : c);
-      saveContracts(updated);
+      await supabase.from('contracts').update(payload).eq('id', editingContract.id);
     } else {
-      const newContract = { ...contractForm, id: crypto.randomUUID(), createdAt: now };
-      saveContracts([newContract, ...contracts]);
+      await supabase.from('contracts').insert([payload]);
     }
+    await fetchContracts();
+    setSaving(false);
     setShowContractModal(false);
   };
 
-  const handleDeleteContract = (id) => {
+  const handleDeleteContract = async (id) => {
     if (!window.confirm('Excluir este contrato?')) return;
-    const updated = contracts.filter(c => c.id !== id);
-    saveContracts(updated);
+    await supabase.from('contracts').delete().eq('id', id);
+    await fetchContracts();
     if (activeContractId === id) {
       setActiveContractId(null);
       localStorage.removeItem(`kabania_active_contract_${currentCompany?.id}`);
@@ -568,7 +599,12 @@ export default function SLADashboard({ currentCompany, currentUser }) {
       {/* Contracts Tab Content */}
       {activeTab === 'contracts' && (
         <div className="sla-contracts-view">
-          {contracts.length === 0 ? (
+          {contractsLoading ? (
+            <div className="sla-loading">
+              <Loader2 size={32} className="animate-spin" />
+              <p>Carregando contratos...</p>
+            </div>
+          ) : contracts.length === 0 ? (
             <div className="sla-empty">
               <FileText size={64} opacity={0.3} />
               <h3>Nenhum contrato cadastrado</h3>
@@ -774,9 +810,9 @@ export default function SLADashboard({ currentCompany, currentUser }) {
               <button
                 className="sla-btn-save"
                 onClick={handleSaveContract}
-                disabled={!contractForm.name.trim() || !contractForm.client.trim()}
+                disabled={!contractForm.name.trim() || !contractForm.client.trim() || saving}
               >
-                {editingContract ? 'Salvar Alterações' : 'Criar Contrato'}
+                {saving ? <><Loader2 size={14} className="animate-spin" /> Salvando...</> : editingContract ? 'Salvar Alterações' : 'Criar Contrato'}
               </button>
             </div>
           </div>
