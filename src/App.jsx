@@ -17,6 +17,7 @@ import BusinessManagement from './components/BusinessManagement';
 import InventoryModule from './components/Inventory/InventoryModule';
 import AIInsights from './components/AIInsights';
 import SLADashboard from './components/SLADashboard';
+import Academy from './components/Academy';
 import UserProfile from './components/UserProfile';
 import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
@@ -673,6 +674,8 @@ function App() {
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'sla_dashboard' ? (
                 <SLADashboard currentCompany={currentCompany} currentUser={currentUser} />
+              ) : currentView === 'academy' ? (
+                <Academy currentCompany={currentCompany} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'inventory' ? (

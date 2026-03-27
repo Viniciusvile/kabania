@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck, GraduationCap } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
@@ -110,6 +110,14 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
         >
           <BookOpen size={20} />
           <span>Base de Conhecimento</span>
+        </div>
+
+        <div
+          className={`nav-item ${currentView === 'academy' ? 'active' : ''}`}
+          onClick={() => onViewChange('academy')}
+        >
+          <GraduationCap size={20} className="text-purple-400" />
+          <span>Kabania Academy</span>
         </div>
 
         <div
