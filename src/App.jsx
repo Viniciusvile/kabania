@@ -16,6 +16,7 @@ import ShiftsModule from './components/Shifts/ShiftsModule';
 import BusinessManagement from './components/BusinessManagement';
 import InventoryModule from './components/Inventory/InventoryModule';
 import AIInsights from './components/AIInsights';
+import SLADashboard from './components/SLADashboard';
 import UserProfile from './components/UserProfile';
 import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
@@ -670,6 +671,8 @@ function App() {
                 />
               ) : currentView === 'ai_insights' ? (
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
+              ) : currentView === 'sla_dashboard' ? (
+                <SLADashboard currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'inventory' ? (

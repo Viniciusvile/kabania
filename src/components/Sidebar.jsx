@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch } from 'lucide-react';
+import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
@@ -94,6 +94,13 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               className={`submenu-item ${currentView === 'business_export' ? 'active' : ''}`}
               onClick={() => onViewChange('business_export')}
             >Exportar Relatórios</div>
+            <div
+              className={`submenu-item ${currentView === 'sla_dashboard' ? 'active' : ''}`}
+              onClick={() => onViewChange('sla_dashboard')}
+            >
+              <ShieldCheck size={13} style={{ marginRight: '4px', display: 'inline' }} />
+              Painel de SLA
+            </div>
           </div>
         </div>
 
