@@ -3,6 +3,8 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { MapPin, QrCode, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { saveActionToOfflineQueue } from '../../services/offlineSyncService';
+import '../Inventory/InventoryModule.css';
+import './ShiftsRedesign.css';
 
 export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, onSuccess }) {
   const [activeTab, setActiveTab] = useState('gps'); // 'gps' | 'qr'
@@ -131,15 +133,17 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
 
   return (
     <div className="modal-overlay-pixel glass-morphism" style={{ zIndex: 9999 }}>
-      <div className="premium-modal-pixel animate-fade-in" style={{ width: '90%', maxWidth: '400px' }}>
-        <div className="premium-modal-header border-vibrant">
+      <div className="premium-modal-pixel animate-fade-in glass-morphism" style={{ width: '90%', maxWidth: '400px', border: '1px solid var(--border-light)' }}>
+        <div className="premium-modal-header border-vibrant" style={{ padding: '1.25rem 1.5rem' }}>
           <div className="flex items-center gap-3">
-             <div className="icon-badge-premium bg-blue-glow">
-               <MapPin className="text-accent-cyan" size={18} />
+             <div className="header-icon-box" style={{ padding: '0.5rem', borderRadius: '0.75rem' }}>
+               <MapPin className="text-accent-cyan" size={20} />
              </div>
-             <h3>Registrar Ponto Eletrônico</h3>
+             <h3 className="text-white font-bold tracking-tight">Registrar Ponto Eletrônico</h3>
           </div>
-          <button className="premium-close-btn" onClick={onClose} disabled={loading}>×</button>
+          <button className="premium-close-btn text-white/40 hover:text-white transition-colors" onClick={onClose} disabled={loading}>
+            <XCircle size={20} />
+          </button>
         </div>
 
         <div className="p-6">
@@ -151,18 +155,18 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
              </div>
           ) : (
             <>
-              <div className="flex bg-black/20 p-1 rounded-xl mb-6">
+              <div className="inventory-tabs mb-6 w-full flex">
                 <button 
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors ${activeTab === 'gps' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                  className={`tab-btn flex-1 ${activeTab === 'gps' ? 'active' : ''}`}
                   onClick={() => setActiveTab('gps')}
                 >
-                  <MapPin size={16} /> GPS Check-in
+                  <MapPin size={18} /> GPS Check-in
                 </button>
                 <button 
-                  className={`flex-1 py-2 text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors ${activeTab === 'qr' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                  className={`tab-btn flex-1 ${activeTab === 'qr' ? 'active' : ''}`}
                   onClick={() => setActiveTab('qr')}
                 >
-                  <QrCode size={16} /> QR Code
+                  <QrCode size={18} /> QR Code
                 </button>
               </div>
 
@@ -174,22 +178,26 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
               )}
 
               {activeTab === 'gps' && (
-                <div className="text-center py-4">
-                  <div className="w-24 h-24 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto mb-6 relative">
-                     <MapPin size={40} className="text-accent-cyan absolute" />
-                     {loading && <div className="absolute inset-0 border-4 border-transparent border-t-accent-cyan rounded-full animate-spin"></div>}
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-24 h-24 rounded-3xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center relative mb-6 shadow-2xl shadow-accent-cyan/10">
+                     <MapPin size={44} className="text-accent-cyan" />
+                     {loading && (
+                       <div className="absolute inset-[-4px] border-2 border-transparent border-t-accent-cyan rounded-3xl animate-spin"></div>
+                     )}
+                     <div className="pulse-dot absolute -top-1 -right-1"></div>
                   </div>
-                  <h4 className="text-white font-semibold text-lg mb-2">Validação por Geofencing</h4>
-                  <p className="text-sm text-white/60 mb-8 max-w-[250px] mx-auto">
+                  
+                  <h4 className="text-white font-bold text-xl tracking-tight mb-2">Validação por Geofencing</h4>
+                  <p className="text-sm text-white/50 mb-8 max-w-[280px]">
                     O sistema usará seu GPS para garantir que você está dentro do raio do Ambiente de Trabalho.
                   </p>
                   
                   <button 
                     onClick={getLocationAndCheckin} 
                     disabled={loading}
-                    className="w-full glow-btn-primary py-4 font-bold text-lg flex items-center justify-center gap-2"
+                    className="inv-submit-btn py-4 text-lg w-full"
                   >
-                    {loading ? <><Loader2 size={20} className="animate-spin" /> Verificando Local...</> : 'Bater Ponto Agora'}
+                    {loading ? <><Loader2 size={24} className="animate-spin" /> Verificando Local...</> : 'Bater Ponto Agora'}
                   </button>
                 </div>
               )}
