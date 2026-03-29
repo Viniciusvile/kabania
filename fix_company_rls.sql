@@ -18,3 +18,8 @@ CREATE POLICY "Usuários autenticados podem criar empresas" ON companies
 DROP POLICY IF EXISTS "Usuários autenticados podem adicionar categorias de IA na criação" ON knowledge_base;
 CREATE POLICY "Usuários autenticados podem adicionar categorias de IA na criação" ON knowledge_base
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+-- 3. Permitir que usuários autenticados busquem a empresa pelo código de convite
+DROP POLICY IF EXISTS "Usuários autenticados podem buscar empresas" ON companies;
+CREATE POLICY "Usuários autenticados podem buscar empresas" ON companies
+  FOR SELECT USING (auth.role() = 'authenticated');
