@@ -66,9 +66,67 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
   const isLowPreview = Number(newItem.quantity) <= Number(newItem.min_threshold);
   const previewProgress = Math.min(100, (Number(newItem.quantity) / (Number(newItem.min_threshold) * 3 || 1)) * 100);
 
+  const inventoryGrid = useMemo(() => items.map(item => {
+    const isLow = item.quantity <= item.min_threshold;
+    return (
+      <div key={item.id} className={`inventory-card ${isLow ? 'low-stock' : ''}`}>
+        {isLow && (
+          <div className="stock-alert">
+            <AlertTriangle size={12} /> REPOSIÇÃO NECESSÁRIA
+          </div>
+        )}
+        <h3 className="item-name">{item.name}</h3>
+        <span className="item-category">{item.category}</span>
+
+        <div className="item-stats">
+          <div className="quantity-info">
+            <span className={`quantity-value ${isLow ? 'danger' : 'success'}`}>{item.quantity}</span>
+            <span className="unit-label">{item.unit}</span>
+          </div>
+          <div className="card-actions">
+            <button
+              onClick={() => setIsWithdrawing(isWithdrawing === item.id ? null : item.id)}
+              className="withdraw-btn"
+              title="Registrar Saída"
+            >
+              <ArrowDownCircle size={22} />
+            </button>
+          </div>
+        </div>
+
+        <div className="progress-shell">
+          <div
+            className={`progress-bar ${isLow ? 'bg-red' : 'bg-blue'}`}
+            style={{ width: `${Math.min(100, (item.quantity / (item.min_threshold * 3 || 1)) * 100)}%` }}
+          />
+        </div>
+        <div className="threshold-info">Mínimo: {item.min_threshold} {item.unit}</div>
+
+        {isWithdrawing === item.id && (
+          <div className="withdraw-overlay">
+            <div className="withdraw-form">
+              <h4>Retirar {item.name}</h4>
+              <input
+                type="number"
+                className="withdraw-input"
+                placeholder="Qtd."
+                value={withdrawAmount}
+                onChange={e => setWithdrawAmount(e.target.value)}
+                autoFocus
+              />
+              <div className="withdraw-actions">
+                <button onClick={() => setIsWithdrawing(null)} className="btn-cancel">Fechar</button>
+                <button onClick={() => handleWithdraw(item)} className="btn-confirm">Baixar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }), [items, isWithdrawing, withdrawAmount]);
+
   return (
     <div className="inventory-split-layout">
-
       {/* ══════════════════════════════════════════════════════
           LEFT PANEL — Inventory Grid
       ══════════════════════════════════════════════════════ */}
@@ -92,64 +150,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
             </div>
           ) : (
             <div className="inventory-grid">
-              {useMemo(() => items.map(item => {
-                const isLow = item.quantity <= item.min_threshold;
-                return (
-                  <div key={item.id} className={`inventory-card ${isLow ? 'low-stock' : ''}`}>
-                    {isLow && (
-                      <div className="stock-alert">
-                        <AlertTriangle size={12} /> REPOSIÇÃO NECESSÁRIA
-                      </div>
-                    )}
-                    <h3 className="item-name">{item.name}</h3>
-                    <span className="item-category">{item.category}</span>
-
-                    <div className="item-stats">
-                      <div className="quantity-info">
-                        <span className={`quantity-value ${isLow ? 'danger' : 'success'}`}>{item.quantity}</span>
-                        <span className="unit-label">{item.unit}</span>
-                      </div>
-                      <div className="card-actions">
-                        <button
-                          onClick={() => setIsWithdrawing(isWithdrawing === item.id ? null : item.id)}
-                          className="withdraw-btn"
-                          title="Registrar Saída"
-                        >
-                          <ArrowDownCircle size={22} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="progress-shell">
-                      <div
-                        className={`progress-bar ${isLow ? 'bg-red' : 'bg-blue'}`}
-                        style={{ width: `${Math.min(100, (item.quantity / (item.min_threshold * 3 || 1)) * 100)}%` }}
-                      />
-                    </div>
-                    <div className="threshold-info">Mínimo: {item.min_threshold} {item.unit}</div>
-
-                    {isWithdrawing === item.id && (
-                      <div className="withdraw-overlay">
-                        <div className="withdraw-form">
-                          <h4>Retirar {item.name}</h4>
-                          <input
-                            type="number"
-                            className="withdraw-input"
-                            placeholder="Qtd."
-                            value={withdrawAmount}
-                            onChange={e => setWithdrawAmount(e.target.value)}
-                            autoFocus
-                          />
-                          <div className="withdraw-actions">
-                            <button onClick={() => setIsWithdrawing(null)} className="btn-cancel">Fechar</button>
-                            <button onClick={() => handleWithdraw(item)} className="btn-confirm">Baixar</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }), [items, isWithdrawing, withdrawAmount])}
+              {inventoryGrid}
             </div>
           )}
         </div>
