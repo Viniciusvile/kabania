@@ -348,17 +348,18 @@
    ============================================ */
 
 .km-modal {
-  background: #0b1120;
-  border: 1px solid rgba(0, 229, 255, 0.15);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   width: 500px;
   max-width: 95vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
   animation: km-appear 0.25s ease;
   overflow: hidden;
+  transition: var(--transition-theme);
 }
 
 @keyframes km-appear {
@@ -381,7 +382,7 @@
   gap: 0.5rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: var(--text-main);
   margin: 0;
 }
 
@@ -396,7 +397,7 @@
   transition: color 0.2s;
 }
 
-.km-modal-close:hover { color: #e2e8f0; }
+.km-modal-close:hover { color: var(--text-main); }
 
 .km-modal-body {
   padding: 1.25rem 1.5rem;
@@ -414,7 +415,7 @@
 
 .km-field label {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -426,15 +427,15 @@
 .km-field input,
 .km-field textarea,
 .km-field select {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  color: #e2e8f0;
+  color: var(--text-main);
   padding: 0.65rem 0.85rem;
   font-size: 0.85rem;
   outline: none;
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .km-field input:focus,
@@ -474,23 +475,23 @@
   gap: 0.4rem;
   padding: 0.3rem 0.65rem 0.3rem 0.35rem;
   border-radius: 30px;
-  border: 1.5px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-card);
   cursor: pointer;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .km-member-pill:hover {
-  border-color: rgba(0, 229, 255, 0.3);
-  color: #e2e8f0;
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
 }
 
 .km-member-pill.selected {
-  background: rgba(0, 229, 255, 0.1);
-  border-color: #00e5ff;
-  color: #e2e8f0;
+  background: var(--accent-cyan-dim);
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
 }
 
 .km-mp-avatar {
@@ -517,9 +518,9 @@
 }
 
 .km-btn-cancel {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: #94a3b8;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
   padding: 0.6rem 1.25rem;
   border-radius: 8px;
   font-size: 0.825rem;
@@ -527,7 +528,7 @@
   transition: all 0.2s;
 }
 
-.km-btn-cancel:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+.km-btn-cancel:hover { background: var(--bg-card); color: var(--text-main); }
 
 .km-btn-submit {
   background: #00e5ff;
@@ -542,7 +543,8 @@
 }
 
 .km-btn-submit:hover {
-  background: #00cde8;
+  background: var(--accent-cyan);
+  filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
@@ -560,11 +562,11 @@
 
 .km-select {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.65rem 0.85rem;
-  color: #e2e8f0;
+  color: var(--text-main);
   font-size: 0.85rem;
   outline: none;
   cursor: pointer;
