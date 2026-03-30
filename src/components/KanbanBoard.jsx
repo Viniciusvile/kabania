@@ -400,37 +400,58 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
   }, []);
 
-  // AI Analysis column watcher
+  // AI Analysis column watcher - Sequential processing to respect API quotas
   useEffect(() => {
-    // Prevent AI from triggering while the user is still dragging the card over the column
-    const unanalyzed = tasks.filter(t => 
-      t.columnId === 'ai' && 
-      !t.aiResponse && 
-      !t.isAiLoading && 
-      t.id !== activeTask?.id
-    );
-    if (unanalyzed.length === 0) return;
-    
-    unanalyzed.forEach(async (task) => {
-      // Set loading state locally
+    let isMounted = true;
+
+    const runAI = async () => {
+      const unanalyzed = tasks.filter(t => 
+        t.columnId === 'ai' && 
+        !t.aiResponse && 
+        !t.isAiLoading && 
+        t.id !== activeTask?.id
+      );
+
+      if (unanalyzed.length === 0) return;
+
+      // Process only the first one found to let the next Effect catch the rest
+      // This prevents multiple overlapping loops and respects the sequential nature
+      const task = unanalyzed[0];
+
+      if (!isMounted) return;
+
+      // Mark as loading to prevent other Effects from picking it up
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
-      
-      const response = await processTaskWithAI(task.desc || task.title, currentCompany?.id, true);
-      
-      // Update locally
-      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
-      
-      // Persist to database
-      const { error } = await supabase
-        .from('tasks')
-        .update({ ai_response: response })
-        .eq('id', task.id);
+
+      try {
+        const response = await processTaskWithAI(task.desc || task.title, currentCompany?.id, true);
         
-      if (error) {
-        console.error('Error persisting AI response:', error);
+        if (!isMounted) return;
+
+        // Update locally
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
+        
+        // Persist to database
+        const { error } = await supabase
+          .from('tasks')
+          .update({ ai_response: response })
+          .eq('id', task.id);
+          
+        if (error) console.error('Error persisting AI response:', error);
+
+        // Subtle delay before next card is picked up by the next Effect trigger
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      } catch (err) {
+        if (isMounted) {
+          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: 'Erro ao processar.' } : t));
+        }
       }
-    });
-  }, [tasks, activeTask]);
+    };
+
+    runAI();
+
+    return () => { isMounted = false; };
+  }, [tasks, activeTask, currentCompany?.id]);
 
   // Keep detail panel in sync with task updates
   useEffect(() => {

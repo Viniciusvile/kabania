@@ -67,12 +67,40 @@ async function getAuthorizedTags(companyId, hub = null) {
 }
 
 
+// Utility for delays (throttle/backoff)
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Generic retry wrapper with exponential backoff for 429 errors
+ */
+async function withRetry(fn, maxRetries = 3) {
+  let lastError;
+  for (let i = 1; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      const isQuotaError = error.message?.includes("429") || error.toString().includes("429");
+      
+      if (isQuotaError && i < maxRetries) {
+        const waitTime = i * 2000; // 2s, 4s, 6s...
+        console.warn(`[Gemini IA] Quota 429 atingida. Tentativa ${i}/${maxRetries}. Aguardando ${waitTime}ms...`);
+        await sleep(waitTime);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false, hub = null) {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    const authorizedTags = await getAuthorizedTags(companyId, hub);
-    
-    const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
+  return withRetry(async () => {
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const authorizedTags = await getAuthorizedTags(companyId, hub);
+      
+      const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
 
 IMPORTANTE: Existe um sistema de TAGS que controla quais assuntos podem ser respondidos.
 
@@ -97,19 +125,19 @@ Mensagem do Usuário:
 
 Resposta curta:`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    console.error("Erro na API do Gemini:", error);
-    
-    // Check if it is a 429 Rate Limit error
-    if (error.message && error.message.includes("429")) {
-      return "⚠️ Limite de requisições (Quota) atingido. Por favor, aguarde um momento e tente novamente.";
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      console.error("Erro na API do Gemini:", error);
+      
+      if (error.message && error.message.includes("429")) {
+        return "⚠️ Limite de requisições (Quota) atingido. Por favor, aguarde um momento e tente novamente.";
+      }
+      
+      throw error; // Rethrow to let withRetry handle it if it's not a 429 after retries or other error
     }
-    
-    return `Ocorreu um erro: ${error.message || error.toString()}.`;
-  }
+  });
 }
 
 export async function analyzeProductivity(data, companyName = "Empresa", companyId = null, hub = 'corporativo') {
