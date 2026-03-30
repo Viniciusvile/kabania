@@ -16,12 +16,13 @@ import ShiftsModule from './components/Shifts/ShiftsModule';
 import BusinessManagement from './components/BusinessManagement';
 import InventoryModule from './components/Inventory/InventoryModule';
 import AIInsights from './components/AIInsights';
+import WorkspaceHub from './components/WorkspaceHub/WorkspaceHub';
 import SLADashboard from './components/SLADashboard';
-import Academy from './components/Academy';
 import UserProfile from './components/UserProfile';
 import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import ClientPortal from './components/Portal/ClientPortal';
+import DigitalTwinModule from './components/DigitalTwin/DigitalTwinModule';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
@@ -86,9 +87,12 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentView, setCurrentView] = useState(() => 
-    localStorage.getItem('synapseCurrentView') || 'kanban'
-  );
+  const [currentView, setCurrentView] = useState(() => {
+    const saved = localStorage.getItem('synapseCurrentView');
+    if (saved === 'kanban' || saved === 'academy') return 'workspace_hub';
+    return saved || 'workspace_hub';
+  });
+  const [workspaceTab, setWorkspaceTab] = useState('kanban');
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
   );
@@ -606,7 +610,10 @@ function App() {
                   setIsSidebarCollapsed(!isSidebarCollapsed);
                 }
               }}
+              currentView={currentView}
               onViewChange={setCurrentView}
+              workspaceTab={workspaceTab}
+              setWorkspaceTab={setWorkspaceTab}
               searchQuery={searchQuery}
               onSearchChange={(e) => setSearchQuery(e.target.value)}
               currentUser={currentUser}
@@ -619,29 +626,24 @@ function App() {
               selectedProjectId={selectedProjectId}
               onProjectChange={(id) => {
                 setSelectedProjectId(id);
-                setCurrentView('kanban');
+                setCurrentView('workspace_hub');
               }}
               onAddProject={handleAddProject}
               onRemoveProject={handleRemoveProject}
             />
             <div className="content-scroll" key={currentView}>
-              {currentView === 'kanban' ? (
-                <>
-                  <DashboardHeader 
-                    projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'}
-                    searchQuery={searchQuery}
-                    onSearchChange={(e) => setSearchQuery(e.target.value)}
-                    onRefresh={() => window.location.reload()}
-                    viewMode="grid"
-                    onFilterToggle={() => {}}
-                  />
-                  <KanbanBoard
-                    searchQuery={searchQuery}
-                    currentUser={currentUser}
-                    currentCompany={currentCompany}
-                    projectId={selectedProjectId}
-                  />
-                </>
+              {currentView === 'workspace_hub' ? (
+                <WorkspaceHub
+                  workspaceTab={workspaceTab}
+                  searchQuery={searchQuery}
+                  onSearchChange={(e) => setSearchQuery(e.target.value)}
+                  projectName={projects.find(p => p.id === selectedProjectId)?.name || 'Projeto'}
+                  projects={projects}
+                  selectedProjectId={selectedProjectId}
+                  currentUser={currentUser}
+                  currentCompany={currentCompany}
+                  userRole={userRole}
+                />
               ) : currentView === 'knowledge' ? (
                 <KnowledgeBase 
                   currentUser={currentUser} 
@@ -674,12 +676,12 @@ function App() {
                 <AIInsights currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'sla_dashboard' ? (
                 <SLADashboard currentCompany={currentCompany} currentUser={currentUser} />
-              ) : currentView === 'academy' ? (
-                <Academy currentCompany={currentCompany} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'inventory' ? (
                 <InventoryModule companyId={currentCompany?.id} currentUser={currentUser} userRole={userRole} />
+              ) : currentView === 'digital_twin' ? (
+                <DigitalTwinModule currentCompany={currentCompany} />
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
               ) : currentView === 'settings' ? (

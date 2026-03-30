@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu, Search, Bell, ChevronDown, Check, User, Settings,
   LogOut, FileText, Crown, Shield, BellRing, CheckCheck,
-  AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X
+  AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X,
+  LayoutGrid, GraduationCap
 } from 'lucide-react';
+import './WorkspaceHub/WorkspaceHub.css';
 import {
   fetchNotifications, markAsRead, subscribeToNotifications
 } from '../services/notificationService';
@@ -23,7 +25,7 @@ export default function TopBar({
   currentUser, currentCompany, userRole, onLogout, 
   theme, onToggleTheme,
   projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject,
-  onViewChange,
+  onViewChange, currentView, workspaceTab, setWorkspaceTab,
   profileData: initialProfileData
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -177,10 +179,29 @@ export default function TopBar({
       </div>
 
       <div className="topbar-right">
-        <div className="search-bar hidden sm:flex">
-          <Search size={16} className="text-muted" />
-          <input type="text" placeholder="Buscar tarefas..." value={searchQuery} onChange={onSearchChange} />
-        </div>
+        {currentView === 'workspace_hub' ? (
+          <div className="workspace-tabs-premium topbar-integrated-tabs" style={{ padding: '4px', transform: 'scale(0.85)', transformOrigin: 'right center', marginRight: 'auto' }}>
+            <button 
+              className={`ws-tab-btn ${workspaceTab === 'kanban' ? 'active' : ''}`}
+              onClick={() => setWorkspaceTab?.('kanban')}
+              style={{ padding: '6px 16px' }}
+            >
+              <LayoutGrid size={16} /> <span className="hidden md:inline">Kanban</span>
+            </button>
+            <button 
+              className={`ws-tab-btn ${workspaceTab === 'academy' ? 'active' : ''}`}
+              onClick={() => setWorkspaceTab?.('academy')}
+              style={{ padding: '6px 16px' }}
+            >
+              <GraduationCap size={16} /> <span className="hidden md:inline">Academy</span>
+            </button>
+          </div>
+        ) : (
+          <div className="search-bar hidden sm:flex">
+            <Search size={16} className="text-muted" />
+            <input type="text" placeholder="Buscar tarefas..." value={searchQuery || ''} onChange={onSearchChange} />
+          </div>
+        )}
 
         <div className="project-selector" onClick={() => toggleDropdown('project')}>
           <span>{selectedProject?.name || 'Selecionar Projeto'}</span>

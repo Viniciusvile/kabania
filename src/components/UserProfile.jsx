@@ -218,24 +218,26 @@ export default function UserProfile({ currentUser, currentCompany, userRole, onP
             <div className="profile-info-column">
               <div className="form-group">
                 <label className="form-label">Empresa Atual</label>
-                <div className="account-section" style={{ padding: '1rem' }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent font-bold">
-                      {currentCompany?.name?.[0].toUpperCase() || 'C'}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">{currentCompany?.name || 'Nenhuma Empresa'}</p>
-                      <p className="text-[11px] text-muted capitalize">{userRole === 'admin' ? 'Administrador' : 'Membro da Equipe'}</p>
-                    </div>
+                <div className="settings-card" style={{ cursor: 'default' }}>
+                  <div className="inv-history-icon-box" style={{ background: 'var(--accent-cyan-dim)', color: 'var(--accent-cyan)' }}>
+                    {currentCompany?.name?.[0].toUpperCase() || 'C'}
+                  </div>
+                  <div>
+                    <h4 className="settings-item" style={{ border: 'none', background: 'transparent', padding: 0, fontSize: '1rem', fontWeight: 800 }}>
+                      {currentCompany?.name || 'Nenhuma Empresa'}
+                    </h4>
+                    <p className="settings-card-title text-sm capitalize mt-1">
+                      {userRole === 'admin' ? 'Administrador' : 'Membro da Equipe'}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="form-group">
                 <label className="form-label">Status da Conta</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                  <span className="text-sm text-white font-medium">Ativa e Verificada</span>
+                <div className="settings-card" style={{ cursor: 'default', background: 'transparent', borderColor: 'transparent', paddingLeft: 0 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 10px #22c55e' }}></div>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>Ativa e Verificada</span>
                 </div>
               </div>
             </div>

@@ -15,7 +15,7 @@ export default function UserSettings({ theme, onToggleTheme }) {
       <div className="space-y-6">
         {/* Appearance Section */}
         <section className="account-section">
-          <div className="flex items-center gap-2 mb-6 text-white font-bold">
+          <div className="settings-section-title">
             <Sun size={18} className="text-accent" /> Aparência
           </div>
           <div className="settings-item">
@@ -25,7 +25,7 @@ export default function UserSettings({ theme, onToggleTheme }) {
             </div>
             <button 
               onClick={onToggleTheme}
-              className="px-4 py-2 bg-accent/10 border border-accent/20 rounded-lg text-accent hover:bg-accent/20 transition-all font-bold text-xs flex items-center gap-2"
+              className="btn-premium btn-premium-secondary" style={{ padding: '0.6rem 1rem', fontSize: '0.8rem' }}
             >
               {theme === 'dark' ? <><Moon size={14} /> Modo Escuro</> : <><Sun size={14} /> Modo Claro</>}
             </button>
@@ -34,7 +34,7 @@ export default function UserSettings({ theme, onToggleTheme }) {
 
         {/* Notifications Section */}
         <section className="account-section">
-          <div className="flex items-center gap-2 mb-6 text-white font-bold">
+          <div className="settings-section-title">
             <Bell size={18} className="text-accent" /> Notificações
           </div>
           <div className="settings-list">
@@ -58,22 +58,22 @@ export default function UserSettings({ theme, onToggleTheme }) {
 
         {/* Security / System Section */}
         <section className="account-section">
-          <div className="flex items-center gap-2 mb-6 text-white font-bold">
+          <div className="settings-section-title">
             <Shield size={18} className="text-accent" /> Segurança e Sistema
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button className="flex items-center gap-3 p-4 bg-white/3 rounded-xl border border-white/5 hover:border-accent/40 transition-all text-left group">
-              <Globe size={18} className="text-muted group-hover:text-accent" />
+          <div className="settings-cards-grid">
+            <button className="settings-card">
+              <Globe size={18} className="settings-card-icon" />
               <div>
-                <p className="text-[10px] font-bold text-white uppercase tracking-tighter">Idioma</p>
-                <p className="text-sm text-muted">Português (Brasil)</p>
+                <p className="settings-card-subtitle">Idioma</p>
+                <p className="settings-card-title">Português (Brasil)</p>
               </div>
             </button>
-            <button className="flex items-center gap-3 p-4 bg-white/3 rounded-xl border border-white/5 hover:border-accent/40 transition-all text-left group">
-              <Smartphone size={18} className="text-muted group-hover:text-accent" />
+            <button className="settings-card">
+              <Smartphone size={18} className="settings-card-icon" />
               <div>
-                <p className="text-[10px] font-bold text-white uppercase tracking-tighter">Sessões Ativas</p>
-                <p className="text-sm text-muted">Gerenciar dispositivos</p>
+                <p className="settings-card-subtitle">Sessões Ativas</p>
+                <p className="settings-card-title">Gerenciar dispositivos</p>
               </div>
             </button>
           </div>

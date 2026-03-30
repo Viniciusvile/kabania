@@ -1,17 +1,6 @@
 import React from 'react';
-import { Briefcase, Flame, Ticket, Plus, Layout, CheckCircle, Clock, MapPin, Calendar } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
-
-// 🕒 DEFINIÇÃO DOS SLOTS DE TEMPO (08:00 às 18:30)
-const TIME_SLOTS = [];
-for (let hour = 8; hour <= 18; hour++) {
-  TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:00`);
-  if (hour < 18 || (hour === 18 && false)) { // Stop at 18:30 as requested
-    TIME_SLOTS.push(`${hour.toString().padStart(2, '0')}:30`);
-  }
-}
-// Add 18:30 manually to be precise
-if (!TIME_SLOTS.includes('18:30')) TIME_SLOTS.push('18:30');
 
 export default function ShiftGrid({ 
   shifts, 
@@ -42,88 +31,68 @@ export default function ShiftGrid({
   };
 
   return (
-    <div className="weekly-grid-pixel timeline-mode">
-      {/* 🕒 EIXO DE TEMPO (SIDEBAR) */}
-      <div className="time-axis-pixel">
-        <div className="axis-header-spacer" />
-        {TIME_SLOTS.map(time => (
-          <div key={time} className="time-label">
-            {time}
-          </div>
-        ))}
-      </div>
-
-      <div className="days-container-pixel">
+    <div className="weekly-grid-pixel timeline-mode" style={{ minHeight: 'auto', gap: '16px', padding: '16px' }}>
+      <div className="days-container-pixel" style={{ gap: '16px', padding: 0 }}>
         {weekDays.map(day => {
           const dayShifts = shifts.filter(s => {
             const d = new Date(s.start_time);
             return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
           });
 
+          // Sort by start time so they stack neatly
+          dayShifts.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
           return (
-            <div key={day.date.toISOString()} className="grid-column-pixel">
-              <header className="day-header-pixel">
-                <span className="day-number">{day.dayNum}</span>
+            <div 
+              key={day.date.toISOString()} 
+              className="grid-column-pixel premium-kanban-column"
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                e.currentTarget.classList.add('drag-over-column');
+              }}
+              onDragLeave={(e) => {
+                e.currentTarget.classList.remove('drag-over-column');
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('drag-over-column');
+                
+                const activityData = e.dataTransfer.getData('activity');
+                const shiftId = e.dataTransfer.getData('shiftId');
+
+                if (activityData) {
+                  const activity = JSON.parse(activityData);
+                  onDropActivity(activity, day.date, "08:00");
+                } else if (shiftId) {
+                  onMoveShift(shiftId, day.date, null);
+                }
+              }}
+            >
+              <header className="day-header-pixel premium-kanban-header">
+                <span className="day-number premium-day-num">{day.dayNum}</span>
                 <span className="day-name">{day.label}</span>
+                <div className="day-shift-count">
+                  {dayShifts.length}
+                </div>
               </header>
 
-              <div className="day-slots-container">
-                {/* 🎯 DROP SLOTS (BACKGROUND) */}
-                {TIME_SLOTS.map(time => {
-                  const [slotHour, slotMin] = time.split(':').map(Number);
-                  
-                  // Filtra shifts que começam neste exato slot (ou no intervalo de 30min dele)
-                  const slotShifts = dayShifts.filter(s => {
-                    const start = new Date(s.start_time);
-                    const h = start.getHours();
-                    const m = start.getMinutes();
-                    // Garante que o shift caia no slot correto (ex: 08:00 a 08:29 cai no slot 08:00)
-                    return h === slotHour && m >= slotMin && m < (slotMin + 30);
-                  });
-
-                  return (
-                    <div 
-                      key={time} 
-                      className="time-slot-row"
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        e.currentTarget.classList.add('drag-over');
-                      }}
-                      onDragLeave={(e) => {
-                        e.currentTarget.classList.remove('drag-over');
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.currentTarget.classList.remove('drag-over');
-                        
-                        const activityData = e.dataTransfer.getData('activity');
-                        const shiftId = e.dataTransfer.getData('shiftId');
-
-                        if (activityData) {
-                          const activity = JSON.parse(activityData);
-                          onDropActivity(activity, day.date, time);
-                        } else if (shiftId) {
-                          onMoveShift(shiftId, day.date, time);
-                        }
-                      }}
-                    >
-                      {/* Linha guia visual */}
-                      <div className="slot-guide" />
-                      
-                      {/* Renderiza os cards deste slot */}
-                      {slotShifts.map(shift => (
-                        <EscalaCard 
-                          key={shift.id} 
-                          shift={shift} 
-                          onAddEmployee={() => onAddEmployee(shift.id)} 
-                          onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
-                          onCheckin={() => onCheckin(shift)}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
+              <div className="day-schedule-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                {dayShifts.length === 0 ? (
+                  <div className="empty-day-pixel" style={{ border: '2px dashed rgba(255,255,255,0.05)', borderRadius: '12px', opacity: 0.5 }}>
+                    LIVRE
+                  </div>
+                ) : (
+                  dayShifts.map(shift => (
+                    <EscalaCard 
+                      key={shift.id} 
+                      shift={shift} 
+                      onAddEmployee={() => onAddEmployee(shift.id)} 
+                      onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
+                      onCheckin={() => onCheckin(shift)}
+                    />
+                  ))
+                )}
               </div>
             </div>
           );
@@ -142,106 +111,104 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin }) {
   const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const locationName = shift.work_environments?.name || 'Local Não Definido';
-  const activityName = shift.work_activities?.name || 'Atividade';
+  const activityName = shift.work_activities?.name || 'Nenhuma Atividade Associada';
 
-  // LOGICA DE POSICIONAMENTO DINÂMICO NO SLOT
-  const start = new Date(shift.start_time);
-  const startHour = start.getHours();
-  const startMinutes = start.getMinutes();
-  
-  // Offset a partir das 08:00
-  // Cada slot de 30min tem uma altura fixa (definida no CSS)
-  // Vamos usar o style para "encaixar" no grid se possível, ou apenas margin
-  
   return (
     <div 
-      className={`escala-card-pixel ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
+      className={`escala-card-pixel premium-shift-card ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData('shiftId', shift.id);
         e.dataTransfer.effectAllowed = 'move';
       }}
     >
-      {/* 📍 HEADER: Location + Time */}
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="location-name flex items-center gap-2 text-white font-bold text-sm">
-            <MapPin size={14} className="text-accent" />
-            {locationName}
-          </div>
+      {/* Indicador de Status Glow */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
+        background: isProblem ? 'var(--escala-danger)' : inProgress ? 'var(--escala-success)' : isConcluded ? 'var(--text-muted)' : 'var(--accent-cyan)',
+        boxShadow: `0 0 15px ${isProblem ? 'var(--escala-danger)' : inProgress ? 'var(--escala-success)' : 'transparent'}`
+      }} />
+
+      {/* ⏰ TIME BADGE */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="premium-time-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '8px' }}>
+          <Clock size={12} className="text-accent-cyan" /> 
+          <span className="premium-time-text" style={{ fontSize: '11px', fontWeight: 'bold' }}>{startTime} - {endTime}</span>
         </div>
-        <div className="shift-time flex flex-col items-end gap-0.5 opacity-80 text-[10px] font-semibold">
-           <div className="flex items-center gap-1">
-             <Clock size={12} /> {startTime}
-           </div>
+        <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', background: isProblem ? 'rgba(239, 68, 68, 0.1)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'var(--badge-bg, rgba(255,255,255,0.05))', color: isProblem ? '#ef4444' : inProgress ? '#10b981' : 'var(--text-muted)' }}>
+          {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
         </div>
       </div>
 
-      {/* 🏷️ ACTIVITY PILL (SMALLER VERSION FOR TIME VIEW) */}
-      <div className="mb-2">
-        <div className="activity-pill-premium" style={{ padding: '4px 8px', fontSize: '0.65rem' }}>
-          <Briefcase size={10} className="icon-accent" /> 
-          {activityName || 'Atividade'}
+      {/* 📍 LOCATION & ACTIVITY */}
+      <div>
+        <div className="premium-location-text" style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.01em', marginBottom: '6px' }}>
+          <MapPin size={16} className="text-accent-cyan" />
+          {locationName}
+        </div>
+        <div className="activity-pill-premium" style={{ display: 'inline-flex', padding: '4px 10px', fontSize: '10px' }}>
+          <Briefcase size={12} className="icon-accent" /> 
+          {activityName}
         </div>
       </div>
 
-      {/* 👥 PERSONNEL LIST (LISTA COMPACTA) */}
-      <div className="border-t border-dashed border-white/10 pt-2 mb-2">
-        <div className="employee-list-pixel">
-          {shift.assigned_employees?.slice(0, 1).map(emp => (
-            <div key={emp.assignment_id || emp.id} className="employee-item-premium p-1.5 rounded-lg bg-white/5 flex items-center gap-2 mb-1 last:mb-0">
-              <div className="emp-avatar-small" style={{ width: '24px', height: '24px', fontSize: '10px' }}>
+      {/* 👥 PERSONNEL LIST */}
+      <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {shift.assigned_employees?.map(emp => (
+            <div key={emp.assignment_id || emp.id} className="premium-emp-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: '10px' }}>
+              <div className="emp-avatar-small" style={{ width: '26px', height: '26px', fontSize: '10px', borderRadius: '8px' }}>
                 {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
               </div>
-              <div className="flex-1 min-w-0">
-                 <div className="employee-name-premium text-xs font-bold truncate text-white">{emp.name}</div>
+              <div className="premium-emp-name" style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                {emp.name}
               </div>
             </div>
           ))}
           {!shift.assigned_employees?.length && (
-            <button className="add-employee-trigger-premium w-full flex items-center justify-start gap-1 p-1 rounded text-white/40 hover:text-white transition-all text-[10px] font-semibold" onClick={onAddEmployee}>
-              <Plus size={12} /> Alocar
+            <button 
+              className="glow-btn-ghost" 
+              onClick={onAddEmployee}
+              style={{ padding: '8px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', borderRadius: '10px', borderStyle: 'dashed' }}
+            >
+              <Plus size={14} /> Atribuir Colaborador
             </button>
           )}
         </div>
       </div>
 
-      {/* ⚙️ STATUS CONTROLS (COMPACT) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        
+      {/* ⚙️ STATUS CONTROLS */}
+      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
         {!inProgress && !isConcluded && (
           <button
             onClick={onCheckin}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '4px',
-              background: 'rgba(0, 229, 255, 0.1)',
-              border: '1px solid rgba(0, 229, 255, 0.4)',
-              color: 'var(--accent-cyan)',
-              padding: '4px 8px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase', cursor: 'pointer'
-            }}
+            className="glow-btn-primary"
+            style={{ flex: 1, padding: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }}
           >
-            <MapPin size={12} /> Bater Ponto
+            <MapPin size={14} /> Bater Ponto
           </button>
         )}
 
         {inProgress && (
           <button
             onClick={() => !isConcluded && onUpdateStatus('completed')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '4px',
-            background: isConcluded ? 'rgba(16, 185, 129, 0.15)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.04)',
-            border: isConcluded ? '1px solid rgba(16, 185, 129, 0.4)' : inProgress ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(255,255,255,0.1)',
-            color: isConcluded || inProgress ? '#10b981' : 'rgba(255,255,255,0.4)',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            fontSize: '0.6rem',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            cursor: isConcluded ? 'default' : 'pointer'
-          }}
-        >
-          <CheckCircle size={12} /> {isConcluded ? 'OK' : 'Concluir'}
-        </button>
+            style={{
+              flex: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              background: isConcluded ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.2)',
+              border: '1px solid rgba(16, 185, 129, 0.5)',
+              color: '#10b981',
+              padding: '10px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              cursor: isConcluded ? 'default' : 'pointer',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
+            }}
+          >
+            <CheckCircle size={14} /> {isConcluded ? 'Concluído' : 'Finalizar Turno'}
+          </button>
         )}
       </div>
     </div>

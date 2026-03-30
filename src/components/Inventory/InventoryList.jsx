@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Package, AlertTriangle, ArrowDownCircle, LayoutGrid, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -92,7 +92,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
             </div>
           ) : (
             <div className="inventory-grid">
-              {items.map(item => {
+              {useMemo(() => items.map(item => {
                 const isLow = item.quantity <= item.min_threshold;
                 return (
                   <div key={item.id} className={`inventory-card ${isLow ? 'low-stock' : ''}`}>
@@ -149,7 +149,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                     )}
                   </div>
                 );
-              })}
+              }), [items, isWithdrawing, withdrawAmount])}
             </div>
           )}
         </div>
@@ -210,7 +210,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                   <input
                     required
                     type="text"
-                    className="form-input-premium"
+                    className="premium-input-field"
                     placeholder="Ex: Cloro Líquido, Resma A4..."
                     value={newItem.name}
                     onChange={e => setNewItem({ ...newItem, name: e.target.value })}
@@ -224,7 +224,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                   <div className="input-with-icon">
                     <LayoutGrid size={14} className="input-icon" />
                     <select
-                      className="form-input-premium"
+                      className="premium-input-field"
                       value={newItem.category}
                       onChange={e => setNewItem({ ...newItem, category: e.target.value })}
                     >
@@ -241,7 +241,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                   <div className="input-with-icon">
                     <ArrowDownCircle size={14} className="input-icon" />
                     <select
-                      className="form-input-premium"
+                      className="premium-input-field"
                       value={newItem.unit}
                       onChange={e => setNewItem({ ...newItem, unit: e.target.value })}
                     >
@@ -266,7 +266,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                     required
                     type="number"
                     min="0"
-                    className="form-input-premium"
+                    className="premium-input-field"
                     value={newItem.quantity}
                     onChange={e => setNewItem({ ...newItem, quantity: e.target.value })}
                     style={{ paddingLeft: '1.25rem' }}
@@ -279,7 +279,7 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
                       required
                       type="number"
                       min="1"
-                      className="form-input-premium alert-border"
+                      className="premium-input-field alert-border"
                       value={newItem.min_threshold}
                       onChange={e => setNewItem({ ...newItem, min_threshold: e.target.value })}
                       style={{ paddingLeft: '1.25rem' }}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck, GraduationCap } from 'lucide-react';
+import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck, GraduationCap, Map } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
@@ -29,11 +29,11 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
 
       <nav className="sidebar-nav">
         <div
-          className={`nav-item ${currentView === 'kanban' ? 'active' : ''}`}
-          onClick={() => onViewChange('kanban')}
+          className={`nav-item ${currentView === 'workspace_hub' ? 'active' : ''}`}
+          onClick={() => onViewChange('workspace_hub')}
         >
-          <Grid size={20} />
-          <span>Projetos</span>
+          <Grid size={20} className="text-indigo-400" />
+          <span>Workspace</span>
         </div>
 
         <div
@@ -112,13 +112,7 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           <span>Base de Conhecimento</span>
         </div>
 
-        <div
-          className={`nav-item ${currentView === 'academy' ? 'active' : ''}`}
-          onClick={() => onViewChange('academy')}
-        >
-          <GraduationCap size={20} className="text-purple-400" />
-          <span>Kabania Academy</span>
-        </div>
+
 
         <div
           className={`nav-item ${currentView === 'inventory' ? 'active' : ''}`}
@@ -126,6 +120,14 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
         >
           <PackageSearch size={20} className="text-blue-400" />
           <span>Estoque Inteligente</span>
+        </div>
+
+        <div
+          className={`nav-item ${currentView === 'digital_twin' ? 'active' : ''}`}
+          onClick={() => onViewChange('digital_twin')}
+        >
+          <Map size={20} className="text-cyan-400" />
+          <span>Gêmeo Digital</span>
         </div>
 
         {/* Admin Settings */}

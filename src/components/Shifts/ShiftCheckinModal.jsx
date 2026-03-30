@@ -155,16 +155,18 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
              </div>
           ) : (
             <>
-              <div className="inventory-tabs mb-6 w-full flex">
+              <div className="inventory-tabs w-full flex" style={{ display: 'flex', gap: '8px', marginBottom: '36px', background: 'rgba(255, 255, 255, 0.03)', padding: '8px', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
                 <button 
-                  className={`tab-btn flex-1 ${activeTab === 'gps' ? 'active' : ''}`}
+                  className={`tab-btn flex-1 flex justify-center items-center gap-2`}
                   onClick={() => setActiveTab('gps')}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'gps' ? 'rgba(0, 229, 255, 0.1)' : 'transparent', color: activeTab === 'gps' ? 'var(--accent-cyan)' : 'var(--text-muted)', border: activeTab === 'gps' ? '1px solid rgba(0, 229, 255, 0.2)' : '1px solid transparent', boxShadow: activeTab === 'gps' ? '0 4px 12px rgba(0, 229, 255, 0.1)' : 'none' }}
                 >
                   <MapPin size={18} /> GPS Check-in
                 </button>
                 <button 
-                  className={`tab-btn flex-1 ${activeTab === 'qr' ? 'active' : ''}`}
+                  className={`tab-btn flex-1 flex justify-center items-center gap-2`}
                   onClick={() => setActiveTab('qr')}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'qr' ? 'rgba(167, 139, 250, 0.1)' : 'transparent', color: activeTab === 'qr' ? '#a78bfa' : 'var(--text-muted)', border: activeTab === 'qr' ? '1px solid rgba(167, 139, 250, 0.2)' : '1px solid transparent', boxShadow: activeTab === 'qr' ? '0 4px 12px rgba(167, 139, 250, 0.1)' : 'none' }}
                 >
                   <QrCode size={18} /> QR Code
                 </button>
@@ -178,33 +180,36 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
               )}
 
               {activeTab === 'gps' && (
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-24 h-24 rounded-3xl bg-accent-cyan/10 border border-accent-cyan/20 flex items-center justify-center relative mb-6 shadow-2xl shadow-accent-cyan/10">
-                     <MapPin size={44} className="text-accent-cyan" />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '28px' }}>
+                  <div style={{ padding: '28px', borderRadius: '50%', background: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: '0 10px 30px rgba(0, 229, 255, 0.1)' }}>
+                     <MapPin size={46} className="text-accent-cyan" strokeWidth={1.5} />
                      {loading && (
-                       <div className="absolute inset-[-4px] border-2 border-transparent border-t-accent-cyan rounded-3xl animate-spin"></div>
+                       <div className="absolute inset-[-4px] border-2 border-transparent border-t-accent-cyan rounded-3xl animate-spin" style={{ position: 'absolute', top: '-4px', left: '-4px', right: '-4px', bottom: '-4px', border: '2px solid transparent', borderTopColor: 'var(--accent-cyan)', borderWidth: '2px', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                      )}
-                     <div className="pulse-dot absolute -top-1 -right-1"></div>
+                     <div className="pulse-dot" style={{ position: 'absolute', top: '8px', right: '8px', width: '12px', height: '12px', background: 'var(--accent-cyan)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent-cyan)' }}></div>
                   </div>
                   
-                  <h4 className="text-white font-bold text-xl tracking-tight mb-2">Validação por Geofencing</h4>
-                  <p className="text-sm text-white/50 mb-8 max-w-[280px]">
-                    O sistema usará seu GPS para garantir que você está dentro do raio do Ambiente de Trabalho.
-                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h4 style={{ color: 'white', fontWeight: 'bold', fontSize: '1.25rem', margin: 0, letterSpacing: '-0.02em' }}>Validação por Geofencing</h4>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', maxWidth: '280px', margin: 0, lineHeight: 1.6 }}>
+                      O sistema usará o GPS para garantir que você está perto do <strong style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Ambiente de Trabalho</strong>.
+                    </p>
+                  </div>
                   
                   <button 
                     onClick={getLocationAndCheckin} 
                     disabled={loading}
-                    className="inv-submit-btn py-4 text-lg w-full"
+                    className="glow-btn-primary"
+                    style={{ padding: '16px', fontSize: '1.05rem', width: '100%', display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px', borderRadius: '16px', letterSpacing: '0.02em' }}
                   >
-                    {loading ? <><Loader2 size={24} className="animate-spin" /> Verificando Local...</> : 'Bater Ponto Agora'}
+                    {loading ? <><Loader2 size={24} className="animate-spin" /> Verificando...</> : 'Bater Ponto Agora'}
                   </button>
                 </div>
               )}
 
               {activeTab === 'qr' && (
-                <div className="text-center">
-                   <p className="text-sm text-white/60 mb-4">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                   <p style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
                      Aponte a câmera para o QR Code afixado no Ambiente de Trabalho.
                    </p>
                    <div id="reader" className="rounded-xl overflow-hidden border border-white/10 bg-black/40"></div>

@@ -72,29 +72,31 @@ export default function InventoryModule({ companyId, currentUser, userRole }) {
           </p>
         </div>
         
-        <div className="header-actions">
-          <button className="btn btn-secondary" onClick={fetchItems}>
-            Atualizar
-          </button>
-        </div>
-      </div>
+        <div className="header-actions-inline" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          {/* Tabs - Movidas para alinhamento com o botão Atualizar */}
+          <div className="inventory-tabs" style={{ margin: 0 }}>
+            <button
+              className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
+              onClick={() => setActiveTab('list')}
+            >
+              <LayoutGrid size={20} />
+              Inventário Atual
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'transactions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('transactions')}
+            >
+              <ListMinus size={20} />
+              Movimentações
+            </button>
+          </div>
 
-      {/* 2. Tabs */}
-      <div className="inventory-tabs">
-        <button
-          className={`tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-          onClick={() => setActiveTab('list')}
-        >
-          <LayoutGrid size={20} />
-          Inventário Atual
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'transactions' ? 'active' : ''}`}
-          onClick={() => setActiveTab('transactions')}
-        >
-          <ListMinus size={20} />
-          Movimentações
-        </button>
+          <div className="header-actions">
+            <button className="btn btn-secondary" onClick={fetchItems}>
+              Atualizar
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 3. Content Area */}

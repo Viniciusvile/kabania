@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX, Wand2 } from 'lucide-react';
 import { addEmployeeToShift, moveShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
@@ -50,19 +50,39 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     };
   });
 
-  const filteredShifts = shifts.filter(s => {
-    if (filterStatus === 'ativos') return s.status === 'in_progress' || s.status === 'open';
-    if (filterStatus === 'concluidos') return s.status === 'concluded';
-    return true;
-  }).filter(s => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return s.work_environments?.name?.toLowerCase().includes(q) || 
-           s.work_activities?.name?.toLowerCase().includes(q);
-  });
+  const filteredShifts = useMemo(() => {
+    return shifts.filter(s => {
+      if (filterStatus === 'ativos') return s.status === 'in_progress' || s.status === 'open';
+      if (filterStatus === 'concluidos') return s.status === 'concluded';
+      return true;
+    }).filter(s => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return s.work_environments?.name?.toLowerCase().includes(q) || 
+             s.work_activities?.name?.toLowerCase().includes(q);
+    });
+  }, [shifts, filterStatus, searchQuery]);
 
-  const fieldWorkers = employees.filter(e => e.is_external === true);
-  const staffMembers = employees.filter(e => e.is_external !== true);
+  const fieldWorkers = useMemo(() => employees.filter(e => e.is_external === true), [employees]);
+  const staffMembers = useMemo(() => employees.filter(e => e.is_external !== true), [employees]);
+
+  // Optimized Search Filters for the Modal
+  const { filteredFieldWorkers, filteredStaffMembers } = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    
+    if (!term) {
+      return { filteredFieldWorkers: fieldWorkers, filteredStaffMembers: staffMembers };
+    }
+
+    const matchEmp = (e) => 
+      e.name.toLowerCase().includes(term) || 
+      (e.skills && e.skills.some(s => s.toLowerCase().includes(term)));
+
+    return {
+      filteredFieldWorkers: fieldWorkers.filter(matchEmp),
+      filteredStaffMembers: staffMembers.filter(e => e.name.toLowerCase().includes(term))
+    };
+  }, [fieldWorkers, staffMembers, searchTerm]);
 
   const handleAddEmployee = async (profileId, shiftId = null, isExternal = false) => {
     const targetId = shiftId || assignmentModal.shiftId;
@@ -417,7 +437,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                     <HardHat size={18} />
                     <h4>Colaboradores de Campo</h4>
                     <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
-                      {fieldWorkers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length}
+                      {filteredFieldWorkers.length}
                     </span>
                   </div>
                   {expandedCategory === 'field' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -425,9 +445,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 
                 <div className={`accordion-content-premium ${expandedCategory === 'field' ? 'active' : ''}`}>
                   <div className="employee-grid-select">
-                    {fieldWorkers
-                      .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()) || e.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase())))
-                      .map(emp => (
+                    {filteredFieldWorkers.map(emp => (
                       <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
                         <div className="emp-avatar-premium">
                           {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
@@ -440,7 +458,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                         </div>
                       </div>
                     ))}
-                    {fieldWorkers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                    {filteredFieldWorkers.length === 0 && (
                       <div className="empty-state-premium">
                         <UserX className="empty-state-icon" size={32} />
                         <p>Nenhum colaborador de campo encontrado.</p>
@@ -460,7 +478,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                     <Users size={18} />
                     <h4>Membros da Equipe</h4>
                     <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
-                      {staffMembers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length}
+                      {filteredStaffMembers.length}
                     </span>
                   </div>
                   {expandedCategory === 'staff' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -468,9 +486,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 
                 <div className={`accordion-content-premium ${expandedCategory === 'staff' ? 'active' : ''}`}>
                   <div className="employee-grid-select">
-                    {staffMembers
-                      .filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map(emp => (
+                    {filteredStaffMembers.map(emp => (
                       <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
                         <div className="emp-avatar-premium">
                           {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
@@ -481,7 +497,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                         </div>
                       </div>
                     ))}
-                    {staffMembers.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 && (
+                    {filteredStaffMembers.length === 0 && (
                       <div className="empty-state-premium">
                         <UserX className="empty-state-icon" size={32} />
                         <p>Nenhum membro da equipe encontrado.</p>
@@ -573,16 +589,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 </div>
               </div>
 
-              <div className="ai-suggestion-box mb-8 p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+              <div className="ai-suggestion-box mb-8 flex items-center justify-between" style={{ padding: '1.25rem' }}>
                 <div className="flex items-center gap-3">
                   <div className="pulse-ai-dot"></div>
-                  <p className="text-xs text-white/60">Deseja que a IA sugira o melhor horário?</p>
+                  <p className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Deseja que a IA sugira o melhor horário?</p>
                 </div>
                 <button 
                   type="button" 
                   className="btn-ask-brain mt-0"
                   onClick={handleSuggestTimes}
                 >
+                  <Wand2 size={16} />
                   Sugerir Horários
                 </button>
               </div>

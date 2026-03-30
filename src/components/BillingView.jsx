@@ -29,8 +29,8 @@ export default function BillingView({ currentCompany }) {
           <div className="account-card billing-main-card">
             <div className="relative z-10">
               <span className="plan-badge">Plano Atual</span>
-              <h2 className="text-3xl font-black text-white mt-4 mb-2">{currentPlan}</h2>
-              <p className="text-sm text-muted mb-8">Sua assinatura está ativa para <strong className="text-white">{currentCompany?.name}</strong>.</p>
+              <h2 className="text-3xl font-black mt-4 mb-2 box-border" style={{ color: "var(--text-main)" }}>{currentPlan}</h2>
+              <p className="text-sm text-muted mb-8">Sua assinatura está ativa para <strong style={{ color: "var(--text-main)" }}>{currentCompany?.name}</strong>.</p>
               
               <div className="billing-feature-grid">
                 {features.map((feature, idx) => (
@@ -56,7 +56,7 @@ export default function BillingView({ currentCompany }) {
 
           {/* History */}
           <div className="account-section">
-            <h3 className="text-white font-bold mb-6 flex items-center gap-2">
+            <h3 className="settings-section-title">
               <Clock size={18} className="text-accent" /> Histórico de Faturas
             </h3>
             <div className="settings-list">
@@ -64,17 +64,19 @@ export default function BillingView({ currentCompany }) {
                 { date: '15 Mar, 2026', amount: 'R$ 0,00', status: 'Processado' },
                 { date: '15 Fev, 2026', amount: 'R$ 0,00', status: 'Processado' }
               ].map((inv, idx) => (
-                <div key={idx} className="settings-item">
-                  <div className="flex items-center gap-4">
-                    <FileText size={20} className="text-muted" />
+                <div key={idx} className="settings-item inv-history-row">
+                  <div className="inv-history-info">
+                    <div className="inv-history-icon-box">
+                      <FileText size={20} />
+                    </div>
                     <div>
-                      <p className="text-sm font-bold text-white">Fatura Mensal - {inv.date}</p>
-                      <p className="text-[10px] text-muted opacity-60">ID: #INV-00{idx + 1}84</p>
+                      <p className="inv-history-title">Fatura Mensal - {inv.date}</p>
+                      <p className="inv-history-id">ID: #INV-00{idx + 1}84</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-white">{inv.amount}</p>
-                    <span className="text-[10px] text-green-400 font-bold uppercase tracking-widest">{inv.status}</span>
+                  <div>
+                    <p className="inv-history-amount">{inv.amount}</p>
+                    <p className="inv-history-status">{inv.status}</p>
                   </div>
                 </div>
               ))}
@@ -85,7 +87,7 @@ export default function BillingView({ currentCompany }) {
         {/* Sidebar area */}
         <div className="space-y-6">
           <div className="account-section">
-            <h3 className="text-white font-bold mb-6 flex items-center gap-2">
+            <h3 className="settings-section-title">
               <Zap size={18} className="text-accent" /> Uso da Conta
             </h3>
             <div className="space-y-6">
@@ -96,8 +98,8 @@ export default function BillingView({ currentCompany }) {
               ].map((limit, idx) => (
                 <div key={idx} className="usage-meter-item">
                   <div className="usage-meter-info">
-                    <span className="text-muted font-medium">{limit.label}</span>
-                    <span className="text-white font-bold">{limit.value}</span>
+                    <span className="usage-meter-label">{limit.label}</span>
+                    <span className="usage-meter-value">{limit.value}</span>
                   </div>
                   <div className="usage-meter-bar">
                     <div className="usage-meter-fill" style={{ width: `${limit.percent}%` }}></div>
@@ -111,7 +113,7 @@ export default function BillingView({ currentCompany }) {
             <div className="w-12 h-12 bg-accent/10 border border-accent/20 rounded-full flex items-center justify-center text-accent mx-auto mb-4">
               <ShieldCheck size={24} />
             </div>
-            <h4 className="text-white font-bold text-sm mb-2">Conformidade LGPD</h4>
+            <h4 className="font-bold text-sm mb-2" style={{ color: "var(--text-main)" }}>Conformidade LGPD</h4>
             <p className="text-[11px] text-muted leading-relaxed">
               Seus dados empresariais estão protegidos com criptografia de ponta a ponta.
             </p>

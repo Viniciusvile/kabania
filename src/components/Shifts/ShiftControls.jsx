@@ -11,7 +11,7 @@ export default function ShiftControls({
 }) {
   return (
     <div className="controls-bar-pixel">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div className="filter-pills-pixel">
           <button className={filterStatus === 'todos' ? 'active' : ''} onClick={() => setFilterStatus('todos')}>Todos</button>
           <button className={filterStatus === 'ativos' ? 'active' : ''} onClick={() => setFilterStatus('ativos')}>Ativos</button>
