@@ -347,18 +347,23 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           </div>
         )}
 
-        {/* Badge discreto de sync — não bloqueia a UI */}
+        {/* Badge discreto de sync — fixo no canto inferior para evitar sobreposições */}
         {isSyncing && (
           <div style={{
-            position: 'absolute', top: '8px', left: '12px', zIndex: 10,
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'rgba(0, 212, 255, 0.12)',
-            border: '1px solid rgba(0, 212, 255, 0.3)',
-            color: 'var(--accent-cyan)',
-            padding: '4px 10px', borderRadius: '20px',
-            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.04em'
+            position: 'fixed', bottom: '30px', left: '30px', zIndex: 9999,
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(0, 212, 255, 0.15)',
+            border: '2px solid rgba(0, 212, 255, 0.4)',
+            color: 'white',
+            padding: '8px 16px', borderRadius: '30px',
+            fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.05em',
+            boxShadow: '0 8px 32px rgba(0, 212, 255, 0.3)',
+            backdropFilter: 'blur(10px)',
+            pointerEvents: 'none',
+            animation: 'slide-up 0.4s ease-out forwards'
           }}>
-            <Loader2 size={11} className="animate-spin" /> Salvando...
+            <Loader2 size={14} className="animate-spin text-accent-cyan" /> 
+            <span>Salvando Alterações...</span>
           </div>
         )}
 
