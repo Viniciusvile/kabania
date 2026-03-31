@@ -326,28 +326,63 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       <ShiftStats stats={stats} />
 
       <div className="shifts-main-layout relative">
-        {/* Badge discreto de carregamento inicial — nunca bloqueia a UI */}
-        {loading && (
-          <div style={{
-            position: 'absolute', top: '8px', left: '50%', transform: 'translateX(-50%)', zIndex: 20,
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'rgba(0, 212, 255, 0.12)',
-            border: '1px solid rgba(0, 212, 255, 0.3)',
-            color: 'var(--accent-cyan)',
-            padding: '5px 14px', borderRadius: '20px',
-            fontSize: '0.75rem', fontWeight: 700, backdropFilter: 'blur(8px)'
-          }}>
-            <Loader2 size={13} className="animate-spin" /> Sincronizando...
-          </div>
-        )}
+        {/* ✅ MINIMALIST SYNC INDICATOR (ANTI-ANXIETY) */}
+        <style>{`
+          .sync-status-minimal {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            color: rgba(0, 229, 255, 0.8);
+            background: rgba(0, 229, 255, 0.04);
+            padding: 6px 14px;
+            border-radius: 100px;
+            opacity: 0;
+            transform: translateY(-5px);
+            transition: all 0.4s ease;
+            pointer-events: none;
+            border: 1px solid rgba(0, 229, 255, 0.15);
+            backdrop-filter: blur(8px);
+          }
 
-        {/* Badge discreto de sync — fixo no canto inferior para evitar sobreposições */}
-        <div className={`sync-toast-premium ${isSyncing ? 'visible' : ''}`}>
-          <Loader2 size={16} className="animate-spin text-accent-cyan" /> 
-          <span>Salvando Alterações...</span>
-        </div>
+          .sync-status-minimal.visible {
+            opacity: 1;
+            transform: translateY(0);
+          }
+
+          .sync-pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-cyan);
+            animation: sync-pulse 1.5s infinite;
+          }
+
+          @keyframes sync-pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 0.8; }
+          }
+
+          [data-theme='light'] .sync-status-minimal {
+            background: rgba(0, 229, 255, 0.08);
+            color: #0891b2;
+            border-color: rgba(0, 229, 255, 0.2);
+          }
+        `}</style>
 
         <div className="shifts-grid-area">
+          <div className="flex items-center gap-4">
+            <h2 className="shifts-title-premium">Gerenciar Escalas</h2>
+            {/* Indicador Minimalista de Sincronia */}
+            <div className={`sync-status-minimal ${isSyncing ? 'visible' : ''}`}>
+              <div className="sync-pulse-dot" />
+              <span>Sincronizando...</span>
+            </div>
+          </div>
+
           <ShiftControls 
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
