@@ -41,6 +41,8 @@ export function useShifts(companyId) {
 
 
   const loadAllData = useCallback(async () => {
+    // SEVERE FIX: Se o companyId sumiu momentaneamente mas temos cache, 
+    // NÃO executamos o fetch e mantemos os dados do cache na tela.
     if (!companyId || isRefreshingRef.current) return;
     try {
       isRefreshingRef.current = true;

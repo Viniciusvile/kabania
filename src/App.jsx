@@ -434,14 +434,17 @@ function App() {
       try {
         // Atraso inicial para evitar conflito com outros componentes
         await stagger(300);
-        const { data: { session }, error } = await safeQuery(() => supabase.auth.getSession());
+        
+        // SAFE DESTRUCTURING: Garantir que não quebre se data for nulo
+        const { data, error } = await safeQuery(() => supabase.auth.getSession());
+        const session = data?.session;
         
         if (isMounted) {
-          if (session) {
+          if (session?.user?.email) {
             await handleLogin(session.user.email);
           } else {
             console.log("No active session found.");
-            // If Supabase says no session, we trust it over localStorage
+            // Se o Supabase confirmou que não há sessão, limpamos o estado
             setIsAuthenticated(false);
           }
         }
@@ -457,9 +460,10 @@ function App() {
 
     initSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const subscription = data?.subscription;
       if (isMounted) {
-        if (event === 'SIGNED_IN' && session) {
+        if (event === 'SIGNED_IN' && session?.user?.email) {
           await handleLogin(session.user.email);
           setIsSessionLoading(false);
         } else if (event === 'SIGNED_OUT') {
@@ -476,7 +480,10 @@ function App() {
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      subscription.unsubscribe();
+      // Opcional: Se data/subscription falhou, não tenta desinscrever
+      if (data?.subscription) {
+        data.subscription.unsubscribe();
+      }
     };
   }, []);
 

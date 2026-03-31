@@ -13,7 +13,8 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: true,
-        storageKey: 'kabania_supabase_auth_token_lock_fixed'
+        storageKey: 'kabania_supabase_auth_token_v3',
+        flowType: 'pkce'
       }
     })
   : null;
