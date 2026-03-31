@@ -202,13 +202,18 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         status: 'scheduled'
       }]);
 
-      if (error) throw error;
+      if (error) {
+         console.error("[CreateShift] ❌ Erro de Banco:", error);
+         throw error;
+      }
       
       setIsModalOpen(false);
       setNewShiftData({ environment_id: '', activity_id: '', start_time: '', end_time: '' });
       await refresh();
     } catch (err) {
-      alert("Erro ao criar escala: " + err.message);
+      const detailedMsg = err.details ? `\nDetalhe: ${err.details}` : '';
+      const codeMsg = err.code ? ` [Código: ${err.code}]` : '';
+      alert(`Erro ao criar escala:${codeMsg}\n${err.message}${detailedMsg}\n\nDICA: Tente atualizar a página (F5) para sincronizar seu perfil.`);
     } finally {
       setIsSyncing(false);
     }

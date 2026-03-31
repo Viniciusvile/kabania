@@ -1,9 +1,9 @@
 -- ============================================================================
--- FIX: DESTRAVAR CRIAÇÃO DE ESCALAS (RESOLUÇÃO DE VIOLAÇÃO DE RLS)
+-- FIX: RESOLUÇÃO DE CONFLITO DE TIPOS (UUID vs TEXT) - VERSÃO ROBUSTA
 --=============================================================================
--- Execute este script no SQL Editor para permitir a criação de novas escalas.
+-- Este script corrige o erro de "operator does not exist: uuid = text".
 
--- 1. Otimizar a função move_shift_rpc com Identidade Redundante
+-- 1. Função move_shift_rpc com conversão explícita (CAST ::text)
 CREATE OR REPLACE FUNCTION public.move_shift_rpc(
     p_shift_id UUID,
     p_start_time TIMESTAMPTZ,
@@ -17,10 +17,10 @@ BEGIN
         end_time = p_end_time,
         updated_at = now()
     WHERE s.id = p_shift_id
-    AND s.company_id = (
-        SELECT company_id FROM public.profiles 
-        -- Identidade Redundante: Checa ID (UUID) ou user_id (Legacy/Text)
-        WHERE (id = auth.uid() OR user_id = auth.uid()::text)
+    AND s.company_id::text = (
+        SELECT company_id::text FROM public.profiles 
+        -- Forçamos conversão em ambos os lados para garantir compatibilidade
+        WHERE (id::text = auth.uid()::text OR user_id::text = auth.uid()::text)
         LIMIT 1
     );
 
@@ -35,26 +35,24 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. Corrigir Política de RLS para ser Redundante e permitir INSERT
--- Removemos as políticas antigas para evitar sobreposição
-DROP POLICY IF EXISTS "Users can view company shifts" ON public.shifts;
-DROP POLICY IF EXISTS "Users can manage company shifts" ON public.shifts;
+-- 2. Política de RLS Unitária com CASTs de Segurança
+DROP POLICY IF EXISTS "Unified manage company shifts" ON public.shifts;
 
--- Criamos uma única política robusta para todas as operações (CRUD)
 CREATE POLICY "Unified manage company shifts" ON public.shifts
     FOR ALL TO authenticated 
     USING (
-        company_id IN (
-            SELECT company_id FROM public.profiles 
-            WHERE (id = auth.uid() OR user_id = auth.uid()::text)
+        company_id::text IN (
+            SELECT company_id::text FROM public.profiles 
+            WHERE (id::text = auth.uid()::text OR user_id::text = auth.uid()::text)
         )
     )
     WITH CHECK (
-        company_id IN (
-            SELECT company_id FROM public.profiles 
-            WHERE (id = auth.uid() OR user_id = auth.uid()::text)
+        company_id::text IN (
+            SELECT company_id::text FROM public.profiles 
+            WHERE (id::text = auth.uid()::text OR user_id::text = auth.uid()::text)
         )
     );
 
--- 3. Garantir que as tabelas acessadas pelo sub-query tenham índices para velocidade
-CREATE INDEX IF NOT EXISTS idx_profiles_auth_linked ON public.profiles(id, user_id);
+-- 3. Índices de performance para as buscas castadas (opcional, melhora velocidade)
+CREATE INDEX IF NOT EXISTS idx_profiles_company_text ON public.profiles ((company_id::text));
+CREATE INDEX IF NOT EXISTS idx_shifts_company_text ON public.shifts ((company_id::text));

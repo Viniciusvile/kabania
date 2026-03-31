@@ -331,11 +331,16 @@ function App() {
       }
 
       if (profile) {
-        // PROACTIVE FIX: Link user_id if missing (for legacy accounts)
-        if (!profile.user_id) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user?.id) {
-            await supabase.from('profiles').update({ user_id: session.user.id }).eq('email', email);
+        // PROACTIVE FIX: Sync identity references (id and user_id)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          const updates = {};
+          if (profile.id !== session.user.id) updates.id = session.user.id;
+          if (profile.user_id !== session.user.id) updates.user_id = session.user.id;
+          
+          if (Object.keys(updates).length > 0) {
+             console.log("[IdentitySync] Atualizando referências de perfil:", updates);
+             await supabase.from('profiles').update(updates).eq('email', email);
           }
         }
 
@@ -371,6 +376,9 @@ function App() {
           setUserRole(profile.role || 'member');
           localStorage.setItem('synapseCurrentCompany', JSON.stringify(cwr));
           localStorage.setItem('synapseUserRole', profile.role || 'member');
+          
+          // SYNC LEGACY KEY: Ensure useShifts.js and others find the ID
+          localStorage.setItem('kabania_company_id', companyData.id);
         } else if (profile.company_id) {
           // CRITICAL FIX: If we have a company_id but failed to fetch, 
           // do NOT let the app settle into 'null' company (which triggers Setup)
