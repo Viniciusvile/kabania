@@ -350,7 +350,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         {/* Badge discreto de sync — não bloqueia a UI */}
         {isSyncing && (
           <div style={{
-            position: 'absolute', top: '8px', right: '12px', zIndex: 10,
+            position: 'absolute', top: '8px', left: '12px', zIndex: 10,
             display: 'flex', alignItems: 'center', gap: '6px',
             background: 'rgba(0, 212, 255, 0.12)',
             border: '1px solid rgba(0, 212, 255, 0.3)',
