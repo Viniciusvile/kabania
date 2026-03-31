@@ -128,19 +128,40 @@ export const deleteWorkActivity = async (id) => {
 // ==========================================
 export const getEmployeeProfiles = async (companyId) => {
   if (!companyId) return [];
-  // Direct join for faster performance
-  const { data, error } = await supabase
+  
+  // PEGADA SEGURA: Buscamos primeiro os perfis de funcionarios
+  const { data: epData, error: epError } = await supabase
     .from('employee_profiles')
-    .select(`
-        *,
-        profiles:profile_id ( id, name, email, avatar_url )
-    `)
+    .select('*')
     .eq('company_id', companyId);
   
-  if (error) throw error;
+  if (epError) {
+    console.error('[getEmployeeProfiles] ❌ Erro ao buscar perfis:', epError);
+    return [];
+  }
 
-  return data.map(sData => ({
-      ...sData.profiles,
+  if (!epData || epData.length === 0) return [];
+
+  // Buscamos os perfis base (profiles) correspondentes para evitar o JOIN implícito que falha com 400
+  const profileIds = epData.map(ep => ep.profile_id).filter(id => id);
+  
+  let profilesMap = {};
+  if (profileIds.length > 0) {
+    const { data: pData } = await supabase
+      .from('profiles')
+      .select('id, name, email, avatar_url')
+      .in('id', profileIds);
+    
+    if (pData) {
+      profilesMap = Object.fromEntries(pData.map(p => [p.id, p]));
+    }
+  }
+
+  return epData.map(sData => {
+    const profile = profilesMap[sData.profile_id] || {};
+    return {
+      ...profile,
+      ...sData,
       shift_profile_id: sData.id,
       role: sData.role || 'Não definido',
       max_daily_hours: sData.max_daily_hours || 8,
@@ -148,7 +169,8 @@ export const getEmployeeProfiles = async (companyId) => {
       availability_schedule: sData.availability_schedule || {},
       skills: sData.skills || [],
       performance_notes: sData.performance_notes || ''
-  }));
+    };
+  });
 };
 
 export const getCollaborators = async (companyId) => {
@@ -205,19 +227,15 @@ export const updateEmployeeProfile = async (profileId, companyId, updateData) =>
 export const getShifts = async (companyId, startDate, endDate) => {
     if (!companyId) return [];
     
+    // PEGADA SEGURA: Buscamos as escalas da tabela base para evitar erros de view/join
     let query = supabase
-        .from('view_shifts_standard')
+        .from('shifts')
         .select(`
             *,
             shift_assignments ( 
                 id, 
                 status, 
-                employee_profiles ( 
-                    id, 
-                    role, 
-                    profile_id,
-                    profiles:profile_id ( name, avatar_url )
-                ) 
+                employee_id
             )
         `)
         .eq('company_id', companyId)
@@ -226,37 +244,24 @@ export const getShifts = async (companyId, startDate, endDate) => {
     if (startDate) query = query.gte('start_time', startDate);
     if (endDate) query = query.lte('end_time', endDate);
 
-    const { data, error } = await query;
-    if (error) {
-        console.error('getShifts Query Error:', error);
-        return []; // Return empty array instead of throwing to prevent component hang
+    const { data: qData, error: qError } = await query;
+    if (qError) {
+        console.error('[getShifts] ❌ Erro ao buscar escalas:', qError);
+        return [];
     }
     
-    if (!data) return [];
+    if (!qData) return [];
 
-    // Transform to include helpful counts and map view fields to component structure
-    return data.map(shift => ({
+    // NOTA: Para performance e evitar erro 400 de join sem FK,
+    // os detalhes dos funcionários (nomes, etc) são carregados via getEmployeeProfiles
+    // e mapeados no componente ou hook useShifts.
+    return qData.map(shift => ({
         ...shift,
-        work_environments: { name: shift.environment_name },
-        work_activities: { 
-            name: shift.activity_name, 
-            required_role: shift.required_role,
-            required_skills: shift.required_skills || []
-        },
-        intelligence_metadata: shift.intelligence_metadata || {},
-        assigned_employees: shift.shift_assignments?.map(a => {
-            const profile = a.employee_profiles?.profiles || {};
-            return {
-                ...a.employee_profiles,
-                assignment_id: a.id,
-                assignment_status: a.status,
-                name: profile.name || 'Colaborador',
-                avatar_url: profile.avatar_url || null,
-                skills: a.employee_profiles?.skills || []
-            };
-        }) || [],
-        calls_count: shift.calls_count || 0,
-        open_calls_count: shift.open_calls_count || 0
+        assigned_employees: shift.shift_assignments?.map(a => ({
+            id: a.employee_id,
+            assignment_id: a.id,
+            assignment_status: a.status
+        })) || []
     }));
 };
 
@@ -287,37 +292,56 @@ export const deleteShift = async (shiftId) => {
 };
 
 export const moveShift = async (shiftId, startTime, endTime) => {
-    // Tentar via RPC (SECURITY DEFINER - bypassa RLS do PostgREST)
-    const { data: rpcData, error: rpcError } = await supabase.rpc('move_shift_rpc', {
-        p_shift_id: shiftId,
-        p_start_time: startTime,
-        p_end_time: endTime
-    });
+    // 1. Tentar via RPC (SECURITY DEFINER - bypassa RLS do PostgREST)
+    try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('move_shift_rpc', {
+            p_shift_id: shiftId,
+            p_start_time: startTime,
+            p_end_time: endTime
+        });
 
-    if (!rpcError && rpcData?.success) {
-        console.log('[moveShift] ✅ RPC bem-sucedida');
-        return { id: shiftId, start_time: startTime, end_time: endTime };
+        if (!rpcError && rpcData?.success) {
+            console.log('[moveShift] ✅ RPC bem-sucedida:', shiftId);
+            return { id: shiftId, start_time: startTime, end_time: endTime };
+        }
+
+        if (rpcError) {
+            console.warn('[moveShift] ⚠️ Falha na RPC, tentando update direto:', rpcError.message);
+        } else if (rpcData && !rpcData.success) {
+            console.error('[moveShift] ❌ RPC retornou erro:', rpcData.error);
+            // Se a RPC disse "Acesso negado", não adianta tentar update direto
+            if (rpcData.error === 'Acesso negado') throw new Error(rpcData.error);
+        }
+    } catch (rpcFatal) {
+        console.error('[moveShift] 🚨 Erro fatal na RPC:', rpcFatal);
     }
 
-    // Fallback: update direto (pode falhar com RLS em alguns ambientes)
-    if (rpcError) {
-        console.warn('[moveShift] RPC indisponível, tentando update direto:', rpcError.message);
-    } else if (rpcData && !rpcData.success) {
-        throw new Error(rpcData.error || 'Erro ao mover escala via RPC');
-    }
-
-    // Fallback: UPDATE direto SEM .select().single() para evitar erro PostgREST 'column id does not exist'
-    const { error: updateError, count } = await supabase
+    // 2. Fallback: UPDATE direto (PostgREST)
+    console.log('[moveShift] 🔄 Tentando UPDATE direto para:', shiftId);
+    
+    // NOTA: Usamos .select('id') em vez de .select().single() para evitar o erro common do PostgREST
+    // quando o record não é visível imediatamente após o update via view.
+    const { data: updatedRows, error: updateError } = await supabase
         .from('shifts')
-        .update({ start_time: startTime, end_time: endTime, updated_at: new Date().toISOString() })
-        .eq('id', shiftId);
+        .update({ 
+            start_time: startTime, 
+            end_time: endTime, 
+            updated_at: new Date().toISOString() 
+        })
+        .eq('id', shiftId)
+        .select('id');
 
     if (updateError) {
         console.error('[moveShift] ❌ Erro no UPDATE direto:', updateError);
-        throw new Error(updateError.message || 'Erro ao mover escala. Verifique as permissões no Supabase.');
+        throw new Error(updateError.message || 'Erro ao mover escala no banco.');
     }
 
-    console.log('[moveShift] ✅ UPDATE direto bem-sucedido');
+    if (!updatedRows || updatedRows.length === 0) {
+        console.error('[moveShift] ❌ Nenhuma linha afetada pelo UPDATE. Verifique o ID ou RLS.');
+        throw new Error('Permissão negada ou escala não encontrada para atualização.');
+    }
+
+    console.log('[moveShift] ✅ UPDATE direto concluído com sucesso');
     return { id: shiftId, start_time: startTime, end_time: endTime };
 };
 

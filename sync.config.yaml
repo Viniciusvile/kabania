@@ -1,0 +1,17 @@
+# Configuração de sincronização Kabania ↔ Obsidian
+
+# Caminhos de vaults (pode ser array para múltiplos vaults)
+vault_paths:
+  - C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/
+
+# Diretório base para arquivos de saída de sync Kabania → Obsidian
+obsidian_base: C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/06_ECOSYSTEM
+
+# Agendamento (cron) – a cada 15 minutos por padrão
+schedule: '*/15 * * * *'
+
+# Nível de log (error, warn, info, debug)
+log_level: info
+
+# Flag para habilitar ou desabilitar a execução automática
+auto_start: true

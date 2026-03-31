@@ -1,7 +1,11 @@
 import fs from 'fs';
+import { logger } from '../src/utils/logger.js';
 import path from 'path';
+import { logger } from '../src/utils/logger.js';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '../src/utils/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from '../src/utils/logger.js';
 
 // 1. Configurações e Caminhos
 const OBSIDIAN_VAULT_PATH = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/';
@@ -37,11 +41,11 @@ const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
  * Função principal de processamento
  */
 async function syncObsidianToKabania() {
-  console.log("🚀 Iniciando sincronização: Obsidian -> Kabania");
+  logger.info('🚀 Iniciando sincronização: Obsidian -> Kabania');
   
   try {
     const files = getMarkdownFiles(OBSIDIAN_VAULT_PATH);
-    console.log(`📂 Encontrados ${files.length} arquivos .md para analisar.`);
+    logger.info(`📂 Encontrados ${files.length} arquivos .md para analisar.`);
 
     for (const filePath of files) {
       const fileName = path.basename(filePath);
@@ -57,11 +61,11 @@ async function syncObsidianToKabania() {
       const shouldSync = metadata.sync === 'true' || isEcosystemFile;
 
       if (!shouldSync) {
-        console.log(`⏩ Ignorando ${fileName} (sem flag sync: true).`);
+        logger.info(`⏩ Ignorando ${fileName} (sem flag sync: true).`);
         continue;
       }
 
-      console.log(`\n🔍 Analisando: ${fileName}...`);
+      logger.info(`🔍 Analisando: ${fileName}...`);
       
       const analysis = await analyzeWithAI(content, fileName, metadata);
       
@@ -88,10 +92,10 @@ async function syncObsidianToKabania() {
       }
     }
 
-    console.log("\n✨ Sincronização concluída!");
+    logger.info("✨ Sincronização concluída!");
 
   } catch (error) {
-    console.error("💥 Erro crítico no script:", error);
+    logger.error(`❌ Erro crítico no script:`, error);
   }
 }
 

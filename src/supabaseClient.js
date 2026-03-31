@@ -8,9 +8,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storageKey: 'kabania_supabase_auth_token_lock_fixed'
+      }
+    })
   : null;
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && supabase) {
   window.supabase = supabase;
 }

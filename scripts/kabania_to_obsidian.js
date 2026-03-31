@@ -1,14 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from '../src/utils/logger.js';
 
 /**
  * KABANIA MODULAR SYNC: ADVANCED EDITION
  * Sincroniza informações profundas do código para o ecossistema Obsidian.
  */
 
-// 1. Configurações
-const OBSIDIAN_BASE = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/06_ECOSYSTEM';
+logger.info('🚀 Iniciando sincronização Kabania → Obsidian (modo incremental)');
+logger.info('🚀 Iniciando sincronização Kabania → Obsidian (modo incremental)');
 const MAP = {
   INDEX: path.join(OBSIDIAN_BASE, 'Index_Kabania.md'),
   SECURITY: path.join(OBSIDIAN_BASE, 'Kabania_Seguranca_e_Arquitetura.md'),
@@ -37,7 +37,7 @@ const genAI = new GoogleGenerativeAI(env.VITE_GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
 async function deepModularSync() {
-  console.log("🚀 Iniciando Sincronização Profunda de Ecossistemas...");
+  logger.info('🚀 Iniciando Sincronização Profunda de Ecossistemas...');
 
   try {
     const timestamp = new Date().toLocaleString('pt-BR');
@@ -75,13 +75,13 @@ async function deepModularSync() {
       fs.appendFileSync(MAP.MODULES, `\n\n## 🔄 Snapshot Técnico (${timestamp})\n${parts[2].trim()}`);
       fs.appendFileSync(MAP.AI, `\n\n## 🔄 Snapshot Técnico (${timestamp})\n${parts[3].trim()}`);
       
-      console.log("✅ Backup e Sincronização de alta densidade concluídos!");
+      logger.info('✅ Backup e Sincronização de alta densidade concluídos!');
     } else {
-      console.warn("⚠️ IA não retornou o número esperado de blocos. Sincronização parcial realizada.");
+      logger.warn('⚠️ IA não retornou o número esperado de blocos. Sincronização parcial realizada.');
     }
 
   } catch (err) {
-    console.error("❌ Erro na sincronização profunda:", err.message);
+    logger.error(`❌ Erro na sincronização profunda: ${err.message}`);
   }
 }
 

@@ -281,37 +281,49 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     const shift = shifts.find(s => s.id === shiftId);
     if (!shift) return;
 
-    const oldStart = new Date(shift.start_time);
-    const oldEnd = new Date(shift.end_time);
-    const durationMs = oldEnd - oldStart;
-
-    const newStart = new Date(newDate);
-    if (newTime) {
-      const [hours, minutes] = newTime.split(':');
-      newStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    } else {
-      newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
-    }
-    const newEnd = new Date(newStart.getTime() + durationMs);
-
-    const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
-
-    updateShiftLocally(shiftId, { 
-      start_time: newStart.toISOString(), 
-      end_time: newEnd.toISOString() 
-    });
-
-    setIsSyncing(true);
-
     try {
-      await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
+      const oldStart = new Date(shift.start_time);
+      const oldEnd = new Date(shift.end_time);
+      const durationMs = oldEnd - oldStart;
+
+      const newStart = new Date(newDate);
+      if (newTime) {
+        const [hours, minutes] = newTime.split(':');
+        newStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      } else {
+        newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
+      }
+      const newEnd = new Date(newStart.getTime() + durationMs);
+
+      const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
+
+      // Optimistic Update
+      updateShiftLocally(shiftId, { 
+        start_time: newStart.toISOString(), 
+        end_time: newEnd.toISOString() 
+      });
+
+      setIsSyncing(true);
+      
+      const result = await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
+      
+      if (!result) {
+         throw new Error("O servico de persistencia não retornou confirmacao.");
+      }
+
+      console.log("[MoveShift] ✅ Sucesso:", result);
     } catch (err) {
       console.error("[MoveShift] ❌ Falha:", err);
-      updateShiftLocally(shiftId, originalTimes); 
-      alert("Erro ao mover escala: " + err.message);
+      // Reverter em caso de erro
+      updateShiftLocally(shiftId, { 
+        start_time: shift.start_time, 
+        end_time: shift.end_time 
+      }); 
+      alert("Não foi possível salvar a mudança: " + (err.message || "Erro de conexão"));
     } finally {
       setIsSyncing(false);
-      refresh().catch(() => {});
+      // Pequeno delay para garantir que o Supabase processou as mudanças antes do refresh
+      setTimeout(() => refresh().catch(() => {}), 300);
     }
   };
 

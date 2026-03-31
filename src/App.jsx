@@ -306,9 +306,10 @@ function App() {
           setTimeout(() => reject(new Error('Tempo limite de conexão com o banco atingido.')), 10000)
         );
 
+        // Separação da consulta para evitar erro 406 (Not Acceptable) em joins sem FK explícita
         const fetchPromise = supabase
           .from('profiles')
-          .select('*, companies(*)')
+          .select('*')
           .eq('email', email)
           .single();
 
@@ -342,40 +343,22 @@ function App() {
           name: profile.name || email.split('@')[0],
           avatar_url: profile.avatar_url
         });
+
         let companyData = null;
-        if (Array.isArray(profile.companies)) {
-          companyData = profile.companies[0];
-        } else if (profile.companies) {
-          companyData = profile.companies;
-        }
-
-        // FALLBACK: If join failed but we have a company_id, try a direct fetch
-        if (!companyData && profile.company_id) {
-          console.warn("[AUTO-RECOVERY] Join failed for profile:", profile.id, "Attempting direct company fetch for ID:", profile.company_id);
+        
+        // Busca direta da empresa se o profile tiver company_id
+        if (profile.company_id) {
+          const { data: directCo, error: directCoError } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', profile.company_id)
+            .single();
           
-          const fetchCompany = async (retryCount = 0) => {
-            const { data: directCo, error: directCoError } = await supabase
-              .from('companies')
-              .select('*')
-              .eq('id', profile.company_id)
-              .single();
-            
-            if (!directCoError && directCo) {
-              console.log("[AUTO-RECOVERY] Company fetch SUCCESS on attempt:", retryCount + 1);
-              return directCo;
-            }
-            
-            if (retryCount < 1) { // One extra retry after delay
-              console.warn("[AUTO-RECOVERY] Fetch failed, retrying in 1s...");
-              await new Promise(r => setTimeout(r, 1000));
-              return fetchCompany(retryCount + 1);
-            }
-            
-            console.error("[AUTO-RECOVERY] All company fetch attempts FAILED:", directCoError);
-            return null;
-          };
-
-          companyData = await fetchCompany();
+          if (!directCoError && directCo) {
+            companyData = directCo;
+          } else {
+            console.warn("[AUTO-RECOVERY] Falha ao buscar empresa:", directCoError);
+          }
         }
 
         if (companyData) {
