@@ -185,7 +185,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
     try {
       setIsSyncing(true);
-      const { error } = await supabase.from('shifts').insert([{
+      
+      // DIAGNOSTIC LOGGING: Confirm current context before write
+      console.log("[CreateShift] Payload Início:", {
+        companyId,
+        environment_id: newShiftData.environment_id,
+        user: currentUser
+      });
+
+      const { data, error } = await supabase.from('shifts').insert([{
         company_id: companyId,
         environment_id: newShiftData.environment_id || null,
         activity_id: newShiftData.activity_id || null,
