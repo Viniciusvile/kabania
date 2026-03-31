@@ -277,54 +277,48 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleMoveShift = async (shiftId, newDate, newTime) => {
+  const handleMoveShift = (shiftId, newDate, newTime) => {
     const shift = shifts.find(s => s.id === shiftId);
     if (!shift) return;
 
-    try {
-      const oldStart = new Date(shift.start_time);
-      const oldEnd = new Date(shift.end_time);
-      const durationMs = oldEnd - oldStart;
+    const oldStart = new Date(shift.start_time);
+    const oldEnd = new Date(shift.end_time);
+    const durationMs = oldEnd - oldStart;
 
-      const newStart = new Date(newDate);
-      if (newTime) {
-        const [hours, minutes] = newTime.split(':');
-        newStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      } else {
-        newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
-      }
-      const newEnd = new Date(newStart.getTime() + durationMs);
-
-      const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
-
-      // Optimistic Update
-      updateShiftLocally(shiftId, { 
-        start_time: newStart.toISOString(), 
-        end_time: newEnd.toISOString() 
-      });
-
-      setIsSyncing(true);
-      
-      const result = await moveShift(shiftId, newStart.toISOString(), newEnd.toISOString());
-      
-      if (!result) {
-         throw new Error("O servico de persistencia não retornou confirmacao.");
-      }
-
-      console.log("[MoveShift] ✅ Sucesso:", result);
-    } catch (err) {
-      console.error("[MoveShift] ❌ Falha:", err);
-      // Reverter em caso de erro
-      updateShiftLocally(shiftId, { 
-        start_time: shift.start_time, 
-        end_time: shift.end_time 
-      }); 
-      alert("Não foi possível salvar a mudança: " + (err.message || "Erro de conexão"));
-    } finally {
-      setIsSyncing(false);
-      // Pequeno delay para garantir que o Supabase processou as mudanças antes do refresh
-      setTimeout(() => refresh().catch(() => {}), 300);
+    const newStart = new Date(newDate);
+    if (newTime) {
+      const [hours, minutes] = newTime.split(':');
+      newStart.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+      newStart.setHours(oldStart.getHours(), oldStart.getMinutes(), 0, 0);
     }
+    const newEnd = new Date(newStart.getTime() + durationMs);
+
+    const originalTimes = { start_time: shift.start_time, end_time: shift.end_time };
+
+    // 1. Instant Optimistic Update
+    updateShiftLocally(shiftId, { 
+      start_time: newStart.toISOString(), 
+      end_time: newEnd.toISOString() 
+    });
+
+    // 2. Background Sync (No 'await' to keep UI moving)
+    setIsSyncing(true);
+    
+    moveShift(shiftId, newStart.toISOString(), newEnd.toISOString())
+      .then(result => {
+        if (!result) throw new Error("Sem confirmação do servidor.");
+        console.log("[MoveShift] ✅ Sincronizado:", shiftId);
+      })
+      .catch(err => {
+        console.error("[MoveShift] ❌ Falha na sincronização:", err);
+        // Reverter localmente em caso de erro
+        updateShiftLocally(shiftId, originalTimes); 
+        alert("Erro ao salvar mudança. A escala voltou para a posição original.");
+      })
+      .finally(() => {
+        setIsSyncing(false);
+      });
   };
 
   return (
@@ -348,24 +342,10 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         )}
 
         {/* Badge discreto de sync — fixo no canto inferior para evitar sobreposições */}
-        {isSyncing && (
-          <div style={{
-            position: 'fixed', bottom: '30px', left: '30px', zIndex: 9999,
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(0, 212, 255, 0.15)',
-            border: '2px solid rgba(0, 212, 255, 0.4)',
-            color: 'white',
-            padding: '8px 16px', borderRadius: '30px',
-            fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.05em',
-            boxShadow: '0 8px 32px rgba(0, 212, 255, 0.3)',
-            backdropFilter: 'blur(10px)',
-            pointerEvents: 'none',
-            animation: 'slide-up 0.4s ease-out forwards'
-          }}>
-            <Loader2 size={14} className="animate-spin text-accent-cyan" /> 
-            <span>Salvando Alterações...</span>
-          </div>
-        )}
+        <div className={`sync-toast-premium ${isSyncing ? 'visible' : ''}`}>
+          <Loader2 size={16} className="animate-spin text-accent-cyan" /> 
+          <span>Salvando Alterações...</span>
+        </div>
 
         <div className="shifts-grid-area">
           <ShiftControls 

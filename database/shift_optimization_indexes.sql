@@ -1,14 +1,28 @@
--- Índices de otimização para a área de Gerenciar Escalas
--- Acelera consultas filtradas por empresa, datas e status
+-- 🚀 Otimização de Performance para Escalas (Shifts)
+-- Melhora a velocidade de buscas por data e empresa, essencial para o Drag-and-Drop instantâneo.
 
-CREATE INDEX IF NOT EXISTS idx_shifts_company_id ON public.shifts (company_id);
-CREATE INDEX IF NOT EXISTS idx_shifts_start_time ON public.shifts (start_time);
-CREATE INDEX IF NOT EXISTS idx_shifts_end_time ON public.shifts (end_time);
-CREATE INDEX IF NOT EXISTS idx_shifts_status ON public.shifts (status);
--- Índice composto para buscas comuns por empresa e intervalo de tempo
-CREATE INDEX IF NOT EXISTS idx_shifts_company_start ON public.shifts (company_id, start_time);
+-- 1. Índice composto para buscas de calendário (mais comum)
+CREATE INDEX IF NOT EXISTS idx_shifts_company_dates 
+ON public.shifts (company_id, start_time, end_time);
 
--- tabelas auxiliares de atribuição de escala
-CREATE INDEX IF NOT EXISTS idx_shift_assignments_shift_id ON public.shift_assignments (shift_id);
-CREATE INDEX IF NOT EXISTS idx_shift_assignments_employee_id ON public.shift_assignments (employee_id);
-CREATE INDEX IF NOT EXISTS idx_shift_assignments_collaborator_id ON public.shift_assignments (collaborator_id);
+-- 2. Índice para buscas por ambiente
+CREATE INDEX IF NOT EXISTS idx_shifts_environment 
+ON public.shifts (environment_id);
+
+-- 3. Índice para buscas por atividade
+CREATE INDEX IF NOT EXISTS idx_shifts_activity 
+ON public.shifts (activity_id);
+
+-- 4. Índice para as atribuições (joins rápidos)
+CREATE INDEX IF NOT EXISTS idx_shift_assignments_shift_id 
+ON public.shift_assignments (shift_id);
+
+CREATE INDEX IF NOT EXISTS idx_shift_assignments_employee 
+ON public.shift_assignments (employee_id);
+
+CREATE INDEX IF NOT EXISTS idx_shift_assignments_collaborator 
+ON public.shift_assignments (collaborator_id);
+
+-- Analisar as tabelas para atualizar estatísticas do planejador de consultas
+ANALYZE public.shifts;
+ANALYZE public.shift_assignments;
