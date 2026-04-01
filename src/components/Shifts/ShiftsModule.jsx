@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX, Wand2 } from 'lucide-react';
-import { addEmployeeToShift, moveShift } from '../../services/shiftService';
+import { addEmployeeToShift, moveShift, createShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
@@ -26,6 +26,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     weekStart, 
     setWeekStart, 
     refresh,
+    addShiftLocally,
     updateShiftLocally
   } = useShifts(companyId);
 
@@ -142,7 +143,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       }));
 
       // 1. Inserir Escalas
-      const { data: newShifts, error: shiftErr } = await supabase.from('shifts').insert(insertPayload).select();
+      const { data: newShifts, error: shiftErr } = await createShift(insertPayload, currentUser);
       if (shiftErr) throw shiftErr;
 
       // 2. Alocar Funcionários Sugeridos
@@ -155,7 +156,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       }
 
       setAutoPilotResult(null);
-      await refresh();
+      if (addShiftLocally && newShifts) addShiftLocally(newShifts);
+      
+      // Não precisamos mais do refresh circular global
+      // await refresh(); 
+      
       alert(`Auto-Pilot Concluído! ${suggestions.length} escalas geradas com sucesso.`);
     } catch (err) {
       console.error(err);
@@ -193,23 +198,22 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         user: currentUser
       });
 
-      const { data, error } = await supabase.from('shifts').insert([{
+      const data = await createShift({
         company_id: companyId,
         environment_id: newShiftData.environment_id || null,
         activity_id: newShiftData.activity_id || null,
         start_time: new Date(newShiftData.start_time).toISOString(),
         end_time: new Date(newShiftData.end_time).toISOString(),
         status: 'scheduled'
-      }]);
-
-      if (error) {
-         console.error("[CreateShift] ❌ Erro de Banco:", error);
-         throw error;
-      }
+      }, currentUser);
       
       setIsModalOpen(false);
       setNewShiftData({ environment_id: '', activity_id: '', start_time: '', end_time: '' });
-      await refresh();
+      
+      // Injeção Instantânea
+      if (addShiftLocally && data) addShiftLocally(data);
+      
+      // await refresh(); // Removido para ganho de velocidade instantânea
     } catch (err) {
       const detailedMsg = err.details ? `\nDetalhe: ${err.details}` : '';
       const codeMsg = err.code ? ` [Código: ${err.code}]` : '';
@@ -243,14 +247,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
       const endDate = new Date(startDate.getTime() + (60 * 60000));
       
-      await supabase.from('shifts').insert([{
+      await createShift({
         company_id: companyId,
         service_request_id: activity.id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'scheduled',
         notes: `Agendado via Inteligência Kabania`
-      }]);
+      }, currentUser);
 
       await refresh();
     } catch (err) {
@@ -260,7 +264,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleDropActivity = async (activity, date, time) => {
+  const handleDropActivity = async (activity, date, time, environmentId = null) => {
     try {
       setIsSyncing(true);
       const startTime = new Date(date);
@@ -273,16 +277,35 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       
       const endTime = new Date(startTime.getTime() + (4 * 60 * 60000));
       
-      await supabase.from('shifts').insert([{
+      // Prioridade de Ambiente: 
+      // 1. Alvo do Drop (environmentId)
+      // 2. Original da Atividade/Service Request
+      const targetEnvId = environmentId || activity.environment_id || activity.work_environments?.id;
+
+      // 🔄 Lógica de Reconhecimento de Tipo: SR vs Atividade Pura
+      const isServiceRequest = !!(activity.customer_name || activity.service_type);
+      const payload = {
         company_id: companyId,
-        service_request_id: activity.id,
+        environment_id: targetEnvId,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: 'scheduled',
-        notes: `Agendado via Arrastar e Soltar no horário ${time || '08:00'}`
-      }]);
+        notes: `Agendado via Drag & Drop: ${activity.location || activity.name}`
+      };
 
-      await refresh();
+      if (isServiceRequest) {
+        payload.service_request_id = activity.id;
+      } else {
+        payload.activity_id = activity.id;
+      }
+
+      const data = await createShift(payload, currentUser);
+      
+      if (data && addShiftLocally) {
+        addShiftLocally(data);
+      }
+      
+      // await refresh(); // Usando injeção instantânea
     } catch (err) {
       alert("Erro ao criar escala via drop: " + err.message);
     } finally {
@@ -315,22 +338,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       end_time: newEnd.toISOString() 
     });
 
-    // 2. Background Sync (No 'await' to keep UI moving)
-    setIsSyncing(true);
-    
-    moveShift(shiftId, newStart.toISOString(), newEnd.toISOString())
+    // 2. Background Sync (Silent)
+    moveShift(shiftId, newStart.toISOString(), newEnd.toISOString(), shift.environment_id)
       .then(result => {
         if (!result) throw new Error("Sem confirmação do servidor.");
-        console.log("[MoveShift] ✅ Sincronizado:", shiftId);
+        console.log("[MoveShift] ✅ Sincronizado Silenciosamente:", shiftId);
       })
       .catch(err => {
         console.error("[MoveShift] ❌ Falha na sincronização:", err);
-        // Reverter localmente em caso de erro
+        // Só alertamos o usuário se realmente falhar no banco
         updateShiftLocally(shiftId, originalTimes); 
         alert("Erro ao salvar mudança. A escala voltou para a posição original.");
-      })
-      .finally(() => {
-        setIsSyncing(false);
       });
   };
 
@@ -421,6 +439,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
         <ShiftSidebar 
           pendingActivities={pendingActivities} 
+          routineActivities={activities}
           onQuickSchedule={handleQuickSchedule} 
           onAutoPilot={handleRunAutoPilot}
           isAutoPilotLoading={isAutoPilotLoading}

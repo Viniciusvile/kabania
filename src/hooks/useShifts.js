@@ -202,22 +202,50 @@ export function useShifts(companyId) {
   }, [companyId, weekStart]);
 
   const isRefreshingRef = useRef(false);
+  const refreshTimerRef = useRef(null);
 
   useEffect(() => {
-    // OPTIMIZED LOAD: Zero delay se temos cache, jitter mínimo se não
-    const delay = hasCacheRef.current ? 0 : (50 + Math.random() * 80);
-    const timer = setTimeout(() => {
+    if (!companyId) return;
+
+    const debounceLoad = () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = setTimeout(() => {
+        loadAllData();
+      }, 400); 
+    };
+
+    const applyRealtimeUpdate = (payload) => {
+      // 🚀 KANBAN-STYLE PARTIAL UPDATE
+      if (payload.eventType === 'UPDATE') {
+        const updatedRaw = payload.new;
+        setShifts(prev => prev.map(s => {
+          if (s.id !== updatedRaw.id) return s;
+          return {
+            ...s,
+            ...updatedRaw,
+            work_environments: s.work_environments,
+            work_activities: s.work_activities,
+            assigned_employees: s.assigned_employees
+          };
+        }));
+      } else {
+        debounceLoad();
+      }
+    };
+
+    const initialTimer = setTimeout(() => {
       loadAllData();
-    }, delay);
+    }, 100);
 
     const channelName = `realtime-escalas-${companyId}`;
     const shiftsChannel = supabase.channel(channelName)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts', filter: `company_id=eq.${companyId}` }, () => loadAllData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_assignments' }, () => loadAllData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts', filter: `company_id=eq.${companyId}` }, (p) => applyRealtimeUpdate(p))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_assignments' }, () => debounceLoad())
       .subscribe();
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(initialTimer);
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
       supabase.removeChannel(shiftsChannel);
     };
   }, [companyId, weekStart, loadAllData]);
@@ -233,8 +261,34 @@ export function useShifts(companyId) {
     weekStart,
     setWeekStart,
     refresh: loadAllData,
+    addShiftLocally: (newShifts) => {
+        const shiftsArray = Array.isArray(newShifts) ? newShifts : [newShifts];
+        
+        setShifts(prev => {
+            const transformed = shiftsArray.map(s => {
+                const env = environments.find(e => e.id === s.environment_id);
+                const activity = activities.find(a => a.id === s.activity_id);
+                
+                return {
+                    ...s,
+                    work_environments: env ? { name: env.name } : s.work_environments,
+                    work_activities: activity ? { name: activity.name } : s.work_activities,
+                    assigned_employees: s.assigned_employees || []
+                };
+            });
+            
+            const updated = [...prev, ...transformed];
+            localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
+            return updated;
+        });
+    },
     updateShiftLocally: (shiftId, updates) => {
-        setShifts(prev => prev.map(s => s.id === shiftId ? { ...s, ...updates } : s));
+        setShifts(prev => {
+            const updated = prev.map(s => s.id === shiftId ? { ...s, ...updates } : s);
+            // 💾 Sincroniza o cache do localStorage imediatamente para o Refresh não carregar lixo
+            localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
+            return updated;
+        });
     }
   };
 }

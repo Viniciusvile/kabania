@@ -144,7 +144,20 @@ function App() {
           .eq('company_id', currentCompany.id)
       );
 
-      if (!error && data) {
+      if (error) {
+        // Fallback robusto para quando a coluna 'id' foi renomeada ou está oculta por RLS broken
+        if (error.code === '42703' && error.message.includes('id')) {
+            console.warn('[App] Coluna id ausente em projects, tentando fallback...');
+            const { data: fallbackData } = await safeQuery(() => 
+              supabase.from('projects').select('name, company_id').eq('company_id', currentCompany.id)
+            );
+            if (fallbackData) {
+              setProjects(fallbackData.map((p, idx) => ({ ...p, id: p.id || `p_fallback_${idx}` })));
+              return;
+            }
+        }
+        console.error('Error fetching projects:', error);
+      } else if (data) {
         if (data.length === 0) {
           // Create default project in Supabase if none exist
           const defaultProj = { 
@@ -165,8 +178,6 @@ function App() {
             setSelectedProjectId(data[0].id);
           }
         }
-      } else if (error) {
-        console.error('Error fetching projects:', error);
       }
     };
 

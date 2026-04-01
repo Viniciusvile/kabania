@@ -266,15 +266,41 @@ export const getShifts = async (companyId, startDate, endDate) => {
 };
 
 export const createShift = async (shiftData, userId) => {
-    const { data, error } = await supabase
-        .from('shifts')
-        .insert([shiftData])
-        .select()
-        .single();
-    if (error) throw error;
-    
-    logEvent(shiftData.company_id, userId, 'SHIFT_CREATED', `Escala criada para o ambiente ${shiftData.environment_id}`);
-    return data;
+    try {
+        const { data, error } = await supabase
+            .from('shifts')
+            .insert([shiftData])
+            .select()
+            .single();
+        
+        if (error) {
+            // FALLBACK: Se o banco reclamar de 'id' (erro 42703), tentamos insert minimalista sem select retorno
+            if (error.code === '42703' && error.message.includes('id')) {
+                console.warn('[shiftService] ⚠️ Coluna id ausente no retorno de Shifts, tentando insert simplificado...');
+                const { error: insError } = await supabase.from('shifts').insert([shiftData]);
+                if (insError) throw insError;
+                
+                // Tenta recuperar para manter consistência na UI
+                const { data: fetchBack } = await supabase
+                    .from('shifts')
+                    .select('*')
+                    .eq('company_id', shiftData.company_id)
+                    .eq('start_time', shiftData.start_time)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                
+                return fetchBack;
+            }
+            throw error;
+        }
+
+        logEvent(shiftData.company_id, userId, 'SHIFT_CREATED', `Escala criada para o ambiente ${shiftData.environment_id}`);
+        return data;
+    } catch (err) {
+        console.error('[createShift] ❌ Erro ao criar escala:', err);
+        throw err;
+    }
 };
 
 export const updateShiftStatus = async (shiftId, status) => {
@@ -291,44 +317,46 @@ export const deleteShift = async (shiftId) => {
     );
 };
 
-export const moveShift = async (shiftId, startTime, endTime) => {
+export const moveShift = async (shiftId, startTime, endTime, environmentId = null) => {
+    // 0. Limpeza de ID para evitar erros de cast
+    const cleanShiftId = shiftId;
+    const cleanEnvId = environmentId === "" ? null : environmentId;
+
     // 1. Tentar via RPC (SECURITY DEFINER - bypassa RLS do PostgREST)
     try {
         const { data: rpcData, error: rpcError } = await supabase.rpc('move_shift_rpc', {
-            p_shift_id: shiftId,
+            p_shift_id: cleanShiftId,
             p_start_time: startTime,
-            p_end_time: endTime
+            p_end_time: endTime,
+            p_environment_id: cleanEnvId
         });
 
         if (!rpcError && rpcData?.success) {
-            console.log('[moveShift] ✅ RPC bem-sucedida:', shiftId);
-            return { id: shiftId, start_time: startTime, end_time: endTime };
+            console.log('[moveShift] ✅ RPC bem-sucedida:', cleanShiftId);
+            return { id: cleanShiftId, start_time: startTime, end_time: endTime, environment_id: cleanEnvId };
         }
 
         if (rpcError) {
             console.warn('[moveShift] ⚠️ Falha na RPC, tentando update direto:', rpcError.message);
-        } else if (rpcData && !rpcData.success) {
-            console.error('[moveShift] ❌ RPC retornou erro:', rpcData.error);
-            // Se a RPC disse "Acesso negado", não adianta tentar update direto
-            if (rpcData.error === 'Acesso negado') throw new Error(rpcData.error);
         }
     } catch (rpcFatal) {
         console.error('[moveShift] 🚨 Erro fatal na RPC:', rpcFatal);
     }
 
     // 2. Fallback: UPDATE direto (PostgREST)
-    console.log('[moveShift] 🔄 Tentando UPDATE direto para:', shiftId);
+    console.log('[moveShift] 🔄 Tentando UPDATE direto para:', cleanShiftId);
     
-    // NOTA: Usamos .select('id') em vez de .select().single() para evitar o erro common do PostgREST
-    // quando o record não é visível imediatamente após o update via view.
+    const updatePayload = { 
+        start_time: startTime, 
+        end_time: endTime, 
+        updated_at: new Date().toISOString() 
+    }
+    if (cleanEnvId) updatePayload.environment_id = cleanEnvId;
+
     const { data: updatedRows, error: updateError } = await supabase
         .from('shifts')
-        .update({ 
-            start_time: startTime, 
-            end_time: endTime, 
-            updated_at: new Date().toISOString() 
-        })
-        .eq('id', shiftId)
+        .update(updatePayload)
+        .eq('id', cleanShiftId)
         .select('id');
 
     if (updateError) {
@@ -337,12 +365,10 @@ export const moveShift = async (shiftId, startTime, endTime) => {
     }
 
     if (!updatedRows || updatedRows.length === 0) {
-        console.error('[moveShift] ❌ Nenhuma linha afetada pelo UPDATE. Verifique o ID ou RLS.');
         throw new Error('Permissão negada ou escala não encontrada para atualização.');
     }
 
-    console.log('[moveShift] ✅ UPDATE direto concluído com sucesso');
-    return { id: shiftId, start_time: startTime, end_time: endTime };
+    return { id: cleanShiftId, start_time: startTime, end_time: endTime, environment_id: cleanEnvId };
 };
 
 export const batchCreateShifts = async (shiftsData, companyId, userId) => {

@@ -49,6 +49,8 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
     // Usually ignore, it fires every frame it doesn't find a code
   }
 
+  const isCheckOut = shift.status === 'in_progress' || shift.status === 'active';
+
   const getLocationAndCheckin = () => {
     if (!navigator.geolocation) {
       setError('Geolocalização não é suportada pelo seu navegador.');
@@ -58,7 +60,6 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
     setLoading(true);
     setError('');
     
-    // High accuracy ensures better GPS parsing
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -84,7 +85,7 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
         p_profile_id: profileId,
         p_company_id: shift.company_id,
         p_checkin_type: type,
-        p_action_type: 'check_in',
+        p_action_type: isCheckOut ? 'check_out' : 'check_in',
         p_latitude: lat,
         p_longitude: lng,
         p_qr_data: qrData
@@ -92,10 +93,10 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
 
       // Offline First Strategy
       if (!navigator.onLine) {
-         console.warn("[PWA Offline] Salvando check-in na fila local...");
+         console.warn("[PWA Offline] Salvando ponto na fila local...");
          const saved = saveActionToOfflineQueue('register_shift_checkin', payload);
          if (saved) {
-           setSuccessMsg('MODO OFFLINE: Ponto salvo no celular. Será enviado quando houver internet!');
+           setSuccessMsg(isCheckOut ? 'MODO OFFLINE: Checkout salvo no celular!' : 'MODO OFFLINE: Ponto salvo no celular!');
            setTimeout(() => {
              if (onSuccess) onSuccess();
              onClose();
@@ -111,14 +112,14 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
       if (rpcError) throw rpcError;
       
       if (!data.success) {
-        throw new Error(data.error || 'Falha na validação do Check-in');
+        throw new Error(data.error || 'Falha na validação do Ponto');
       }
 
       if (data.status === 'rejected_distance') {
-        throw new Error(`Acesso negado: Você está fora do raio permitido do Ambiente de Trabalho (${Math.round(data.distance)}m). Vá até o local para bater o ponto.`);
+        throw new Error(`Acesso negado: Você está fora do raio permitido (${Math.round(data.distance)}m). Vá até o local para bater o ponto.`);
       }
 
-      setSuccessMsg('Ponto registrado com sucesso na nuvem!');
+      setSuccessMsg(isCheckOut ? 'Turno finalizado com sucesso!' : 'Ponto registrado com sucesso!');
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
@@ -136,10 +137,10 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
       <div className="premium-modal-pixel animate-fade-in glass-morphism" style={{ width: '90%', maxWidth: '400px', border: '1px solid var(--border-light)' }}>
         <div className="premium-modal-header border-vibrant" style={{ padding: '1.25rem 1.5rem' }}>
           <div className="flex items-center gap-3">
-             <div className="header-icon-box" style={{ padding: '0.5rem', borderRadius: '0.75rem' }}>
-               <MapPin className="text-accent-cyan" size={20} />
+             <div className="header-icon-box" style={{ padding: '0.5rem', borderRadius: '0.75rem', background: isCheckOut ? 'rgba(251, 191, 36, 0.1)' : 'rgba(0, 229, 255, 0.1)' }}>
+                <MapPin className={isCheckOut ? "text-amber-400" : "text-accent-cyan"} size={20} />
              </div>
-             <h3 className="text-white font-bold tracking-tight">Registrar Ponto Eletrônico</h3>
+             <h3 className="text-white font-bold tracking-tight">{isCheckOut ? 'Finalizar Escala' : 'Registrar Início'}</h3>
           </div>
           <button className="premium-close-btn text-white/40 hover:text-white transition-colors" onClick={onClose} disabled={loading}>
             <XCircle size={20} />
@@ -149,9 +150,9 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
         <div className="p-6">
           {successMsg ? (
              <div className="text-center py-8">
-               <CheckCircle size={48} className="text-green-400 mx-auto mb-4" />
+               <CheckCircle size={48} className={isCheckOut ? "text-amber-400 mx-auto mb-4" : "text-green-400 mx-auto mb-4"} />
                <h4 className="text-white text-xl font-bold">{successMsg}</h4>
-               <p className="text-white/60 mt-2">Tenha um ótimo turno!</p>
+               <p className="text-white/60 mt-2">{isCheckOut ? 'Bom descanso e até a próxima!' : 'Tenha um ótimo turno!'}</p>
              </div>
           ) : (
             <>
@@ -159,14 +160,14 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
                 <button 
                   className={`tab-btn flex-1 flex justify-center items-center gap-2`}
                   onClick={() => setActiveTab('gps')}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'gps' ? 'rgba(0, 229, 255, 0.1)' : 'transparent', color: activeTab === 'gps' ? 'var(--accent-cyan)' : 'var(--text-muted)', border: activeTab === 'gps' ? '1px solid rgba(0, 229, 255, 0.2)' : '1px solid transparent', boxShadow: activeTab === 'gps' ? '0 4px 12px rgba(0, 229, 255, 0.1)' : 'none' }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'gps' ? (isCheckOut ? 'rgba(251, 191, 36, 0.1)' : 'rgba(0, 229, 255, 0.1)') : 'transparent', color: activeTab === 'gps' ? (isCheckOut ? '#fbbf24' : 'var(--accent-cyan)') : 'var(--text-muted)', border: activeTab === 'gps' ? (isCheckOut ? '1px solid rgba(251, 191, 36, 0.2)' : '1px solid rgba(0, 229, 255, 0.2)') : '1px solid transparent' }}
                 >
-                  <MapPin size={18} /> GPS Check-in
+                  <MapPin size={18} /> {isCheckOut ? 'GPS Checkout' : 'GPS Check-in'}
                 </button>
                 <button 
                   className={`tab-btn flex-1 flex justify-center items-center gap-2`}
                   onClick={() => setActiveTab('qr')}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'qr' ? 'rgba(167, 139, 250, 0.1)' : 'transparent', color: activeTab === 'qr' ? '#a78bfa' : 'var(--text-muted)', border: activeTab === 'qr' ? '1px solid rgba(167, 139, 250, 0.2)' : '1px solid transparent', boxShadow: activeTab === 'qr' ? '0 4px 12px rgba(167, 139, 250, 0.1)' : 'none' }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold', fontSize: '0.9rem', background: activeTab === 'qr' ? 'rgba(167, 139, 250, 0.1)' : 'transparent', color: activeTab === 'qr' ? '#a78bfa' : 'var(--text-muted)', border: activeTab === 'qr' ? '1px solid rgba(167, 139, 250, 0.2)' : '1px solid transparent' }}
                 >
                   <QrCode size={18} /> QR Code
                 </button>
@@ -181,28 +182,42 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
 
               {activeTab === 'gps' && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '28px' }}>
-                  <div style={{ padding: '28px', borderRadius: '50%', background: 'rgba(0, 229, 255, 0.05)', border: '1px solid rgba(0, 229, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: '0 10px 30px rgba(0, 229, 255, 0.1)' }}>
-                     <MapPin size={46} className="text-accent-cyan" strokeWidth={1.5} />
+                  <div style={{ padding: '28px', borderRadius: '50%', background: isCheckOut ? 'rgba(251, 191, 36, 0.05)' : 'rgba(0, 229, 255, 0.05)', border: isCheckOut ? '1px solid rgba(251, 191, 36, 0.15)' : '1px solid rgba(0, 229, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                     <MapPin size={46} className={isCheckOut ? "text-amber-400" : "text-accent-cyan"} strokeWidth={1.5} />
                      {loading && (
-                       <div className="absolute inset-[-4px] border-2 border-transparent border-t-accent-cyan rounded-3xl animate-spin" style={{ position: 'absolute', top: '-4px', left: '-4px', right: '-4px', bottom: '-4px', border: '2px solid transparent', borderTopColor: 'var(--accent-cyan)', borderWidth: '2px', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                        <div className="absolute inset-[-4px] border-2 border-transparent border-t-accent-cyan rounded-3xl animate-spin" style={{ position: 'absolute', top: '-4px', left: '-4px', right: '-4px', bottom: '-4px', border: '2px solid transparent', borderTopColor: isCheckOut ? '#fbbf24' : 'var(--accent-cyan)', borderWidth: '2px', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
                      )}
-                     <div className="pulse-dot" style={{ position: 'absolute', top: '8px', right: '8px', width: '12px', height: '12px', background: 'var(--accent-cyan)', borderRadius: '50%', boxShadow: '0 0 10px var(--accent-cyan)' }}></div>
+                     <div className="pulse-dot" style={{ position: 'absolute', top: '8px', right: '8px', width: '12px', height: '12px', background: isCheckOut ? '#fbbf24' : 'var(--accent-cyan)', borderRadius: '50%', boxShadow: isCheckOut ? '0 0 10px #fbbf24' : '0 0 10px var(--accent-cyan)' }}></div>
                   </div>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <h4 style={{ color: 'white', fontWeight: 'bold', fontSize: '1.25rem', margin: 0, letterSpacing: '-0.02em' }}>Validação por Geofencing</h4>
+                    <h4 style={{ color: 'white', fontWeight: 'bold', fontSize: '1.25rem', margin: 0 }}>{isCheckOut ? 'Checkout por GPS' : 'Check-in por GPS'}</h4>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', maxWidth: '280px', margin: 0, lineHeight: 1.6 }}>
-                      O sistema usará o GPS para garantir que você está perto do <strong style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Ambiente de Trabalho</strong>.
+                      O sistema garantirá que você está no local para <strong style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{isCheckOut ? 'encerrar' : 'validar o início do'} seu turno</strong>.
                     </p>
                   </div>
                   
                   <button 
                     onClick={getLocationAndCheckin} 
                     disabled={loading}
-                    className="glow-btn-primary"
-                    style={{ padding: '16px', fontSize: '1.05rem', width: '100%', display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px', borderRadius: '16px', letterSpacing: '0.02em' }}
+                    className={isCheckOut ? "glow-btn-checkout" : "glow-btn-primary"}
+                    style={{ 
+                      padding: '16px', 
+                      fontSize: '1.05rem', 
+                      width: '100%', 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      gap: '12px', 
+                      marginTop: '8px', 
+                      borderRadius: '16px',
+                      background: isCheckOut ? 'linear-gradient(135deg, #f59e0b, #ea580c)' : undefined,
+                      border: 'none',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: loading ? 'not-allowed' : 'pointer'
+                    }}
                   >
-                    {loading ? <><Loader2 size={24} className="animate-spin" /> Verificando...</> : 'Bater Ponto Agora'}
+                    {loading ? <><Loader2 size={24} className="animate-spin" /> Verificando...</> : (isCheckOut ? 'Finalizar Escala Agora' : 'Bater Ponto Agora')}
                   </button>
                 </div>
               )}
@@ -210,20 +225,29 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
               {activeTab === 'qr' && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                    <p style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-                     Aponte a câmera para o QR Code afixado no Ambiente de Trabalho.
+                     {isCheckOut ? 'Leia o QR Code para confirmar sua saída.' : 'Leia o QR Code para confirmar sua entrada.'}
                    </p>
-                   <div id="reader" className="rounded-xl overflow-hidden border border-white/10 bg-black/40"></div>
-                   {loading && (
-                     <div className="mt-4 flex items-center justify-center gap-2 text-accent-cyan">
-                       <Loader2 size={16} className="animate-spin" /> Processando leitura...
-                     </div>
-                   )}
+                   <div id="reader" className="rounded-xl overflow-hidden border border-white/10 bg-black/40 w-full" style={{ minHeight: '200px' }}></div>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+      <style>{`
+        .glow-btn-checkout {
+          box-shadow: 0 4px 20px rgba(234, 88, 12, 0.4);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glow-btn-checkout:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(234, 88, 12, 0.6);
+          filter: brightness(1.1);
+        }
+        .glow-btn-checkout:active:not(:disabled) {
+          transform: translateY(0);
+        }
+      `}</style>
     </div>
   );
 }

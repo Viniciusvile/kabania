@@ -98,6 +98,12 @@ export default function ShiftGrid({
           );
         })}
       </div>
+      <style>{`
+        .drag-over-column {
+          background: rgba(0, 229, 255, 0.05) !important;
+          border: 2px dashed var(--accent-cyan) !important;
+        }
+      `}</style>
     </div>
   );
 }
