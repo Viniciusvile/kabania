@@ -692,7 +692,7 @@ function App() {
               ) : currentView === 'digital_twin' ? (
                 <DigitalTwinModule currentCompany={currentCompany} />
               ) : currentView === 'profile' ? (
-                <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+                <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} onProfileUpdate={handleProfileUpdate} />
               ) : currentView === 'settings' ? (
                 <UserSettings theme={theme} onToggleTheme={toggleTheme} />
               ) : currentView === 'billing' ? (

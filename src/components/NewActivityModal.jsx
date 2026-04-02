@@ -178,7 +178,7 @@ export default function NewActivityModal({ isOpen, onClose, onSave, currentCompa
     const now = new Date();
     const created = now.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
     const newActivity = {
-      id: String(Math.floor(Math.random() * 90000) + 10000),
+      id: crypto.randomUUID(),
       location: form.client || 'Sem cliente',
       type: form.activityType,
       status: form.status,

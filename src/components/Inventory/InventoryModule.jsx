@@ -3,6 +3,7 @@ import { PackageSearch, Plus, LayoutGrid, ListMinus } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { safeQuery, stagger } from '../../utils/supabaseSafe';
 import InventoryList from './InventoryList';
+import InventoryTransactions from './InventoryTransactions';
 import './InventoryModule.css';
 
 export default function InventoryModule({ companyId, currentUser, userRole }) {
@@ -111,11 +112,10 @@ export default function InventoryModule({ companyId, currentUser, userRole }) {
           />
         )}
         {activeTab === 'transactions' && (
-          <div className="empty-state">
-            <ListMinus size={80} className="empty-state-icon" />
-            <h2>Histórico de Movimentações</h2>
-            <p>Em breve: Visão detalhada de consumo por cargo, unidade e alertas de sazonalidade via IA.</p>
-          </div>
+          <InventoryTransactions 
+            companyId={companyId}
+            currentUser={currentUser}
+          />
         )}
       </div>
     </div>

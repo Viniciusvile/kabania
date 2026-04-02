@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Clock, MapPin, CheckCircle, Plus } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2 } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 
 export default function ShiftGrid({ 
@@ -11,7 +11,8 @@ export default function ShiftGrid({
   onRefresh, 
   updateShiftLocally, 
   setIsSyncing,
-  onCheckin
+  onCheckin,
+  onDeleteShift
 }) {
   
   const handleUpdateStatus = async (shiftId, status) => {
@@ -52,18 +53,26 @@ export default function ShiftGrid({
                 e.currentTarget.classList.add('drag-over-column');
               }}
               onDragLeave={(e) => {
-                e.currentTarget.classList.remove('drag-over-column');
+                if (!e.currentTarget.contains(e.relatedTarget)) {
+                  e.currentTarget.classList.remove('drag-over-column');
+                }
               }}
               onDrop={(e) => {
                 e.preventDefault();
                 e.currentTarget.classList.remove('drag-over-column');
-                
-                const activityData = e.dataTransfer.getData('activity');
+
+                // Try both drag data formats
+                let activityData = e.dataTransfer.getData('application/json');
+                if (!activityData) activityData = e.dataTransfer.getData('activity');
                 const shiftId = e.dataTransfer.getData('shiftId');
 
-                if (activityData) {
-                  const activity = JSON.parse(activityData);
-                  onDropActivity(activity, day.date, "08:00");
+                if (activityData && activityData !== 'null') {
+                  try {
+                    const activity = JSON.parse(activityData);
+                    onDropActivity(activity, day.date, '08:00');
+                  } catch (err) {
+                    console.error('[ShiftGrid] Error parsing drag data:', err);
+                  }
                 } else if (shiftId) {
                   onMoveShift(shiftId, day.date, null);
                 }
@@ -90,6 +99,7 @@ export default function ShiftGrid({
                       onAddEmployee={() => onAddEmployee(shift.id)} 
                       onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
                       onCheckin={() => onCheckin(shift)}
+                      onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
                     />
                   ))
                 )}
@@ -100,15 +110,21 @@ export default function ShiftGrid({
       </div>
       <style>{`
         .drag-over-column {
-          background: rgba(0, 229, 255, 0.05) !important;
-          border: 2px dashed var(--accent-cyan) !important;
+          background: rgba(0, 229, 255, 0.06) !important;
+          border: 2px dashed var(--accent-cyan, #00e5ff) !important;
+          box-shadow: inset 0 0 20px rgba(0,229,255,0.05);
+        }
+        .drag-over-column .empty-day-pixel {
+          border-color: var(--accent-cyan, #00e5ff) !important;
+          opacity: 1 !important;
+          color: var(--accent-cyan, #00e5ff) !important;
         }
       `}</style>
     </div>
   );
 }
 
-function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin }) {
+function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete }) {
   const isProblem = shift.status === 'open' || (shift.open_calls_count > 0);
   const isConcluded = shift.status === 'completed' || shift.status === 'concluded';
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
@@ -122,11 +138,6 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin }) {
   return (
     <div 
       className={`escala-card-pixel premium-shift-card ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('shiftId', shift.id);
-        e.dataTransfer.effectAllowed = 'move';
-      }}
     >
       {/* Indicador de Status Glow */}
       <div style={{
@@ -135,14 +146,41 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin }) {
         boxShadow: `0 0 15px ${isProblem ? 'var(--escala-danger)' : inProgress ? 'var(--escala-success)' : 'transparent'}`
       }} />
 
-      {/* ⏰ TIME BADGE */}
+      {/* ⏰ TIME BADGE + DRAG HANDLE + DELETE */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="premium-time-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', borderRadius: '8px' }}>
+        {/* Drag handle — ÚNICO elemento arrastável */}
+        <div
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('shiftId', shift.id);
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'grab', flex: 1 }}
+          className="premium-time-badge"
+        >
           <Clock size={12} className="text-accent-cyan" /> 
           <span className="premium-time-text" style={{ fontSize: '11px', fontWeight: 'bold' }}>{startTime} - {endTime}</span>
         </div>
-        <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', background: isProblem ? 'rgba(239, 68, 68, 0.1)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'var(--badge-bg, rgba(255,255,255,0.05))', color: isProblem ? '#ef4444' : inProgress ? '#10b981' : 'var(--text-muted)' }}>
-          {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <div style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, padding: '2px 8px', borderRadius: '12px', background: isProblem ? 'rgba(239, 68, 68, 0.1)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'var(--badge-bg, rgba(255,255,255,0.05))', color: isProblem ? '#ef4444' : inProgress ? '#10b981' : 'var(--text-muted)' }}>
+            {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
+          </div>
+          {/* Botão de delete — fora do draggable, onClick funciona normalmente */}
+          <button
+            onClick={() => onDelete()}
+            title="Excluir escala"
+            style={{
+              width: '28px', height: '28px', borderRadius: '8px', border: 'none',
+              background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)'; e.currentTarget.style.transform = 'scale(1.15)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
       </div>
 

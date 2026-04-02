@@ -59,7 +59,7 @@ export function useShifts(companyId) {
       // RPCs v3/v2 falhavam com 5 retries de backoff exponencial.
       // ═══════════════════════════════════════════════════════════════
       
-      const [shiftsResult, envsResult, actsResult, empResult, collabResult, srResult] = await Promise.all([
+      const [shiftsResult, envsResult, actsResult, empResult, collabResult, srResult, activitiesResult] = await Promise.all([
         supabase.from('shifts').select('*').eq('company_id', companyId)
           .gte('start_time', weekStart.toISOString()).lte('start_time', end.toISOString())
           .order('start_time').then(r => r.data || []).catch(() => []),
@@ -68,6 +68,8 @@ export function useShifts(companyId) {
         getEmployeeProfiles(companyId).catch(() => []),
         getCollaborators(companyId).catch(() => []),
         supabase.from('service_requests').select('*').eq('company_id', companyId)
+          .then(r => r.data || []).catch(() => []),
+        supabase.from('activities').select('*').eq('company_id', companyId)
           .then(r => r.data || []).catch(() => [])
       ]);
 
@@ -75,11 +77,13 @@ export function useShifts(companyId) {
       const directActs = actsResult || [];
       const directEmployees = [...(empResult || []), ...(collabResult || [])];
       const serviceRequests = srResult || [];
+      const actualActivities = activitiesResult || [];
 
       // Mapear shifts com dados de ambiente/atividade por ID
       const envMap = Object.fromEntries(directEnvs.map(e => [e.id, e]));
       const actMap = Object.fromEntries(directActs.map(a => [a.id, a]));
       const srMap = Object.fromEntries(serviceRequests.map(sr => [String(sr.id), sr]));
+      const actualActMap = Object.fromEntries(actualActivities.map(aa => [String(aa.id), aa]));
 
       // Buscar assignments para os shifts carregados (1 query extra, mas rápida)
       const shiftIds = shiftsResult.map(s => s.id);
@@ -116,14 +120,14 @@ export function useShifts(companyId) {
       const transformedShifts = shiftsResult.map(shift => {
         const env = envMap[shift.environment_id];
         const act = actMap[shift.activity_id];
-        const sr = srMap[String(shift.service_request_id)];
+        const sr = srMap[String(shift.service_request_id)] || actualActMap[String(shift.service_request_id)];
         return {
           ...shift,
           work_environments: { 
-            name: env?.name || (sr ? `${sr.customer_name}${sr.client_unit ? ' (' + sr.client_unit + ')' : ''}` : 'Local Não Definido')
+            name: env?.name || (sr ? (sr.customer_name || sr.location || 'Local') : 'Local Não Definido')
           },
           work_activities: { 
-            name: act?.name || sr?.service_type || 'Atividade',
+            name: act?.name || sr?.service_type || sr?.type || 'Atividade',
             required_role: act?.required_role || shift.required_role,
             required_skills: act?.required_skills || shift.required_skills || []
           },
@@ -159,30 +163,41 @@ export function useShifts(companyId) {
       }));
       setEmployees(transformedEmployees);
 
-      // Pending Activities
-      const rawActivities = [
-        ...directActs.map(act => ({
-          ...act,
-          location: act.name || 'Atividade Geral',
-          type: 'Rotina',
-          created: act.created_at
-        })),
-        ...serviceRequests.map(sr => ({
+      // Pending Activities (UNIFIED: Service Requests + Actual Activities)
+      const linkedSrIds = new Set(transformedShifts.map(s => String(s.service_request_id)).filter(Boolean));
+      
+      const pendingSRs = serviceRequests
+        .filter(sr => {
+          const status = (sr.status || '').toLowerCase();
+          const isCompleted = status.includes('conclu') || status.includes('finalized') || status.includes('accept');
+          return !isCompleted && !linkedSrIds.has(String(sr.id));
+        })
+        .map(sr => ({
           ...sr,
           location: sr.customer_name + (sr.client_unit ? ' (' + sr.client_unit + ')' : ''),
           type: sr.service_type,
-          created: sr.created_at
-        }))
-      ];
+          created: sr.created_at,
+          source: 'service_request'
+        }));
 
-      const linkedIds = new Set(transformedShifts.map(s => String(s.service_request_id)).filter(Boolean));
-      const pending = rawActivities.filter(a => {
-        const status = (a.status || '').toLowerCase();
-        const isCompleted = status.includes('conclu') || status.includes('finalized');
-        return !isCompleted && !linkedIds.has(String(a.id));
-      }).sort((a, b) => new Date(b.created) - new Date(a.created));
+      const pendingActual = actualActivities
+        .filter(aa => {
+          const status = (aa.status || '').toLowerCase();
+          const isCompleted = status.includes('conclu') || status.includes('finalized');
+          return !isCompleted && !linkedSrIds.has(String(aa.id));
+        })
+        .map(aa => ({
+          ...aa,
+          location: aa.location || 'Atividade Direta',
+          type: aa.type || 'Serviço',
+          created: aa.created || aa.created_at,
+          source: 'activity'
+        }));
 
-      setPendingActivities(pending);
+      const unifiedPending = [...pendingSRs, ...pendingActual]
+        .sort((a, b) => new Date(b.created) - new Date(a.created));
+
+      setPendingActivities(unifiedPending);
 
       // Salvar cache para Instant Hydration
       localStorage.setItem(`${cacheKey}_stats`, JSON.stringify(computedStats));
@@ -241,6 +256,8 @@ export function useShifts(companyId) {
     const shiftsChannel = supabase.channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts', filter: `company_id=eq.${companyId}` }, (p) => applyRealtimeUpdate(p))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_assignments' }, () => debounceLoad())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'service_requests', filter: `company_id=eq.${companyId}` }, () => debounceLoad())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter: `company_id=eq.${companyId}` }, () => debounceLoad())
       .subscribe();
 
     return () => {
@@ -285,7 +302,13 @@ export function useShifts(companyId) {
     updateShiftLocally: (shiftId, updates) => {
         setShifts(prev => {
             const updated = prev.map(s => s.id === shiftId ? { ...s, ...updates } : s);
-            // 💾 Sincroniza o cache do localStorage imediatamente para o Refresh não carregar lixo
+            localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
+            return updated;
+        });
+    },
+    removeShiftLocally: (shiftId) => {
+        setShifts(prev => {
+            const updated = prev.filter(s => s.id !== shiftId);
             localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
             return updated;
         });

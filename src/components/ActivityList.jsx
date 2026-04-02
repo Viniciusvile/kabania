@@ -207,7 +207,8 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const nowStr = () => new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
   const handleSave = async (activity) => {
-    const newId = String(Math.floor(Math.random() * 90000) + 10000);
+        const newId = crypto.randomUUID();
+
     const nowIso = new Date().toISOString();
     
     // Prepare precisely what Supabase expects (matching the SQL schema)
@@ -367,7 +368,8 @@ export default function ActivityList({ currentUser, currentCompany }) {
   };
 
   const handleDuplicate = async (activity) => {
-    const newId = String(Math.floor(Math.random() * 90000) + 10000);
+        const newId = crypto.randomUUID();
+
     const nowIso = new Date().toISOString();
     
     const dupPayload = {

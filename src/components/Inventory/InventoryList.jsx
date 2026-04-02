@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Package, AlertTriangle, ArrowDownCircle, LayoutGrid, Plus, CheckCircle } from 'lucide-react';
+import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, LayoutGrid, Plus, CheckCircle } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
 export default function InventoryList({ items, loading, companyId, currentUser, onRefresh }) {
   const [isWithdrawing, setIsWithdrawing] = useState(null);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isEntering, setIsEntering] = useState(null);
+  const [amount, setAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -16,24 +17,29 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
     unit: 'un'
   });
 
-  const handleWithdraw = async (item) => {
-    if (!withdrawAmount || isNaN(withdrawAmount) || Number(withdrawAmount) <= 0) return;
-    if (Number(withdrawAmount) > item.quantity) {
+  const handleTransaction = async (item, type) => {
+    const qty = Number(amount);
+    if (!amount || isNaN(amount) || qty <= 0) return;
+    
+    if (type === 'out' && qty > item.quantity) {
       alert('Quantidade maior que o estoque atual.');
       return;
     }
+    
     try {
       const { error } = await supabase.from('inventory_transactions').insert([{
         item_id: item.id,
         company_id: companyId,
-        type: 'out',
-        quantity: Number(withdrawAmount),
+        type: type,
+        quantity: qty,
         user_email: currentUser,
-        notes: 'Retirada manual'
+        notes: type === 'out' ? 'Retirada manual' : 'Entrada manual'
       }]);
+      
       if (!error) {
         setIsWithdrawing(null);
-        setWithdrawAmount('');
+        setIsEntering(null);
+        setAmount('');
         onRefresh();
       }
     } catch (e) { console.error(e); }
@@ -44,20 +50,33 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
     if (!newItem.name || !companyId) return;
     setIsSaving(true);
     try {
-      const { error } = await supabase.from('inventory_items').insert([{
+      const { data: itemData, error: itemError } = await supabase.from('inventory_items').insert([{
         company_id: companyId,
         ...newItem,
-        quantity: Number(newItem.quantity),
+        quantity: 0, // Iniciamos com 0 pois o gatilho da transação abaixo somará o valor real
         min_threshold: Number(newItem.min_threshold)
-      }]);
-      if (!error) {
+      }]).select();
+
+      if (!itemError && itemData && itemData[0]) {
+        // Registrar estoque inicial como transação
+        if (Number(newItem.quantity) > 0) {
+          await supabase.from('inventory_transactions').insert([{
+            item_id: itemData[0].id,
+            company_id: companyId,
+            type: 'in',
+            quantity: Number(newItem.quantity),
+            user_email: currentUser,
+            notes: 'Estoque inicial'
+          }]);
+        }
+
         setSaveSuccess(true);
         setNewItem({ name: '', category: 'Limpeza', quantity: 0, min_threshold: 5, unit: 'un' });
         onRefresh();
         setTimeout(() => setSaveSuccess(false), 2500);
       } else {
         alert('Erro ao criar item.');
-        console.error(error);
+        console.error(itemError);
       }
     } catch (e) { console.error(e); }
     setIsSaving(false);
@@ -85,7 +104,22 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
           </div>
           <div className="card-actions">
             <button
-              onClick={() => setIsWithdrawing(isWithdrawing === item.id ? null : item.id)}
+              onClick={() => {
+                setIsEntering(isEntering === item.id ? null : item.id);
+                setIsWithdrawing(null);
+                setAmount('');
+              }}
+              className="entry-btn"
+              title="Registrar Entrada"
+            >
+              <ArrowUpCircle size={22} />
+            </button>
+            <button
+              onClick={() => {
+                setIsWithdrawing(isWithdrawing === item.id ? null : item.id);
+                setIsEntering(null);
+                setAmount('');
+              }}
               className="withdraw-btn"
               title="Registrar Saída"
             >
@@ -102,28 +136,33 @@ export default function InventoryList({ items, loading, companyId, currentUser, 
         </div>
         <div className="threshold-info">Mínimo: {item.min_threshold} {item.unit}</div>
 
-        {isWithdrawing === item.id && (
+        {(isWithdrawing === item.id || isEntering === item.id) && (
           <div className="withdraw-overlay">
             <div className="withdraw-form">
-              <h4>Retirar {item.name}</h4>
+              <h4>{isEntering ? 'Entrada' : 'Retirada'}: {item.name}</h4>
               <input
                 type="number"
                 className="withdraw-input"
                 placeholder="Qtd."
-                value={withdrawAmount}
-                onChange={e => setWithdrawAmount(e.target.value)}
+                value={amount}
+                onChange={e => setAmount(e.target.value)}
                 autoFocus
               />
               <div className="withdraw-actions">
-                <button onClick={() => setIsWithdrawing(null)} className="btn-cancel">Fechar</button>
-                <button onClick={() => handleWithdraw(item)} className="btn-confirm">Baixar</button>
+                <button onClick={() => { setIsWithdrawing(null); setIsEntering(null); }} className="btn-cancel">Fechar</button>
+                <button 
+                  onClick={() => handleTransaction(item, isEntering ? 'in' : 'out')} 
+                  className={`btn-confirm ${isEntering ? 'in' : ''}`}
+                >
+                  Confirmar
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
     );
-  }), [items, isWithdrawing, withdrawAmount]);
+  }), [items, isWithdrawing, isEntering, amount]);
 
   return (
     <div className="inventory-split-layout">

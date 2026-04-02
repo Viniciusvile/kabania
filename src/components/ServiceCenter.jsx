@@ -84,7 +84,7 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
   }, [currentCompany]);
 
   const handleAccept = async (request) => {
-    const newActivityId = String(Math.floor(Math.random() * 90000) + 10000);
+    const newActivityId = crypto.randomUUID();
     const nowIso = new Date().toISOString();
 
     const activityPayload = {

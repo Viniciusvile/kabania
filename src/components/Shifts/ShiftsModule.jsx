@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX, Wand2 } from 'lucide-react';
-import { addEmployeeToShift, moveShift, createShift } from '../../services/shiftService';
+import { addEmployeeToShift, moveShift, createShift, deleteShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
@@ -27,7 +27,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     setWeekStart, 
     refresh,
     addShiftLocally,
-    updateShiftLocally
+    updateShiftLocally,
+    removeShiftLocally
   } = useShifts(companyId);
 
   const [filterStatus, setFilterStatus] = useState('todos');
@@ -40,6 +41,55 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState('field');
+  const [kanbanTasks, setKanbanTasks] = useState([]);
+
+  // ── Busca Kanban tasks de todos projetos da empresa ──────────────────
+  useEffect(() => {
+    const fetchKanbanTasks = async () => {
+      if (!companyId) return;
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('id, title, description, column_id, tag, deadline, assignees, customer_name')
+        .eq('company_id', companyId)
+        .in('column_id', ['backlog', 'todo', 'progress']);
+      if (!error && data) {
+        setKanbanTasks(data.map(t => ({ ...t, source: 'kanban', desc: t.description })));
+      }
+    };
+    fetchKanbanTasks();
+  }, [companyId]);
+
+  // Workspace mostra APENAS os cards do Kanban (backlog, todo, in progress)
+  const workspaceItems = useMemo(() => [...kanbanTasks], [kanbanTasks]);
+
+  const handleDeleteShift = async (shiftId) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta escala?')) return;
+
+    // Atualiza UI imediatamente (otimista)
+    removeShiftLocally(shiftId);
+    setIsSyncing(true);
+
+    try {
+      const { error } = await supabase
+        .from('shifts')
+        .delete()
+        .eq('id', shiftId);
+
+      if (error) {
+        console.error('[deleteShift] Erro no banco:', error);
+        // Rollback: recarrega os dados originais
+        refresh();
+        alert('Erro ao excluir: ' + (error.message || 'Verifique permissões no banco.'));
+      }
+      // Sem erro: Realtime vai confirmar a exclusão; UI já foi atualizada
+    } catch (err) {
+      console.error('[deleteShift] Exceção:', err);
+      refresh(); // Rollback
+      alert('Erro ao excluir: ' + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -282,8 +332,10 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       // 2. Original da Atividade/Service Request
       const targetEnvId = environmentId || activity.environment_id || activity.work_environments?.id;
 
-      // 🔄 Lógica de Reconhecimento de Tipo: SR vs Atividade Pura
-      const isServiceRequest = !!(activity.customer_name || activity.service_type);
+      // 🔄 Lógica de Reconhecimento de Tipo Unificada
+      const isServiceRequest = activity.source === 'service_request' || !!activity.customer_name;
+      const isActivity = activity.source === 'activity';
+      
       const payload = {
         company_id: companyId,
         environment_id: targetEnvId,
@@ -293,9 +345,19 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         notes: `Agendado via Drag & Drop: ${activity.location || activity.name}`
       };
 
-      if (isServiceRequest) {
+      console.log("[handleDropActivity] Payload construído:", {
+        id: activity.id,
+        source: activity.source,
+        isServiceRequest,
+        isActivity,
+        targetEnvId
+      });
+
+      if (isServiceRequest || isActivity) {
+        // Vincula a solicitações externas ou atividades manuais (origem central/lista)
         payload.service_request_id = activity.id;
       } else {
+        // Vincula a atividades do catálogo (rotinas)
         payload.activity_id = activity.id;
       }
 
@@ -434,11 +496,12 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             isSyncing={isSyncing}
             setIsSyncing={setIsSyncing}
             onCheckin={(shift) => setCheckinModal({ isOpen: true, shift })}
+            onDeleteShift={handleDeleteShift}
           />
         </div>
 
         <ShiftSidebar 
-          pendingActivities={pendingActivities} 
+          pendingActivities={workspaceItems} 
           routineActivities={activities}
           onQuickSchedule={handleQuickSchedule} 
           onAutoPilot={handleRunAutoPilot}
