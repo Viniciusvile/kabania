@@ -1,6 +1,7 @@
 /* --- Kanban Board styles --- */
 .kanban-wrapper {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 8px; /* Room for highlighted column jump */
   flex: 1;
   min-height: 0;
   overflow-x: auto;

@@ -485,7 +485,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         `}</style>
 
         <div className="shifts-grid-area">
-          <div className="flex items-center gap-4">
+          <div className="shifts-header-row-premium">
             <h2 className="shifts-title-premium">Gerenciar Escalas</h2>
             {/* Indicador Minimalista de Sincronia */}
             <div className={`sync-status-minimal ${isSyncing ? 'visible' : ''}`}>

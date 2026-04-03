@@ -78,19 +78,21 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
-    padding: '10px 8px',
+    gap: '8px',
+    padding: '12px 10px',
     fontSize: '11px',
     fontWeight: 800,
-    borderRadius: '10px',
-    transition: 'all 0.2s',
+    borderRadius: '12px',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: 'pointer',
-    border: 'none',
+    border: active ? '1px solid rgba(0,229,255,0.3)' : '1px solid transparent',
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    background: active ? 'var(--accent-cyan, #00e5ff)' : 'transparent',
-    color: active ? '#000' : 'var(--text-muted)',
-    boxShadow: active ? '0 4px 12px rgba(0,229,255,0.25)' : 'none',
+    letterSpacing: '0.08em',
+    background: active 
+      ? 'linear-gradient(135deg, rgba(0,194,255,0.1) 0%, rgba(0,114,255,0.15) 100%)' 
+      : 'transparent',
+    color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-muted)',
+    boxShadow: active ? '0 0 20px rgba(0,229,255,0.15)' : 'none',
   });
 
   const cardBase = (isDragging, isRoutine, isUrgent) => ({
@@ -140,18 +142,34 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
       <div style={{ display: 'flex', padding: '10px', gap: '6px', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))' }}>
         <button style={tabStyle(activeTab === 'pending')} onClick={() => setActiveTab('pending')}>
           <LayoutGrid size={13} />
-          Workspace
+          WORKSPACE
           {pendingActivities.length > 0 && (
-            <span style={{ background: activeTab === 'pending' ? 'rgba(0,0,0,0.2)' : 'var(--accent-cyan)', color: '#000', fontSize: '9px', padding: '1px 6px', borderRadius: '999px', fontWeight: 900 }}>
+            <span style={{ 
+              background: 'rgba(0,229,255,0.1)', 
+              color: 'var(--accent-cyan)', 
+              border: '1px solid rgba(0,229,255,0.3)',
+              fontSize: '10px', 
+              padding: '2px 8px', 
+              borderRadius: '99px', 
+              fontWeight: 900 
+            }}>
               {pendingActivities.length}
             </span>
           )}
         </button>
         <button style={tabStyle(activeTab === 'routine')} onClick={() => setActiveTab('routine')}>
           <Layers size={13} />
-          Atividades
+          ATIVIDADES
           {routineActivities.length > 0 && (
-            <span style={{ background: activeTab === 'routine' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.1)', color: activeTab === 'routine' ? '#000' : 'var(--text-muted)', fontSize: '9px', padding: '1px 6px', borderRadius: '999px', fontWeight: 900 }}>
+            <span style={{ 
+              background: activeTab === 'routine' ? 'rgba(168,85,247,0.1)' : 'rgba(255,255,255,0.05)', 
+              color: activeTab === 'routine' ? '#c084fc' : 'var(--text-muted)', 
+              border: `1px solid ${activeTab === 'routine' ? 'rgba(168,85,247,0.3)' : 'transparent'}`,
+              fontSize: '10px', 
+              padding: '2px 8px', 
+              borderRadius: '99px', 
+              fontWeight: 900 
+            }}>
               {routineActivities.length}
             </span>
           )}

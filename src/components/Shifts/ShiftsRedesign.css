@@ -116,6 +116,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
+    margin-bottom: 32px;
 }
 
 .filter-pills-pixel {
