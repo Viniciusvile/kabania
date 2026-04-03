@@ -42,6 +42,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState('field');
   const [kanbanTasks, setKanbanTasks] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, shiftId: null });
 
   // ── Busca Kanban tasks de todos projetos da empresa ──────────────────
   useEffect(() => {
@@ -62,8 +63,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   // Workspace mostra APENAS os cards do Kanban (backlog, todo, in progress)
   const workspaceItems = useMemo(() => [...kanbanTasks], [kanbanTasks]);
 
-  const handleDeleteShift = async (shiftId) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta escala?')) return;
+  const handleDeleteShift = (shiftId) => {
+    // Abre modal customizado em vez de window.confirm (que é bloqueado em dev/localhost)
+    setConfirmModal({ isOpen: true, shiftId });
+  };
+
+  const handleConfirmDelete = async () => {
+    const shiftId = confirmModal.shiftId;
+    setConfirmModal({ isOpen: false, shiftId: null });
+    if (!shiftId) return;
 
     // Atualiza UI imediatamente (otimista)
     removeShiftLocally(shiftId);
@@ -77,14 +85,12 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
       if (error) {
         console.error('[deleteShift] Erro no banco:', error);
-        // Rollback: recarrega os dados originais
         refresh();
         alert('Erro ao excluir: ' + (error.message || 'Verifique permissões no banco.'));
       }
-      // Sem erro: Realtime vai confirmar a exclusão; UI já foi atualizada
     } catch (err) {
       console.error('[deleteShift] Exceção:', err);
-      refresh(); // Rollback
+      refresh();
       alert('Erro ao excluir: ' + err.message);
     } finally {
       setIsSyncing(false);
@@ -333,8 +339,12 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       const targetEnvId = environmentId || activity.environment_id || activity.work_environments?.id;
 
       // 🔄 Lógica de Reconhecimento de Tipo Unificada
-      const isServiceRequest = activity.source === 'service_request' || !!activity.customer_name;
-      const isActivity = activity.source === 'activity';
+      const isKanban = activity.source === 'kanban';
+      const isServiceRequest = !isKanban && (activity.source === 'service_request' || !!activity.customer_name);
+      const isActivity = !isKanban && activity.source === 'activity';
+
+      // Monta a nota descritiva com o título do card (Kanban não tem FK compatível com shifts)
+      const label = activity.title || activity.location || activity.name || 'Tarefa';
       
       const payload = {
         company_id: companyId,
@@ -342,24 +352,28 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         status: 'scheduled',
-        notes: `Agendado via Drag & Drop: ${activity.location || activity.name}`
+        notes: isKanban
+          ? `Agendado via Workspace (Kanban): ${label}`
+          : `Agendado via Drag & Drop: ${activity.location || activity.name}`
       };
 
       console.log("[handleDropActivity] Payload construído:", {
         id: activity.id,
         source: activity.source,
+        isKanban,
         isServiceRequest,
         isActivity,
         targetEnvId
       });
 
-      if (isServiceRequest || isActivity) {
-        // Vincula a solicitações externas ou atividades manuais (origem central/lista)
+      if (isServiceRequest) {
+        // Vincula a solicitações de serviço externas
         payload.service_request_id = activity.id;
-      } else {
+      } else if (isActivity) {
         // Vincula a atividades do catálogo (rotinas)
         payload.activity_id = activity.id;
       }
+      // Cards do Kanban (isKanban) não vinculam FK — apenas geram escala com notes descritivas
 
       const data = await createShift(payload, currentUser);
       
@@ -376,6 +390,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   };
 
   const handleMoveShift = (shiftId, newDate, newTime) => {
+    console.log("[MoveShift] Iniciando mudança:", { shiftId, newDate, newTime });
     const shift = shifts.find(s => s.id === shiftId);
     if (!shift) return;
 
@@ -405,12 +420,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       .then(result => {
         if (!result) throw new Error("Sem confirmação do servidor.");
         console.log("[MoveShift] ✅ Sincronizado Silenciosamente:", shiftId);
+        // Garantir que os dados estão 100% atualizados no hook
+        if (refresh) refresh();
       })
       .catch(err => {
         console.error("[MoveShift] ❌ Falha na sincronização:", err);
         // Só alertamos o usuário se realmente falhar no banco
         updateShiftLocally(shiftId, originalTimes); 
         alert("Erro ao salvar mudança. A escala voltou para a posição original.");
+        if (refresh) refresh();
       });
   };
 
@@ -516,6 +534,42 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
            onCancel={() => setAutoPilotResult(null)}
            isProcessing={isSyncing}
         />
+      )}
+
+      {/* 🗑️ MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (substitui window.confirm) */}
+      {confirmModal.isOpen && (
+        <div className="modal-overlay-pixel glass-morphism" style={{ zIndex: 9999 }}>
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ 
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 1rem'
+              }}>
+                <span style={{ fontSize: '24px' }}>🗑️</span>
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.5rem' }}>Excluir Escala</h3>
+              <p style={{ fontSize: '13px', opacity: 0.6 }}>Tem certeza que deseja excluir esta escala? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="glow-btn-ghost py-3"
+                style={{ flex: 1 }}
+                onClick={() => setConfirmModal({ isOpen: false, shiftId: null })}
+              >
+                Cancelar
+              </button>
+              <button
+                className="glow-btn-primary py-3"
+                style={{ flex: 1, background: 'rgba(239,68,68,0.8)', boxShadow: '0 4px 15px rgba(239,68,68,0.3)' }}
+                onClick={handleConfirmDelete}
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {checkinModal.isOpen && (
