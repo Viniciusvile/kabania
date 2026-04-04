@@ -41,7 +41,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState('field');
-  const [kanbanTasks, setKanbanTasks] = useState([]);
+  const [kanbanTasks, setKanbanTasks] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`kanban_tasks_cache_${companyId}`);
+      return cached ? JSON.parse(cached) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, shiftId: null });
 
   // ── Busca Kanban tasks de todos projetos da empresa ──────────────────
@@ -54,7 +61,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         .eq('company_id', companyId)
         .in('column_id', ['backlog', 'todo', 'progress']);
       if (!error && data) {
-        setKanbanTasks(data.map(t => ({ ...t, source: 'kanban', desc: t.description })));
+        const transformed = data.map(t => ({ ...t, source: 'kanban', desc: t.description }));
+        setKanbanTasks(transformed);
+        localStorage.setItem(`kanban_tasks_cache_${companyId}`, JSON.stringify(transformed));
       }
     };
     fetchKanbanTasks();

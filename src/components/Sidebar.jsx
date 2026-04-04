@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck, GraduationCap, Map } from 'lucide-react';
+import { BrainCircuit, Grid, Calendar, BarChart2, Lightbulb, BookOpen, LogOut, ClipboardList, Building2, Crown, ChevronDown, LifeBuoy, Sparkles, Users, MessageSquare, FileText, Settings, Shield, PackageSearch, ShieldCheck, GraduationCap, Map, CalendarDays } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLogout, currentView, onViewChange, userRole }) {
@@ -16,8 +16,8 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
       {isMobileOpen && <div className="sidebar-overlay" onClick={onCloseMobile}></div>}
       <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-brand">
-          <div className="flex items-center gap-3 flex-1">
-            <BrainCircuit className="brand-icon min-w-[32px]" size={32} />
+          <div className="flex items-center gap-3">
+            <BrainCircuit className="brand-icon" size={32} />
             <span className="brand-name">Synapse Smart</span>
           </div>
           {isMobileOpen && (
@@ -132,14 +132,25 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
 
         {/* Admin Settings */}
         {userRole === 'admin' && (
-          <div
-            className={`nav-item ${currentView === 'company' ? 'active' : ''}`}
-            onClick={() => onViewChange('company')}
-          >
-            <Building2 size={20} />
-            <span>Dados da Empresa</span>
-            {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
-          </div>
+          <>
+            <div
+              className={`nav-item ${currentView === 'company' ? 'active' : ''}`}
+              onClick={() => onViewChange('company')}
+            >
+              <Building2 size={20} />
+              <span>Dados da Empresa</span>
+              {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
+            </div>
+            
+            <div
+              className={`nav-item ${currentView === 'calendar_settings' ? 'active' : ''}`}
+              onClick={() => onViewChange('calendar_settings')}
+            >
+              <CalendarDays size={20} className="text-green-400" />
+              <span>Calendários</span>
+              {!isCollapsed && <Crown size={14} className="ml-auto text-yellow-500 opacity-80" />}
+            </div>
+          </>
         )}
       </nav>
 

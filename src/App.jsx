@@ -23,6 +23,8 @@ import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import ClientPortal from './components/Portal/ClientPortal';
 import DigitalTwinModule from './components/DigitalTwin/DigitalTwinModule';
+import CalendarIntegrationSettings from './components/CalendarIntegrationSettings';
+import AuthCallbackHandler from './components/AuthCallbackHandler';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
@@ -68,6 +70,11 @@ function App() {
   if (pathname.startsWith('/portal/')) {
     const token = pathname.split('/portal/')[1];
     return <ClientPortal token={token} />;
+  }
+
+  // Interceptação de Rotas de Autenticação OAuth
+  if (pathname.startsWith('/auth/')) {
+    return <AuthCallbackHandler />;
   }
 
   // Changed: Initial state based on localStorage for "Optimistic" UI
@@ -697,6 +704,12 @@ function App() {
                 <UserSettings theme={theme} onToggleTheme={toggleTheme} />
               ) : currentView === 'billing' ? (
                 <BillingView currentCompany={currentCompany} />
+              ) : currentView === 'calendar_settings' ? (
+                <CalendarIntegrationSettings 
+                  currentCompany={currentCompany} 
+                  currentUser={currentUser} 
+                  userRole={userRole} 
+                />
               ) : (
                 <div className="p-8 text-center text-muted">View em desenvolvimento</div>
               )}

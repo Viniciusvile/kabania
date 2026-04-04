@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Star, RotateCcw, Filter, LayoutGrid, MoreHorizontal, Plus, Search, Trash2, Eye, Edit2, Copy, CheckCircle, XCircle, AlertTriangle, Calendar } from 'lucide-react';
-import { useGoogleLogin } from '@react-oauth/google';
+
 import NewActivityModal from './NewActivityModal';
 import ActivityDetailModal from './ActivityDetailModal';
 import { logEvent } from '../services/historyService';
 import { supabase } from '../supabaseClient';
-import { syncActivityToCalendar, deleteCalendarEvent } from '../services/calendarService';
+import { CalendarIntegrationService } from '../services/calendarIntegrationService';
 import { createNotification } from '../services/notificationService';
 import { createShift } from '../services/shiftService';
 import './ActivityList.css';
@@ -122,31 +122,24 @@ export default function ActivityList({ currentUser, currentCompany }) {
     return cached ? JSON.parse(cached) : [];
   });
   const [loading, setLoading] = useState(false);
-  const [googleToken, setGoogleToken] = useState(null);
 
-  // Google Login for Calendar scope
-  const loginCalendar = useGoogleLogin({
-    onSuccess: tokenResponse => {
-      setGoogleToken(tokenResponse.access_token);
-      // We don't have a reliable way to "resume" the save here easily without complex state,
-      // so we tell the user to click save again.
-      alert("Google Agenda autorizado! Clique em 'CRIAR' ou 'SALVAR' novamente para sincronizar.");
-    },
-    scope: 'https://www.googleapis.com/auth/calendar.events',
-  });
 
-  const checkAndSync = async (activity, token) => {
-    if (!token) {
-      loginCalendar();
-      return null;
-    }
+  const syncWithExternalCalendars = async (activity) => {
+    if (!currentCompany?.id) return null;
+    
     try {
-      const event = await syncActivityToCalendar(activity, token);
-      return event.id;
-    } catch (err) {
-      console.error("Erro na sincronização:", err);
-      // If token expired, clear it
-      setGoogleToken(null);
+      const service = new CalendarIntegrationService(currentCompany.id);
+      const config = await service.getIntegrationConfig();
+      
+      if (!config) return null;
+      
+      const results = await service.syncActivityToExternalCalendars(activity, config);
+      
+      // Return Google event ID if available for backward compatibility
+      const googleResult = results.find(r => r.provider === 'google' && r.success);
+      return googleResult ? googleResult.eventId : null;
+    } catch (error) {
+      console.error("Erro na sincronização com calendários externos:", error);
       return null;
     }
   };
@@ -232,12 +225,9 @@ export default function ActivityList({ currentUser, currentCompany }) {
 
     // If sync is requested, handle it
     if (activity.syncCalendar) {
-      const eventId = await checkAndSync(activity, googleToken);
+      const eventId = await syncWithExternalCalendars(activity);
       if (eventId) {
         supabasePayload.google_event_id = eventId;
-      } else {
-        // User needs to authorize or click save again
-        return; 
       }
     }
 
@@ -322,9 +312,9 @@ export default function ActivityList({ currentUser, currentCompany }) {
       google_event_id: updatedActivity.google_event_id
     };
 
-    // Update Calendar if exists
-    if (updatedActivity.google_event_id && googleToken) {
-      await checkAndSync(updatedActivity, googleToken);
+    // Update external calendars if sync is enabled
+    if (updatedActivity.syncCalendar) {
+      await syncWithExternalCalendars(updatedActivity);
     }
 
     const { error } = await supabase
@@ -348,9 +338,17 @@ export default function ActivityList({ currentUser, currentCompany }) {
   const confirmDelete = async (id) => {
     const act = activities.find(a => a.id === id);
     
-    // Delete from Calendar if exists
-    if (act?.google_event_id && googleToken) {
-      await deleteCalendarEvent(act.google_event_id, googleToken);
+    // Delete from external calendars if needed
+    if (currentCompany?.id && (act?.google_event_id || act?.outlook_event_id)) {
+      try {
+        const service = new CalendarIntegrationService(currentCompany.id);
+        const config = await service.getIntegrationConfig();
+        if (config) {
+          await service.deleteFromExternalCalendars(act, config);
+        }
+      } catch (error) {
+        console.error("Erro ao deletar de calendários externos:", error);
+      }
     }
 
     const { error } = await supabase.from('activities').delete().eq('id', id);

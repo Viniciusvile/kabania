@@ -24,7 +24,7 @@ export function useShifts(companyId) {
   const [employees, setEmployees] = useState(() => safeParse(`${cacheKey}_employees`, []));
   const [environments, setEnvironments] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [pendingActivities, setPendingActivities] = useState([]);
+  const [pendingActivities, setPendingActivities] = useState(() => safeParse(`${cacheKey}_pending`, []));
   
   // INSTANT HYDRATION: loading é SEMPRE false — o grid nunca fica bloqueado
   // O sync acontece em background, sem overlay.
@@ -203,6 +203,7 @@ export function useShifts(companyId) {
       localStorage.setItem(`${cacheKey}_stats`, JSON.stringify(computedStats));
       localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(transformedShifts));
       localStorage.setItem(`${cacheKey}_employees`, JSON.stringify(transformedEmployees));
+      localStorage.setItem(`${cacheKey}_pending`, JSON.stringify(unifiedPending));
       hasCacheRef.current = true;
       
 
