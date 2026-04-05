@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import DashboardHeader from './components/DashboardHeader';
@@ -704,13 +704,15 @@ function App() {
                 <UserSettings theme={theme} onToggleTheme={toggleTheme} />
               ) : currentView === 'billing' ? (
                 <BillingView currentCompany={currentCompany} />
-              ) : currentView === 'calendar_settings' ? (
-                <CalendarIntegrationSettings 
-                  currentCompany={currentCompany} 
-                  currentUser={currentUser} 
-                  userRole={userRole} 
-                />
-              ) : (
+                ) : currentView === 'calendar_settings' ? (
+                  <Suspense fallback={<div className="p-8 text-center">Carregando Configurações...</div>}>
+                    <CalendarIntegrationSettings 
+                      currentCompany={currentCompany} 
+                      currentUser={currentUser} 
+                      userRole={userRole} 
+                    />
+                  </Suspense>
+                ) : (
                 <div className="p-8 text-center text-muted">View em desenvolvimento</div>
               )}
             </div>

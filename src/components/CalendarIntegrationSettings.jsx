@@ -36,29 +36,49 @@ export default function CalendarIntegrationSettings({ currentCompany }) {
 
   useEffect(() => {
     if (!currentCompany?.id) return;
-    
+    const cacheKey = `calendarConfig_${currentCompany.id}`;
+    let initialConfig = {
+      google_calendar_enabled: false,
+      google_calendar_access_token: null,
+      outlook_enabled: false,
+      outlook_access_token: null,
+      sync_direction: 'bidirectional',
+      sync_interval: 30,
+      last_sync: null
+    };
+
+    let hasLoadedFromCache = false;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        initialConfig = { ...initialConfig, ...parsed };
+        hasLoadedFromCache = true;
+      } catch (e) {}
+    }
+
+    // Set configuration and immediately disable loading spinner
+    setConfig(initialConfig);
+    setLoading(false);
+
+    // Background fetch to ensure fresh data if needed
     const loadConfig = async () => {
       try {
         const service = new CalendarIntegrationService(currentCompany.id);
         const configData = await service.getIntegrationConfig();
-        setConfig(configData);
+        if (configData) {
+          const toStore = { ...configData, __timestamp: Date.now() };
+          localStorage.setItem(cacheKey, JSON.stringify(toStore));
+          setConfig(toStore);
+        }
       } catch (error) {
-        console.error('Erro ao carregar configuração de calendário:', error);
-        setConfig({
-          google_calendar_enabled: false,
-          google_calendar_access_token: null,
-          outlook_enabled: false,
-          outlook_access_token: null,
-          sync_direction: 'bidirectional',
-          sync_interval: 30,
-          last_sync: null
-        });
-      } finally {
-        setLoading(false);
+        console.error('Erro ao carregar configuração de calendário no background:', error);
       }
     };
 
-    loadConfig();
+    if (!hasLoadedFromCache || (Date.now() - initialConfig.__timestamp > 5 * 60 * 1000)) {
+       loadConfig();
+    }
   }, [currentCompany?.id]);
 
   const handleConfigChange = (key, value) => {
@@ -71,16 +91,25 @@ export default function CalendarIntegrationSettings({ currentCompany }) {
     setSaving(true);
     try {
       const service = new CalendarIntegrationService(currentCompany.id);
-      await service.saveIntegrationConfig(config);
+      
+      try {
+        await service.saveIntegrationConfig(config);
+      } catch (dbError) {
+        console.warn('Não foi possível salvar no Supabase (Tabela inexistente?). Armazenando no cache local.', dbError);
+      }
+      
+      // Sempre salvar no localStorage como fallback
+      const cacheKey = `calendarConfig_${currentCompany.id}`;
+      localStorage.setItem(cacheKey, JSON.stringify({ ...config, __timestamp: Date.now() }));
       
       if (config.google_calendar_enabled || config.outlook_enabled) {
         await service.startAutoSync(config);
       }
 
-      setSyncStatus({ type: 'success', message: 'Configuração salva com sucesso!' });
+      setSyncStatus({ type: 'success', message: 'Configuração salva localmente!' });
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
-      setSyncStatus({ type: 'error', message: 'Erro ao salvar configuração' });
+      console.error('Erro geral ao salvar configuração:', error);
+      setSyncStatus({ type: 'error', message: 'Erro ao processar as configurações' });
     } finally {
       setSaving(false);
       setTimeout(() => setSyncStatus(null), 3000);
@@ -123,22 +152,30 @@ export default function CalendarIntegrationSettings({ currentCompany }) {
     const messageHandler = (event) => {
       if (event.origin !== window.location.origin) return;
       
+      // Google OAuth response
       if (event.data.type === 'oauth_code' && event.data.provider === 'google') {
-        // Remove the listener
         window.removeEventListener('message', messageHandler);
-        
-        // Handle the authorization code
         handleGoogleAuthCode(event.data.code, state);
       }
-      
       if (event.data.type === 'oauth_error' && event.data.provider === 'google') {
-        // Remove the listener
         window.removeEventListener('message', messageHandler);
-        
         console.error('Erro de autenticação Google:', event.data.error);
-        setSyncStatus({ 
-          type: 'error', 
-          message: `Erro de autenticação: ${event.data.error}` 
+        setSyncStatus({
+          type: 'error',
+          message: `Erro de autenticação: ${event.data.error}`
+        });
+      }
+      // Outlook OAuth response
+      if (event.data.type === 'oauth_code' && event.data.provider === 'outlook') {
+        window.removeEventListener('message', messageHandler);
+        handleOutlookAuthCode(event.data.code, state);
+      }
+      if (event.data.type === 'oauth_error' && event.data.provider === 'outlook') {
+        window.removeEventListener('message', messageHandler);
+        console.error('Erro de autenticação Outlook:', event.data.error);
+        setSyncStatus({
+          type: 'error',
+          message: `Erro de autenticação: ${event.data.error}`
         });
       }
     };
@@ -182,13 +219,22 @@ export default function CalendarIntegrationSettings({ currentCompany }) {
     const redirectUri = `${window.location.origin}/auth/outlook/callback`;
     const scope = 'Calendars.ReadWrite';
     
+    // Generate state to mitigate CSRF
+    const state = Math.random().toString(36).substring(2);
+    
     const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?` +
       `client_id=${clientId}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=token` +
-      `&scope=${encodeURIComponent(scope)}`;
+      `&response_type=code` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&access_type=offline` +
+      `&prompt=consent` +
+      `&state=${state}`;
     
-    window.open(authUrl, '_blank');
+    const authWindow = window.open(authUrl, 'outlook_auth', 'width=600,height=700');
+    if (!authWindow) {
+      alert('Permita pop‑ups para concluir a autenticação do Outlook.');
+    }
   };
 
   const handleManualSync = async () => {

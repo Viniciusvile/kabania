@@ -105,7 +105,7 @@ function ActivityPopover({ activity, onClose }) {
 }
 
 // ─── MONTH VIEW ───────────────────────────────────────────────────────────────
-function MonthView({ year, month, activities, onEventClick }) {
+function MonthView({ year, month, activitiesByDate, onEventClick }) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
@@ -126,7 +126,7 @@ function MonthView({ year, month, activities, onEventClick }) {
           if (!day) return <div key={`empty-${idx}`} className="cal-cell cal-cell-empty" />;
           const isToday = sameDay(day, today);
           const dayStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
-          const dayActivities = activities.filter(a => activityDate(a) === dayStr);
+          const dayActivities = activitiesByDate[dayStr] || [];
           const visible = dayActivities.slice(0, MAX_VISIBLE);
           const extra = dayActivities.length - MAX_VISIBLE;
           return (
@@ -145,7 +145,7 @@ function MonthView({ year, month, activities, onEventClick }) {
 }
 
 // ─── WEEK VIEW ────────────────────────────────────────────────────────────────
-function WeekView({ date, activities, onEventClick }) {
+function WeekView({ date, activitiesByDate, onEventClick }) {
   // Get start of week (Sunday)
   const startOfWeek = new Date(date);
   startOfWeek.setDate(date.getDate() - date.getDay());
@@ -172,7 +172,7 @@ function WeekView({ date, activities, onEventClick }) {
       <div className="cal-week-body">
         {days.map((d, i) => {
           const dayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-          const dayActivities = activities.filter(a => activityDate(a) === dayStr);
+          const dayActivities = activitiesByDate[dayStr] || [];
           const isToday = sameDay(d, today);
           return (
             <div key={i} className={`cal-week-col ${isToday ? 'cal-week-col-today' : ''}`}>
@@ -189,9 +189,9 @@ function WeekView({ date, activities, onEventClick }) {
 }
 
 // ─── DAY VIEW ─────────────────────────────────────────────────────────────────
-function DayView({ date, activities, onEventClick }) {
+function DayView({ date, activitiesByDate, onEventClick }) {
   const dayStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-  const dayActivities = activities.filter(a => activityDate(a) === dayStr);
+  const dayActivities = activitiesByDate[dayStr] || [];
   const today = new Date();
   const isToday = sameDay(date, today);
 
@@ -261,8 +261,17 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
 
   const refresh = fetchActivities;
 
-  // Show all activities for the company as per team requirements
-  const companyActivities = activities;
+  // Optimize activities into a date map to avoid O(N) filtering per day
+  const activitiesByDate = useMemo(() => {
+    const map = {};
+    for (const a of activities) {
+      const d = activityDate(a);
+      if (!d) continue;
+      if (!map[d]) map[d] = [];
+      map[d].push(a);
+    }
+    return map;
+  }, [activities]);
 
   const label = useMemo(() => {
     if (view === 'month') return `${MONTHS[cursor.getMonth()]} ${cursor.getFullYear()}`;
@@ -327,15 +336,15 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
           <MonthView
             year={cursor.getFullYear()}
             month={cursor.getMonth()}
-            activities={companyActivities}
+            activitiesByDate={activitiesByDate}
             onEventClick={setSelected}
           />
         )}
         {view === 'week' && (
-          <WeekView date={cursor} activities={companyActivities} onEventClick={setSelected} />
+          <WeekView date={cursor} activitiesByDate={activitiesByDate} onEventClick={setSelected} />
         )}
         {view === 'day' && (
-          <DayView date={cursor} activities={companyActivities} onEventClick={setSelected} />
+          <DayView date={cursor} activitiesByDate={activitiesByDate} onEventClick={setSelected} />
         )}
       </div>
 

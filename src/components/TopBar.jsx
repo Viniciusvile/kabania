@@ -179,25 +179,8 @@ export default function TopBar({
       </div>
 
       <div className="topbar-right">
-        {currentView === 'workspace_hub' ? (
-          <div className="workspace-tabs-premium topbar-integrated-tabs" style={{ padding: '4px', transform: 'scale(0.85)', transformOrigin: 'right center', marginRight: 'auto' }}>
-            <button 
-              className={`ws-tab-btn ${workspaceTab === 'kanban' ? 'active' : ''}`}
-              onClick={() => setWorkspaceTab?.('kanban')}
-              style={{ padding: '6px 16px' }}
-            >
-              <LayoutGrid size={16} /> <span className="hidden md:inline">Kanban</span>
-            </button>
-            <button 
-              className={`ws-tab-btn ${workspaceTab === 'academy' ? 'active' : ''}`}
-              onClick={() => setWorkspaceTab?.('academy')}
-              style={{ padding: '6px 16px' }}
-            >
-              <GraduationCap size={16} /> <span className="hidden md:inline">Academy</span>
-            </button>
-          </div>
-        ) : (
-          <div className="search-bar hidden sm:flex">
+        {currentView === 'kanban' && (
+          <div className="search-bar">
             <Search size={16} className="text-muted" />
             <input type="text" placeholder="Buscar tarefas..." value={searchQuery || ''} onChange={onSearchChange} />
           </div>
@@ -268,10 +251,15 @@ export default function TopBar({
           )}
         </div>
 
-        {/* Theme Toggle */}
-        <div className="topbar-icon theme-toggle" onClick={onToggleTheme} title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}>
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </div>
+          {/* Calendar Settings Shortcut */}
+          <div className="topbar-icon" onClick={() => onViewChange('calendar_settings')} title="Configurações de Calendário">
+            <Calendar size={20} className={activeDropdown === 'calendar_settings' ? 'text-white' : ''} />
+          </div>
+          
+          {/* Theme Toggle */}
+          <div className="topbar-icon theme-toggle" onClick={onToggleTheme} title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}>
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </div>
 
         {/* Notifications Bell */}
         <div className="topbar-icon" onClick={() => toggleDropdown('notifications')}>
