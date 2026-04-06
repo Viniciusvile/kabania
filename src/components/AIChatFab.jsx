@@ -82,7 +82,6 @@ import './Dashboard.css';
       )}
       
       <button className="fab-button cursor-pointer mt-4" onClick={() => setIsOpen(!isOpen)}>
-        <span className="fab-text">PERGUNTE À IA</span>
         <div className="fab-icon-wrapper">
           <Bot size={28} className="text-accent" />
           <div className="fab-glow"></div>
