@@ -263,3 +263,98 @@
   align-items: center;
   gap: 1rem;
 }
+
+/* Contract Checklist Styles */
+.cfm-contract-checklist {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.cfm-contract-checklist::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cfm-contract-checklist::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.cfm-contract-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cfm-contract-item:hover {
+  background: rgba(0, 229, 255, 0.03);
+  border-color: rgba(0, 229, 255, 0.2);
+}
+
+.cfm-contract-item.selected {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+}
+
+.cfm-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.selected .cfm-checkbox {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.1);
+}
+
+.cfm-checkbox-inner {
+  width: 10px;
+  height: 10px;
+  background: #00e5ff;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #00e5ff;
+}
+
+.cfm-contract-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.cfm-contract-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.cfm-contract-client {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.cfm-loading-inline, .cfm-no-contracts {
+  font-size: 0.8rem;
+  color: #64748b;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}

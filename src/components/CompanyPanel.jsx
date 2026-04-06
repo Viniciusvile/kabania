@@ -355,8 +355,8 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
 
       <div className="cp-grid">
         {activeTab === 'members' ? (
-        <div className="cp-grid">
-          {/* Info Card */}
+          <>
+            {/* Info Card */}
           <div className="cp-card-premium">
             <h3 className="cp-card-title"><Building2 size={18} /> Informações da Empresa</h3>
             <div className="cp-info-list">
@@ -745,14 +745,14 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
               )}
             </div>
           </div>
-        </div>
-        ) : activeTab === 'customers' ? (
-          <div className="cp-crm-section animate-slide-up">
-            <div className="cp-crm-header">
-              <div className="cp-crm-title-area">
-                <h2 className="cp-crm-title">Gestão de Clientes</h2>
-                <span className="cp-sector-tag">Total: {customers.length} clientes</span>
-              </div>
+        </>
+      ) : activeTab === 'customers' ? (
+        <div className="cp-crm-section animate-slide-up">
+          <div className="cp-crm-header">
+            <div className="cp-crm-title-area">
+              <h2 className="cp-crm-title">Gestão de Clientes</h2>
+              <span className="cp-sector-tag">Total: {customers.length} clientes</span>
+            </div>
               <button 
                 className="cp-btn-new-customer"
                 onClick={() => { setEditingCustomer(null); setShowCustModal(true); }}
@@ -793,11 +793,11 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             </div>
           </div>
         ) : activeTab === 'analytics' ? (
-          <div className="animate-slide-up" style={{ width: '100%', marginTop: '1rem' }}>
+          <div className="animate-slide-up" style={{ gridColumn: '1 / -1' }}>
             <AnalyticsDashboard currentCompany={currentCompany} customers={customers} />
           </div>
         ) : null}
-
+      </div>
       {showCustModal && (
         <CustomerFormModal 
           isOpen={showCustModal}
@@ -814,7 +814,6 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           }}
         />
       )}
-      </div>
     </div>
   );
 }

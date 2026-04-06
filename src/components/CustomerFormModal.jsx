@@ -9,8 +9,12 @@ export default function CustomerFormModal({ isOpen, onClose, onSave, editingCust
     address: '',
     email: '',
     phone: '',
-    employee_count: 0
+    employee_count: 0,
+    estimated_revenue: 0,
+    contract_id: null
   });
+  const [contracts, setContracts] = useState([]);
+  const [fetchingContracts, setFetchingContracts] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,10 +24,39 @@ export default function CustomerFormModal({ isOpen, onClose, onSave, editingCust
         address: editingCustomer.address || '',
         email: editingCustomer.email || '',
         phone: editingCustomer.phone || '',
-        employee_count: editingCustomer.employee_count || 0
+        employee_count: editingCustomer.employee_count || 0,
+        estimated_revenue: editingCustomer.estimated_revenue || 0,
+        contract_id: editingCustomer.contract_id || null
+      });
+    } else {
+      setFormData({
+        name: '', address: '', email: '', phone: '', employee_count: 0, estimated_revenue: 0, contract_id: null
       });
     }
-  }, [editingCustomer]);
+  }, [editingCustomer, isOpen]);
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      if (!isOpen || !currentCompanyId) return;
+      setFetchingContracts(true);
+      try {
+        const { data, error } = await supabase
+          .from('contracts')
+          .select('id, name, client')
+          .eq('company_id', currentCompanyId);
+        
+        if (!error && data) {
+          setContracts(data);
+        }
+      } catch (err) {
+        console.error("Error fetching contracts:", err);
+      } finally {
+        setFetchingContracts(false);
+      }
+    };
+
+    fetchContracts();
+  }, [isOpen, currentCompanyId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -113,14 +146,53 @@ export default function CustomerFormModal({ isOpen, onClose, onSave, editingCust
                 />
               </div>
 
-              <div className="cfm-field full">
-                <label>NÚMERO DE FUNCIONÁRIOS</label>
+              <div className="cfm-field">
+                <label>Nº FUNCIONÁRIOS</label>
                 <input 
                   type="number"
                   min="0"
                   value={formData.employee_count}
                   onChange={e => setFormData({ ...formData, employee_count: parseInt(e.target.value) || 0 })}
                 />
+              </div>
+
+              <div className="cfm-field full">
+                <label>RECEITA / FATURAMENTO (R$)</label>
+                <input 
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ex: 5000.00"
+                  value={formData.estimated_revenue}
+                  onChange={e => setFormData({ ...formData, estimated_revenue: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div className="cfm-field full">
+                <label>VINCULAR A UM CONTRATO (SLA)</label>
+                <div className="cfm-contract-checklist">
+                  {fetchingContracts ? (
+                    <div className="cfm-loading-inline">Carregando contratos...</div>
+                  ) : contracts.length === 0 ? (
+                    <div className="cfm-no-contracts">Nenhum contrato encontrado. Crie um no Painel de SLA.</div>
+                  ) : (
+                    contracts.map(contract => (
+                      <div 
+                        key={contract.id} 
+                        className={`cfm-contract-item ${formData.contract_id === contract.id ? 'selected' : ''}`}
+                        onClick={() => setFormData({ ...formData, contract_id: formData.contract_id === contract.id ? null : contract.id })}
+                      >
+                        <div className="cfm-checkbox">
+                          {formData.contract_id === contract.id && <div className="cfm-checkbox-inner" />}
+                        </div>
+                        <div className="cfm-contract-info">
+                          <span className="cfm-contract-name">{contract.name}</span>
+                          <span className="cfm-contract-client">{contract.client}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

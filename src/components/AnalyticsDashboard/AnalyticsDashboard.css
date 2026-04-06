@@ -1,0 +1,278 @@
+.analytics-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.analytics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.analytics-header h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+}
+
+.analytics-header-subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.analytics-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1100px) {
+  .analytics-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .analytics-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.an-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.an-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-cyan);
+  opacity: 0.5;
+}
+
+[data-theme='dark'] .an-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.an-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-cyan-dim);
+}
+
+.an-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.an-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.an-icon-box.bg-cyan {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-cyan);
+}
+
+.an-icon-box.bg-purple {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+}
+
+.an-icon-box.bg-emerald {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}
+
+.an-card-title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.an-card-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.an-card-sub {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-muted);
+}
+
+.text-success { color: #34d399; }
+.text-danger { color: #ef4444; }
+
+.an-charts-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+}
+
+.an-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .an-panel {
+  background: rgba(31, 34, 42, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.an-panel h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-main);
+}
+
+/* Native CSS Bar Chart */
+.css-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  height: 200px;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-top: auto;
+}
+
+.css-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  position: relative;
+  height: 100%;
+}
+
+.css-bar {
+  width: 100%;
+  max-width: 40px;
+  background: linear-gradient(180deg, var(--accent-cyan) 0%, var(--accent-cyan-dim) 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s;
+  box-shadow: 0 -4px 12px rgba(0, 229, 255, 0.2);
+  cursor: crosshair;
+}
+
+.css-bar:hover {
+  transform: scaleY(1.02);
+  filter: brightness(1.2);
+}
+
+.css-bar-label {
+  position: absolute;
+  bottom: -25px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.css-bar-tooltip {
+  position: absolute;
+  top: -30px;
+  opacity: 0;
+  background: var(--text-main);
+  color: var(--bg-app);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  pointer-events: none;
+  font-weight: 600;
+}
+
+.css-bar:hover + .css-bar-tooltip {
+  opacity: 1;
+  transform: translateY(-5px);
+}
+
+/* Profitability Progress */
+.an-profit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.an-profit-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.an-profit-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.an-profit-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.an-profit-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #a78bfa, #c084fc);
+  border-radius: 4px;
+  transition: width 1s ease-out;
+}
+
+@media (max-width: 1024px) {
+  .an-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
