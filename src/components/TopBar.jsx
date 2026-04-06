@@ -29,7 +29,7 @@ export default function TopBar({
   profileData: initialProfileData
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [profileData, setProfileData] = useState(initialProfileData || { name: '', avatar_url: null });
+  const [profileData, setProfileData] = useState(initialProfileData || { name: '', first_name: '', last_name: '', avatar_url: null });
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -57,8 +57,14 @@ export default function TopBar({
         table: 'profiles',
         filter: `email=eq.${currentUser}`
       }, (payload) => {
+        const constructedName = payload.new.first_name 
+          ? `${payload.new.first_name} ${payload.new.last_name || ''}`.trim() 
+          : (payload.new.name || (typeof currentUser === 'string' ? currentUser.split('@')[0] : 'Usuário'));
+        
         setProfileData({
-          name: payload.new.name || (typeof currentUser === 'string' ? currentUser.split('@')[0] : 'Usuário'),
+          name: constructedName,
+          first_name: payload.new.first_name,
+          last_name: payload.new.last_name,
           avatar_url: payload.new.avatar_url
         });
       })
@@ -67,7 +73,9 @@ export default function TopBar({
     return () => { supabase.removeChannel(channel); };
   }, [currentUser]);
 
-  const userInitials = profileData.name ? profileData.name.substring(0, 2).toUpperCase() : 'UP';
+  const userInitials = profileData.first_name 
+    ? (profileData.first_name[0] + (profileData.last_name?.[0] || '')).toUpperCase()
+    : (profileData.name ? profileData.name.substring(0, 2).toUpperCase() : 'UP');
   const topbarRef = useRef(null);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId) || projects[0];

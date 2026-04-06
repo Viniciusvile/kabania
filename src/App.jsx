@@ -363,9 +363,15 @@ function App() {
           }
         }
 
+        const constructedName = profile.first_name 
+          ? `${profile.first_name} ${profile.last_name || ''}`.trim() 
+          : (profile.name || email.split('@')[0]);
+
         setProfileData({
-          name: profile.name || email.split('@')[0],
-          avatar_url: profile.avatar_url
+          name: constructedName,
+          avatar_url: profile.avatar_url,
+          first_name: profile.first_name,
+          last_name: profile.last_name
         });
 
         let companyData = null;
