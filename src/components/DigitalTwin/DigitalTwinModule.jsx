@@ -46,8 +46,15 @@ export default function DigitalTwinModule({ currentCompany }) {
   useEffect(() => {
     const mapEl = mapViewportRef.current;
     if (mapEl) mapEl.addEventListener('wheel', handleWheel, { passive: false });
+    // Add global mouse listeners to ensure drag works even when cursor leaves the viewport
+    const handleGlobalMouseMove = (e) => handleMouseMove(e);
+    const handleGlobalMouseUp = () => handleMouseUp();
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
     return () => {
       if (mapEl) mapEl.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
   }, []);
 
@@ -67,8 +74,8 @@ export default function DigitalTwinModule({ currentCompany }) {
     
     if (draggedObject && mapCanvasRef.current) {
       const rect = mapCanvasRef.current.getBoundingClientRect();
-      let newX = ((e.clientX - rect.left - draggedObject.offsetX) / rect.width) * 100;
-      let newY = ((e.clientY - rect.top - draggedObject.offsetY) / rect.height) * 100;
+let newX = ((e.clientX - rect.left - draggedObject.offsetX) / (rect.width * scale)) * 100;
+let newY = ((e.clientY - rect.top - draggedObject.offsetY) / (rect.height * scale)) * 100;
       
       if (draggedObject.type === 'room') {
          setRooms(prev => prev.map(r => r.id === draggedObject.id ? { ...r, x: newX, y: newY } : r));
@@ -86,9 +93,9 @@ export default function DigitalTwinModule({ currentCompany }) {
   const handleMapCanvasClick = (e) => {
     if (isDraggingMap || draggedObject) return;
     
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((e.clientX - rect.left - dragOffset.x) / (rect.width * scale)) * 100;
+      const y = ((e.clientY - rect.top - dragOffset.y) / (rect.height * scale)) * 100;
 
     if (activeTool === 'add_desk') {
       const newDesk = { id: `desk-${Date.now()}`, x, y, status: 'free', user: null };
