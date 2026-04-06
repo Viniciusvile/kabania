@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, Trash2, Calendar, UserPlus, Trophy, Medal, Star } from 'lucide-react';
+import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, Trash2, Calendar, UserPlus, Trophy, Medal, Star, TrendingUp } from 'lucide-react';
 import CustomerCard from './CustomerCard';
 import CustomerFormModal from './CustomerFormModal';
+import AnalyticsDashboard from './AnalyticsDashboard/AnalyticsDashboard';
 import { logEvent } from '../services/historyService';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { supabase } from '../supabaseClient';
@@ -343,6 +344,12 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           onClick={() => setActiveTab('customers')}
         >
           <Building2 size={18} /> Clientes (CRM)
+        </button>
+        <button
+          className={`cp-tab ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          <TrendingUp size={18} /> Analytics Avançado
         </button>
       </div>
 
@@ -739,53 +746,57 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             </div>
           </div>
         </div>
-      ) : (
-        <div className="cp-crm-section animate-slide-up">
-          <div className="cp-crm-header">
-            <div className="cp-crm-title-area">
-              <h2 className="cp-crm-title">Gestão de Clientes</h2>
-              <span className="cp-sector-tag">Total: {customers.length} clientes</span>
-            </div>
-            <button 
-              className="cp-btn-new-customer"
-              onClick={() => { setEditingCustomer(null); setShowCustModal(true); }}
-            >
-              <Plus size={18} /> Novo Cliente
-            </button>
-          </div>
-
-          <div className="cp-customers-grid">
-            {customers.map(customer => (
-              <CustomerCard 
-                key={customer.id} 
-                customer={customer} 
-                onEdit={() => { setEditingCustomer(customer); setShowCustModal(true); }}
-                onDelete={async () => {
-                  if (window.confirm(`Excluir cliente ${customer.name}?`)) {
-                    const { error } = await supabase.from('customers').delete().eq('id', customer.id);
-                    if (!error) {
-                      setCustomers(prev => prev.filter(c => c.id !== customer.id));
-                      logEvent(currentCompany.id, currentUser, 'CUSTOMER_DELETED', `Cliente ${customer.name} removido.`);
-                    }
-                  }
-                }}
-              />
-            ))}
-            {customers.length === 0 && !loadingCustomers && (
-              <div className="cp-empty-crm">
-                <p>Sua base de clientes está vazia.</p>
-                <button 
-                  className="kb-btn-template mt-2"
-                  onClick={() => setShowCustModal(true)}
-                >
-                  <Plus size={16} /> Cadastrar Primeiro Cliente
-                </button>
+        ) : activeTab === 'customers' ? (
+          <div className="cp-crm-section animate-slide-up">
+            <div className="cp-crm-header">
+              <div className="cp-crm-title-area">
+                <h2 className="cp-crm-title">Gestão de Clientes</h2>
+                <span className="cp-sector-tag">Total: {customers.length} clientes</span>
               </div>
-            )}
-            {loadingCustomers && <div className="cp-empty">Carregando clientes...</div>}
+              <button 
+                className="cp-btn-new-customer"
+                onClick={() => { setEditingCustomer(null); setShowCustModal(true); }}
+              >
+                <Plus size={18} /> Novo Cliente
+              </button>
+            </div>
+
+            <div className="cp-customers-grid">
+              {customers.map(customer => (
+                <CustomerCard 
+                  key={customer.id} 
+                  customer={customer} 
+                  onEdit={() => { setEditingCustomer(customer); setShowCustModal(true); }}
+                  onDelete={async () => {
+                    if (window.confirm(`Excluir cliente ${customer.name}?`)) {
+                      const { error } = await supabase.from('customers').delete().eq('id', customer.id);
+                      if (!error) {
+                        setCustomers(prev => prev.filter(c => c.id !== customer.id));
+                        logEvent(currentCompany.id, currentUser, 'CUSTOMER_DELETED', `Cliente ${customer.name} removido.`);
+                      }
+                    }
+                  }}
+                />
+              ))}
+              {customers.length === 0 && !loadingCustomers && (
+                <div className="cp-empty-crm">
+                  <p>Sua base de clientes está vazia.</p>
+                  <button 
+                    className="kb-btn-template mt-2"
+                    onClick={() => setShowCustModal(true)}
+                  >
+                    <Plus size={16} /> Cadastrar Primeiro Cliente
+                  </button>
+                </div>
+              )}
+              {loadingCustomers && <div className="cp-empty">Carregando clientes...</div>}
+            </div>
           </div>
-        </div>
-      )}
+        ) : activeTab === 'analytics' ? (
+          <div className="animate-slide-up" style={{ width: '100%', marginTop: '1rem' }}>
+            <AnalyticsDashboard currentCompany={currentCompany} customers={customers} />
+          </div>
+        ) : null}
 
       {showCustModal && (
         <CustomerFormModal 
