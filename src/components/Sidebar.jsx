@@ -44,6 +44,22 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
           <span>Gerenciar Escalas</span>
         </div>
 
+        <div
+          className={`nav-item ${currentView === 'inventory' ? 'active' : ''}`}
+          onClick={() => onViewChange('inventory')}
+        >
+          <PackageSearch size={20} className="text-blue-400" />
+          <span>Estoque Inteligente</span>
+        </div>
+
+        <div
+          className={`nav-item ${currentView === 'digital_twin' ? 'active' : ''}`}
+          onClick={() => onViewChange('digital_twin')}
+        >
+          <Map size={20} className="text-cyan-400" />
+          <span>Gêmeo Digital</span>
+        </div>
+
         <div className={`nav-group ${expandedGroups.activities ? 'expanded' : ''}`}>
           <div className="nav-item" onClick={() => toggleGroup('activities')}>
             <ClipboardList size={20} />
@@ -114,21 +130,6 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
 
 
 
-        <div
-          className={`nav-item ${currentView === 'inventory' ? 'active' : ''}`}
-          onClick={() => onViewChange('inventory')}
-        >
-          <PackageSearch size={20} className="text-blue-400" />
-          <span>Estoque Inteligente</span>
-        </div>
-
-        <div
-          className={`nav-item ${currentView === 'digital_twin' ? 'active' : ''}`}
-          onClick={() => onViewChange('digital_twin')}
-        >
-          <Map size={20} className="text-cyan-400" />
-          <span>Gêmeo Digital</span>
-        </div>
 
         {/* Admin Settings */}
         {userRole === 'admin' && (

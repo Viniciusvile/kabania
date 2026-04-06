@@ -67,6 +67,11 @@ function EventChip({ activity, onClick }) {
       style={{ background: col.bg, color: col.text }}
       onClick={(e) => { e.stopPropagation(); onClick(activity); }}
       title={activity.location || activity.id}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('activityId', activity.id);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
     >
       {time && <span className="cal-chip-time">{time}</span>}
       <span className="cal-chip-label">{activity.location || `#${activity.id}`}</span>
@@ -105,7 +110,7 @@ function ActivityPopover({ activity, onClose }) {
 }
 
 // ─── MONTH VIEW ───────────────────────────────────────────────────────────────
-function MonthView({ year, month, activitiesByDate, onEventClick }) {
+function MonthView({ year, month, activitiesByDate, onEventClick, onEventDrop }) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
@@ -130,7 +135,16 @@ function MonthView({ year, month, activitiesByDate, onEventClick }) {
           const visible = dayActivities.slice(0, MAX_VISIBLE);
           const extra = dayActivities.length - MAX_VISIBLE;
           return (
-            <div key={dayStr} className={`cal-cell ${isToday ? 'cal-cell-today' : ''}`}>
+            <div 
+              key={dayStr} 
+              className={`cal-cell ${isToday ? 'cal-cell-today' : ''}`}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const activityId = e.dataTransfer.getData('activityId');
+                if (activityId && onEventDrop) onEventDrop(activityId, dayStr);
+              }}
+            >
               <span className={`cal-day-num ${isToday ? 'cal-day-today-num' : ''}`}>{day.getDate()}</span>
               <div className="cal-cell-events">
                 {visible.map(a => <EventChip key={a.id} activity={a} onClick={onEventClick} />)}
@@ -145,7 +159,7 @@ function MonthView({ year, month, activitiesByDate, onEventClick }) {
 }
 
 // ─── WEEK VIEW ────────────────────────────────────────────────────────────────
-function WeekView({ date, activitiesByDate, onEventClick }) {
+function WeekView({ date, activitiesByDate, onEventClick, onEventDrop }) {
   // Get start of week (Sunday)
   const startOfWeek = new Date(date);
   startOfWeek.setDate(date.getDate() - date.getDay());
@@ -175,7 +189,16 @@ function WeekView({ date, activitiesByDate, onEventClick }) {
           const dayActivities = activitiesByDate[dayStr] || [];
           const isToday = sameDay(d, today);
           return (
-            <div key={i} className={`cal-week-col ${isToday ? 'cal-week-col-today' : ''}`}>
+            <div 
+              key={i} 
+              className={`cal-week-col ${isToday ? 'cal-week-col-today' : ''}`}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const activityId = e.dataTransfer.getData('activityId');
+                if (activityId && onEventDrop) onEventDrop(activityId, dayStr);
+              }}
+            >
               {dayActivities.length === 0
                 ? <div className="cal-week-empty" />
                 : dayActivities.map(a => <EventChip key={a.id} activity={a} onClick={onEventClick} />)
@@ -261,6 +284,38 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
 
   const refresh = fetchActivities;
 
+  const handleEventDrop = async (activityId, newDateStr) => {
+    if (!activityId || !newDateStr) return;
+
+    // 1. Optimistic Update
+    setActivities(prev => prev.map(a => {
+      if (String(a.id) === String(activityId)) {
+        return { ...a, visitDate: newDateStr, last_appointment: newDateStr };
+      }
+      return a;
+    }));
+
+    // 2. Database Update
+    const { error } = await supabase
+      .from('activities')
+      .update({ last_appointment: newDateStr, updated: new Date().toISOString() })
+      .eq('id', activityId);
+
+    if (error) {
+      console.error('Error dropping event:', error);
+      alert('Erro ao reposicionar a atividade.');
+      refresh(); // Reload to original state
+    } else {
+      // Update cache
+      localStorage.setItem(getCacheKey(), JSON.stringify(
+        activities.map(a => String(a.id) === String(activityId) 
+          ? { ...a, visitDate: newDateStr, last_appointment: newDateStr } 
+          : a
+        )
+      ));
+    }
+  };
+
   // Optimize activities into a date map to avoid O(N) filtering per day
   const activitiesByDate = useMemo(() => {
     const map = {};
@@ -338,10 +393,11 @@ export default function ActivityCalendar({ currentUser, currentCompany }) {
             month={cursor.getMonth()}
             activitiesByDate={activitiesByDate}
             onEventClick={setSelected}
+            onEventDrop={handleEventDrop}
           />
         )}
         {view === 'week' && (
-          <WeekView date={cursor} activitiesByDate={activitiesByDate} onEventClick={setSelected} />
+          <WeekView date={cursor} activitiesByDate={activitiesByDate} onEventClick={setSelected} onEventDrop={handleEventDrop} />
         )}
         {view === 'day' && (
           <DayView date={cursor} activitiesByDate={activitiesByDate} onEventClick={setSelected} />

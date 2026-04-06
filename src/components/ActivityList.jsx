@@ -114,6 +114,15 @@ function ActivityContextMenu({ anchorRect, activity, onClose, onView, onEdit, on
   );
 }
 
+const formatDisplayDate = (dString) => {
+  if (!dString) return '';
+  if (dString.includes('T')) {
+    const d = new Date(dString);
+    return isNaN(d) ? dString : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  }
+  return dString;
+};
+
 export default function ActivityList({ currentUser, currentCompany }) {
   const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
 
@@ -628,7 +637,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
                     const rowKey = activity.id + activity.created;
                     return (
                       <tr key={rowKey} onDoubleClick={() => setDetailActivity(activity)}>
-                        <td data-label="Identificador">{activity.id}</td>
+                        <td data-label="Identificador" title={activity.id}>#{activity.id.split('-')[0]}</td>
                         <td data-label="Localização" className="text-secondary">{activity.location}</td>
                         <td data-label="Tipo do serviço" className="text-secondary">{activity.type}</td>
                         <td data-label="Situação">
@@ -648,9 +657,9 @@ export default function ActivityList({ currentUser, currentCompany }) {
                             ))}
                           </div>
                         </td>
-                        <td data-label="Criado em">{activity.created}</td>
-                        <td data-label="Atualizado em">{activity.updated}</td>
-                        <td data-label="Último agend.">{activity.lastAppointment || ''}</td>
+                        <td data-label="Criado em">{formatDisplayDate(activity.created)}</td>
+                        <td data-label="Atualizado em">{formatDisplayDate(activity.updated)}</td>
+                        <td data-label="Último agend.">{formatDisplayDate(activity.lastAppointment) || ''}</td>
                         <td>
                           <div className="action-cell" onClick={e => e.stopPropagation()}>
                             <div className="context-menu-wrapper">
@@ -707,7 +716,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
               paginated.map((activity) => (
                 <div key={activity.id} className="activity-card animate-fade-in" onDoubleClick={() => setDetailActivity(activity)}>
                   <div className="activity-card-header">
-                    <span className="activity-card-id">#{activity.id}</span>
+                    <span className="activity-card-id" title={activity.id}>#{activity.id.split('-')[0]}</span>
                     <span className={`status-badge status-${activity.status.toLowerCase().replace(/\s/g, '-')}`}>
                       {activity.status}
                     </span>
@@ -716,7 +725,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
                     <h3 className="activity-card-title">{activity.location}</h3>
                     <p className="activity-card-type">{activity.type}</p>
                     <div className="activity-card-date">
-                      <span>Criada em: {activity.created}</span>
+                      <span>Criada em: {formatDisplayDate(activity.created)}</span>
                     </div>
                   </div>
                   <div className="activity-card-footer">

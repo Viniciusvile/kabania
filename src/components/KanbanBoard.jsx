@@ -426,8 +426,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       try {
         const response = await processTaskWithAI(task.desc || task.title, currentCompany?.id, true);
         
-        if (!isMounted) return;
-
+        // Removed !isMounted return so that the background processing completes
+        // and updates the task even if the effect was cleaned up due to the tasks array updating.
+        
         // Update locally
         setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
         
@@ -442,9 +443,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         // Subtle delay before next card is picked up by the next Effect trigger
         await new Promise(resolve => setTimeout(resolve, 1200));
       } catch (err) {
-        if (isMounted) {
-          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: 'Erro ao processar.' } : t));
-        }
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: 'Erro ao processar.' } : t));
       }
     };
 
@@ -452,6 +451,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
     return () => { isMounted = false; };
   }, [tasks, activeTask, currentCompany?.id]);
+
 
   // Keep detail panel in sync with task updates
   useEffect(() => {

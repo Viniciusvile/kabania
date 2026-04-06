@@ -113,7 +113,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
         // Fetch Only Necessary Columns for Tasks
         const { data: tData, error: tError } = await supabase
           .from('tasks')
-          .select('id, title, column_id, tag_color, deadline, updated_at, created_at, assignees')
+          .select('id, title, column_id, tag_color, deadline, created_at, assignees')
           .eq('company_id', currentCompany.id);
 
         // Fetch Only Necessary Columns for Activities
@@ -161,7 +161,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
     const prodMap = allTasks
       .filter(t => t.columnId === 'done')
       .reduce((acc, t) => {
-        const date = t.updated_at?.split('T')[0] || t.created_at?.split('T')[0];
+        const date = t.created_at?.split('T')[0];
         if (date) acc[date] = (acc[date] || 0) + 1;
         return acc;
       }, {});
@@ -364,8 +364,10 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
                   <Pie
                     key={`pie-${chartData.sectors.length}`}
                     data={chartData.sectors}
-                    innerRadius={65}
-                    outerRadius={85}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={75}
                     paddingAngle={5}
                     dataKey="value"
                   >
@@ -376,7 +378,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
                   <Tooltip 
                     contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
                   />
-                  <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                  <Legend layout="horizontal" align="center" verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
                 </PieChart>
               </ResponsiveContainer>
             )}

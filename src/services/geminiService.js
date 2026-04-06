@@ -303,7 +303,6 @@ export async function analyzeServiceRequest(description, companyId) {
     2. O campo "type" DEVE ser exatamente uma das seguintes opções:
        - "Manutenção Preventiva - 45 minutos"
        - "Manutenção Corretiva - 60 minutos" 
-       - "Instalação Field Control - 90 minutos"
        - "Instalação de Equipamento - 120 minutos"
        - "Vistoria - 30 minutos"
     3. Campos do JSON:

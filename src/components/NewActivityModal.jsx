@@ -7,7 +7,6 @@ import './NewActivityModal.css';
 const ACTIVITY_TYPES = [
   'Manutenção Preventiva - 45 minutos',
   'Manutenção Corretiva - 60 minutos',
-  'Instalação Field Control - 90 minutos',
   'Instalação de Equipamento - 120 minutos',
   'Vistoria - 30 minutos',
 ];
