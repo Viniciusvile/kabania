@@ -7,19 +7,22 @@ export default function CustomerCard({ customer, onEdit, onDelete }) {
 
   return (
     <div className="customer-card animate-fade-in">
-      <div className="cc-badge-employees">
-        {customer.employee_count} funcionários
-      </div>
+
 
       <div className="cc-header">
         <div className="cc-avatar">{initials}</div>
-        <div className="cc-actions">
-          <button className="cp-action-btn" onClick={onEdit} title="Editar">
-            <Edit2 size={14} />
-          </button>
-          <button className="cp-action-btn danger" onClick={onDelete} title="Excluir">
-            <Trash2 size={14} />
-          </button>
+        <div className="cc-header-right">
+          <div className="cc-badge-employees">
+            {customer.employee_count} func.
+          </div>
+          <div className="cc-actions">
+            <button className="cp-action-btn" onClick={onEdit} title="Editar">
+              <Edit2 size={14} />
+            </button>
+            <button className="cp-action-btn danger" onClick={onDelete} title="Excluir">
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
