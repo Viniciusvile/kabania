@@ -3,7 +3,7 @@ import {
   Menu, Search, Bell, ChevronDown, Check, User, Settings,
   LogOut, FileText, Crown, Shield, BellRing, CheckCheck,
   AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X,
-  LayoutGrid, GraduationCap
+  LayoutGrid, GraduationCap, BellOff
 } from 'lucide-react';
 import './WorkspaceHub/WorkspaceHub.css';
 import {
@@ -290,9 +290,7 @@ export default function TopBar({
                 {!aiSummary && !isGeneratingSummary && (
                   <button 
                     onClick={handleGenerateSummary}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa', border: '1px solid rgba(167, 139, 250, 0.2)', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.2)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'rgba(167, 139, 250, 0.1)'}
+                    className="btn-ai-summary"
                   >
                     Resumir Dia com IA ✨
                   </button>
@@ -311,8 +309,11 @@ export default function TopBar({
               </div>
 
               {notifications.length === 0 && (
-                <div style={{ padding: '2rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  A operação está tranquila. Nenhuma notificação ainda.
+                <div className="dropdown-item notif-empty">
+                  <BellOff size={32} opacity={0.2} />
+                  <div className="notif-empty-text">
+                    A operação está tranquila.<br/>Nenhuma notificação ainda.
+                  </div>
                 </div>
               )}
 
