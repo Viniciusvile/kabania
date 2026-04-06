@@ -30,6 +30,7 @@ import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
 import { processKnowledgeRow } from './services/geminiService';
 import { syncOfflineQueue } from './services/offlineSyncService';
+import { Sparkles, X } from 'lucide-react';
 import './App.css';
 import './components/AIChatFab.css';
 
@@ -634,6 +635,7 @@ function App() {
               onSearchChange={(e) => setSearchQuery(e.target.value)}
               currentUser={currentUser}
               currentCompany={currentCompany}
+              profileData={profileData}
               userRole={userRole}
               onLogout={handleLogout}
               theme={theme}
