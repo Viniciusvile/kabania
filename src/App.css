@@ -55,94 +55,106 @@
 /* Global Background Import Progress */
 .global-bg-import {
   position: fixed;
-  bottom: 24px;
+  bottom: 100px; /* Movido para cima para não sobrepor o Chat FAB */
   right: 24px;
-  width: 280px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 320px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
-  padding: 12px;
+  padding: 16px;
   display: flex;
-  gap: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 9999;
-  animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bg-import-slide 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   color: white;
+  overflow: hidden;
+}
+
+@keyframes bg-import-slide {
+  from { transform: translateX(50px) scale(0.9); opacity: 0; }
+  to { transform: translateX(0) scale(1); opacity: 1; }
 }
 
 .global-bg-import.completed {
-  border-color: rgba(74, 222, 128, 0.4);
-  background: rgba(6, 78, 59, 0.85);
+  border-color: rgba(74, 222, 128, 0.3);
+  background: rgba(6, 78, 59, 0.7);
 }
 
 .bg-import-icon {
-  width: 32px;
-  height: 32px;
-  background: var(--accent-gradient);
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, #00e5ff 0%, #1200ff 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 8px 16px rgba(0, 229, 255, 0.2);
 }
 
 .bg-import-content {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .bg-import-text {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
 }
 
 .bg-import-bar-shell {
-  height: 4px;
+  height: 6px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
 .bg-import-bar {
   height: 100%;
-  background: var(--accent-cyan);
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #00e5ff, #0095ff);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
 }
 
 .bg-import-summary {
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 500;
 }
 
 .bg-import-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 20px;
-  height: 20px;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .bg-import-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-@keyframes slide-up {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  background: rgba(255, 255, 255, 0.15);
+  transform: rotate(90deg);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 
