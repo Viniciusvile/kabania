@@ -321,6 +321,12 @@
   color: white;
 }
 
+.modal-header-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
 .premium-modal-header {
   background: rgba(255, 255, 255, 0.03) !important;
   border-bottom: 1px solid rgba(0, 229, 255, 0.3) !important;
@@ -1013,6 +1019,9 @@ select.premium-input-field option {
 }
 
 .modal-actions-premium {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
   background: rgba(255, 255, 255, 0.02);
   margin-left: -2rem;
   margin-right: -2rem;
@@ -1077,9 +1086,25 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 [data-theme='light'] .ai-suggestion-box {
-  background: linear-gradient(145deg, rgba(0, 229, 255, 0.03), rgba(139, 92, 246, 0.03)) !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.02) !important;
+  background: linear-gradient(145deg, rgba(0, 229, 255, 0.05), rgba(139, 92, 246, 0.05)) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .ai-suggestion-box p {
+  color: #0f172a !important; /* Force slate 900 for readability */
+}
+
+[data-theme='light'] .btn-ask-brain {
+  background: linear-gradient(135deg, rgba(0, 82, 204, 0.08), rgba(167, 139, 250, 0.12));
+  border: 1px solid rgba(0, 82, 204, 0.2);
+  color: #0052cc;
+}
+
+[data-theme='light'] .btn-ask-brain:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0052cc, #7c3aed);
+  border-color: #0052cc;
+  color: white;
 }
 
 [data-theme='light'] .pulse-ai-dot {

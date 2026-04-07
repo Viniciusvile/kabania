@@ -706,7 +706,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         <div className="modal-overlay-pixel glass-morphism">
           <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '550px' }}>
             <div className="premium-modal-header border-vibrant">
-              <div className="flex items-center gap-3">
+              <div className="modal-header-content flex items-center gap-3">
                 <div className="icon-badge-premium bg-blue-glow">
                    <Users className="text-accent-cyan" size={18} />
                 </div>
@@ -782,7 +782,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
               <div className="ai-suggestion-box mb-8 flex items-center justify-between" style={{ padding: '1.25rem' }}>
                 <div className="flex items-center gap-3">
                   <div className="pulse-ai-dot"></div>
-                  <p className="text-sm font-semibold" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Deseja que a IA sugira o melhor horário?</p>
+                  <p className="text-sm font-semibold">Deseja que a IA sugira o melhor horário?</p>
                 </div>
                 <button 
                   type="button" 

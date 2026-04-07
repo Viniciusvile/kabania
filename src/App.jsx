@@ -100,6 +100,23 @@ function App() {
     if (saved === 'kanban' || saved === 'academy') return 'workspace_hub';
     return saved || 'workspace_hub';
   });
+
+  // FINAL FIX: Listen to auth state changes to ensure currentUser is ALWAYS synced
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[AuthChange] Evento: ${event}, Usuário: ${session?.user?.email}`);
+      if (session?.user?.email) {
+        setCurrentUser(session.user.email);
+        localStorage.setItem('synapseCurrentUser', session.user.email);
+        setIsAuthenticated(true);
+        localStorage.setItem('synapseAuth', 'true');
+      } else if (event === 'SIGNED_OUT') {
+        handleLogoutLocal();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   const [workspaceTab, setWorkspaceTab] = useState('kanban');
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'

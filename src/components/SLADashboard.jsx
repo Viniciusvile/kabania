@@ -305,8 +305,29 @@ export default function SLADashboard({ currentCompany, currentUser }) {
   };
 
   const handleSaveContract = async () => {
-    if (!contractForm.name.trim() || !contractForm.client.trim()) return;
+    console.log("[handleSaveContract] Tentativa de salvamento:", {
+      companyId: currentCompany.id,
+      user: currentUser
+    });
+
+    if (!currentUser) {
+      alert("Sessão de usuário não identificada. Por favor, recarregue a página ou faça login novamente.");
+      setSaving(false);
+      return;
+    }
+
+    if (!contractForm.name.trim() || !contractForm.client.trim()) {
+      alert("Por favor, preencha o nome e o cliente obrigatórios.");
+      return;
+    }
     setSaving(true);
+    
+    // DEBUG: Log context before sending to Supabase
+    console.log("[handleSaveContract] Tentativa de salvamento:", {
+      companyId: currentCompany?.id,
+      user: currentUser?.email
+    });
+
     const payload = {
       company_id: currentCompany.id,
       name: contractForm.name.trim(),
@@ -316,16 +337,37 @@ export default function SLADashboard({ currentCompany, currentUser }) {
       status: contractForm.status,
       notes: contractForm.notes || null,
       sla_thresholds: contractForm.slaThresholds,
-      created_by: currentUser?.email || null,
+      created_by: currentUser || null,
     };
-    if (editingContract) {
-      await supabase.from('contracts').update(payload).eq('id', editingContract.id);
-    } else {
-      await supabase.from('contracts').insert([payload]);
+
+    try {
+      let errorInfo;
+      if (editingContract) {
+        const { error: err } = await supabase.from('contracts').update(payload).eq('id', editingContract.id);
+        errorInfo = err;
+      } else {
+        const { error: err } = await supabase.from('contracts').insert([payload]);
+        errorInfo = err;
+      }
+
+      if (errorInfo) {
+        console.error("[handleSaveContract] Erro retornado:", errorInfo);
+        // Tradução amigável de erros comuns 403
+        if (errorInfo.code === '42501') {
+          alert("Erro de Permissão (403): O banco de dados recusou a gravação.\n\nCERTIFIQUE-SE de ter rodado o script 'fix_contracts_rls.sql' no SQL Editor do seu Supabase.");
+        } else {
+          alert(`Erro ao salvar contrato: ${errorInfo.message}\n${errorInfo.details || ''}`);
+        }
+      } else {
+        await fetchContracts();
+        setShowContractModal(false);
+      }
+    } catch (err) {
+      console.error("[handleSaveContract] Exceção:", err);
+      alert("Erro crítico de conexão: " + err.message);
+    } finally {
+      setSaving(false);
     }
-    await fetchContracts();
-    setSaving(false);
-    setShowContractModal(false);
   };
 
   const handleDeleteContract = async (id) => {
@@ -719,7 +761,7 @@ export default function SLADashboard({ currentCompany, currentUser }) {
               <h2><FileText size={20} /> {editingContract ? 'Editar Contrato' : 'Novo Contrato'}</h2>
               <button onClick={() => setShowContractModal(false)}><X size={20} /></button>
             </div>
-            <div className="sla-modal-body">
+            <div className="sla-modal-body" style={{ paddingTop: '0.5rem' }}>
               <div className="sla-form-grid">
                 <div className="sla-form-field sla-form-full">
                   <label>Nome do Contrato *</label>
