@@ -31,6 +31,17 @@ export default function DigitalTwinModule({ currentCompany }) {
   // Dragging Objects
   const [draggedObject, setDraggedObject] = useState(null);
 
+  // Modal Control
+  const [modalConfig, setModalConfig] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    type: 'input', // 'input' | 'confirm'
+    value: '', 
+    onConfirm: () => {},
+    isDanger: false
+  });
+
   const mapViewportRef = useRef(null);
   const mapCanvasRef = useRef(null);
 
@@ -103,11 +114,18 @@ const rect = e.currentTarget.getBoundingClientRect();
       setActiveTool('none');
     } 
     else if (activeTool === 'add_room') {
-      const name = window.prompt("Nome da Sala:");
-      if (!name) return;
-      const newRoom = { id: `room-${Date.now()}`, name, x, y, w: 30, h: 40 };
-      setRooms(prev => [...prev, newRoom]);
-      setActiveTool('none');
+      setModalConfig({
+        isOpen: true,
+        title: 'Nova Sala',
+        message: 'Digite o nome para o novo ambiente:',
+        type: 'input',
+        value: 'Nova Sala',
+        onConfirm: (name) => {
+          const newRoom = { id: `room-${Date.now()}`, name, x, y, w: 30, h: 40 };
+          setRooms(prev => [...prev, newRoom]);
+          setActiveTool('none');
+        }
+      });
     }
   };
 
@@ -132,17 +150,32 @@ const rect = e.currentTarget.getBoundingClientRect();
     } 
     else if (activeTool === 'assign') {
       if (desk.status === 'occupied') {
-         if (window.confirm(`Desocupar a mesa de ${desk.user.name}?`)) {
-           setDesks(prev => prev.map(d => d.id === desk.id ? { ...d, status: 'free', user: null } : d));
-         }
+        setModalConfig({
+          isOpen: true,
+          title: 'Desocupar Mesa',
+          message: `Deseja realmente desocupar a mesa de ${desk.user.name}?`,
+          type: 'confirm',
+          isDanger: true,
+          onConfirm: () => {
+            setDesks(prev => prev.map(d => d.id === desk.id ? { ...d, status: 'free', user: null } : d));
+          }
+        });
       } else {
-         const name = window.prompt("Nome do Funcionário:");
-         if (name && name.trim()) {
-           setDesks(prev => prev.map(d => d.id === desk.id ? { 
-             ...d, status: 'occupied', 
-             user: { name: name.trim(), role: 'Colaborador', avatar: name.trim().charAt(0).toUpperCase(), isOnline: true } 
-           } : d));
-         }
+        setModalConfig({
+          isOpen: true,
+          title: 'Alocar Colaborador',
+          message: 'Digite o nome do funcionário para esta mesa:',
+          type: 'input',
+          value: '',
+          onConfirm: (name) => {
+            if (name && name.trim()) {
+              setDesks(prev => prev.map(d => d.id === desk.id ? { 
+                ...d, status: 'occupied', 
+                user: { name: name.trim(), role: 'Colaborador', avatar: name.trim().charAt(0).toUpperCase(), isOnline: true } 
+              } : d));
+            }
+          }
+        });
       }
     }
   };
@@ -150,9 +183,16 @@ const rect = e.currentTarget.getBoundingClientRect();
   const handleRoomClick = (e, room) => {
     e.stopPropagation();
     if (activeTool === 'remove') {
-       if (window.confirm(`Apagar a sala '${room.name}'?`)) {
-         setRooms(prev => prev.filter(r => r.id !== room.id));
-       }
+      setModalConfig({
+        isOpen: true,
+        title: 'Remover Sala',
+        message: `Deseja apagar permanentemente a sala '${room.name}'?`,
+        type: 'confirm',
+        isDanger: true,
+        onConfirm: () => {
+          setRooms(prev => prev.filter(r => r.id !== room.id));
+        }
+      });
     }
   };
 
@@ -310,6 +350,50 @@ const rect = e.currentTarget.getBoundingClientRect();
           <button onClick={() => setScale(s => Math.max(s - 0.2, 0.4))}><ZoomOut size={18}/></button>
         </div>
       </div>
+
+      {/* PREMIUM MODAL OVERLAY */}
+      {modalConfig.isOpen && (
+        <div className="dt-modal-overlay" onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}>
+          <div className="dt-modal-glass" onClick={e => e.stopPropagation()}>
+            <h3>{modalConfig.title}</h3>
+            <div className="dt-modal-content">
+              <p>{modalConfig.message}</p>
+              {modalConfig.type === 'input' && (
+                <input 
+                  type="text" 
+                  className="dt-modal-input" 
+                  autoFocus
+                  value={modalConfig.value}
+                  onChange={e => setModalConfig({ ...modalConfig, value: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      modalConfig.onConfirm(modalConfig.value);
+                      setModalConfig({ ...modalConfig, isOpen: false });
+                    }
+                  }}
+                />
+              )}
+            </div>
+            <div className="dt-modal-actions">
+              <button 
+                className="dt-btn dt-btn-secondary" 
+                onClick={() => setModalConfig({ ...modalConfig, isOpen: false })}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={`dt-btn ${modalConfig.isDanger ? 'dt-btn-danger' : 'dt-btn-primary'}`}
+                onClick={() => {
+                  modalConfig.onConfirm(modalConfig.value);
+                  setModalConfig({ ...modalConfig, isOpen: false });
+                }}
+              >
+                {modalConfig.type === 'confirm' ? 'Confirmar' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
     </div>
   );
