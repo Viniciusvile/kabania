@@ -55,10 +55,10 @@
 /* Global Background Import Progress */
 .global-bg-import {
   position: fixed;
-  bottom: 100px; /* Movido para cima para não sobrepor o Chat FAB */
-  right: 24px;
+  bottom: 24px;
+  left: 24px; /* Movido para a esquerda para evitar conflito com o Chat FAB na direita */
   width: 320px;
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -69,13 +69,13 @@
   gap: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
   z-index: 9999;
-  animation: bg-import-slide 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bg-import-slide-left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   color: white;
   overflow: hidden;
 }
 
-@keyframes bg-import-slide {
-  from { transform: translateX(50px) scale(0.9); opacity: 0; }
+@keyframes bg-import-slide-left {
+  from { transform: translateX(-50px) scale(0.9); opacity: 0; }
   to { transform: translateX(0) scale(1); opacity: 1; }
 }
 
