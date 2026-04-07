@@ -42,7 +42,7 @@ export default function KanbanDemo() {
     <section id="demo" className="demo-section container">
       <div className="section-header">
         <h2 className="section-title">Como a Memória Histórica Atua</h2>
-        <p className="section-subtitle">Veja como o Kabania detecta problemas e sugere soluções instantâneas baseadas no seu próprio histórico de desenvolvimento.</p>
+        <p className="section-subtitle">Veja como o Synapse Smart detecta problemas e sugere soluções instantâneas baseadas no seu próprio histórico de desenvolvimento.</p>
       </div>
 
       <div className="kanban-container glass-panel">
@@ -97,7 +97,7 @@ export default function KanbanDemo() {
               <BrainCircuit size={24} />
             </div>
             <div>
-              <h3 style={{ fontWeight: 600, fontSize: '1.125rem' }}>Consultor Kabania</h3>
+              <h3 style={{ fontWeight: 600, fontSize: '1.125rem' }}>Consultor Synapse Smart</h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Analisando fluxo...</p>
             </div>
           </div>

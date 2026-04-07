@@ -8,7 +8,7 @@ export default function Navbar() {
       <div className="container nav-content">
         <div className="logo">
           <BrainCircuit className="logo-icon text-accent" size={28} />
-          <span className="logo-text">Kabania<span className="text-gradient">.ai</span></span>
+          <span className="logo-text">Synapse <span className="text-gradient">Smart</span></span>
         </div>
         <div className="nav-links">
           <a href="#features">Pilares</a>

@@ -273,7 +273,7 @@ export default function SLADashboard({ currentCompany, currentUser }) {
         <tbody>${metrics.byCollab.map((c, i) => `<tr><td>${i + 1}. ${c.name}</td><td>${formatHours(c.tma)}</td><td>${c.count}</td></tr>`).join('')}</tbody>
       </table>
 
-      <div class="footer">Relatório gerado automaticamente pelo <strong>Kabania / Synapse Smart</strong> · Dados precisos até ${new Date().toLocaleString('pt-BR')}</div>
+      <div class="footer">Relatório gerado automaticamente pelo <strong>Synapse Smart</strong> · Dados precisos até ${new Date().toLocaleString('pt-BR')}</div>
     </body></html>`);
     win.document.close();
     win.focus();

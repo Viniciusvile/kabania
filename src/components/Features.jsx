@@ -26,7 +26,7 @@ export default function Features() {
       <div className="section-header fade-in">
         <h2 className="section-title">Os Três Pilares da Solução</h2>
         <p className="section-subtitle">
-          Muito mais que um quadro visual. O Kabania funciona como um consultor estratégico e a memória técnica definitiva da sua empresa.
+          Muito mais que um quadro visual. O Synapse Smart funciona como um consultor estratégico e a memória técnica definitiva da sua empresa.
         </p>
       </div>
       

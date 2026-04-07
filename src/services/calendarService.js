@@ -17,7 +17,7 @@ export const syncActivityToCalendar = async (activity, accessToken) => {
   const endDate = new Date(startDate.getTime() + duration * 60000);
 
   const event = {
-    summary: `[Kabania] ${activity.location} - ${activity.type}`,
+    summary: `[Synapse Smart] ${activity.location} - ${activity.type}`,
     location: activity.address || '',
     description: `
       Tipo: ${activity.type}

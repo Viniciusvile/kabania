@@ -211,7 +211,7 @@ export default function BusinessManagement({ currentUser, currentCompany, userRo
           </tbody>
         </table>
         <div className="print-footer">
-          <p>Kabania Gestão Empresarial</p>
+          <p>Synapse Smart Gestão Empresarial</p>
         </div>
       </div>
     </div>
