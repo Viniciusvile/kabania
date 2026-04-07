@@ -24,6 +24,32 @@ export default function ShiftGrid({
     time: '08:00' 
   });
 
+  // 🖱️ Horizontal Drag Logic
+  const [dragStart, setDragStart] = useState(null);
+  const [offsetX, setOffsetX] = useState(0);
+
+  const handleMouseDown = (e) => {
+    // Se o clique for em um card ou botão, não inicia o arraste do grid
+    if (e.target.closest('.premium-shift-card') || e.target.closest('button')) return;
+    setDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e) => {
+    if (dragStart === null) return;
+    const diff = e.clientX - dragStart;
+    setOffsetX(diff);
+  };
+
+  const handleMouseUp = () => {
+    if (dragStart === null) return;
+    const threshold = 120; // Sensibilidade do arraste
+    if (offsetX > threshold) onPrevWeek();
+    else if (offsetX < -threshold) onNextWeek();
+    
+    setDragStart(null);
+    setOffsetX(0);
+  };
+
   const handleUpdateStatus = async (shiftId, status) => {
     try {
       if (setIsSyncing) setIsSyncing(true);
@@ -49,145 +75,135 @@ export default function ShiftGrid({
 
   return (
     <>
-    <div className="grid-nav-wrapper" style={{ position: 'relative', width: '100%' }}>
-      {/* ⬅️ Botão Voltar Semana */}
-      <button 
-        className="nav-arrow left" 
-        onClick={onPrevWeek}
-        title="Semana Anterior"
+    <div 
+      className="grid-drag-container" 
+      style={{ 
+        position: 'relative', 
+        width: '100%', 
+        cursor: dragStart ? 'grabbing' : 'grab',
+        overflow: 'hidden'
+      }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <div 
+        className="grid-drag-content"
+        style={{
+          transform: `translateX(${offsetX}px)`,
+          transition: dragStart ? 'none' : 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1)',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%'
+        }}
       >
-        <ChevronLeft size={32} />
-      </button>
+        <div className="weekly-grid-pixel timeline-mode" style={{ minHeight: 'auto', gap: '16px', padding: '16px' }}>
+          <div className="days-container-pixel" style={{ gap: '16px', padding: 0 }}>
+            {weekDays.map(day => {
+              const dayShifts = shifts.filter(s => {
+                const d = new Date(s.start_time);
+                return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
+              });
 
-      <div className="weekly-grid-pixel timeline-mode" style={{ minHeight: 'auto', gap: '16px', padding: '16px' }}>
-        <div className="days-container-pixel" style={{ gap: '16px', padding: 0 }}>
-          {weekDays.map(day => {
-            const dayShifts = shifts.filter(s => {
-              const d = new Date(s.start_time);
-              return d.getDate() === day.date.getDate() && d.getMonth() === day.date.getMonth();
-            });
+              dayShifts.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
 
-            dayShifts.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-
-            return (
-              <div 
-                key={day.date.toISOString()} 
-                className="grid-column-pixel premium-kanban-column"
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                  e.currentTarget.classList.add('drag-over-column');
-                }}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget)) {
-                    e.currentTarget.classList.remove('drag-over-column');
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  e.currentTarget.classList.remove('drag-over-column');
-
-                  let activityData = e.dataTransfer.getData('application/json');
-                  if (!activityData) activityData = e.dataTransfer.getData('activity');
-                  const shiftId = e.dataTransfer.getData('shiftId');
-
-                  if (activityData && activityData !== 'null') {
-                    try {
-                      const activity = JSON.parse(activityData);
-                      setTimeModal({ isOpen: true, activity, date: day.date, time: '08:00' });
-                    } catch (err) {
-                      console.error('[ShiftGrid] Error parsing drag data:', err);
+              return (
+                <div 
+                  key={day.date.toISOString()} 
+                  className="grid-column-pixel premium-kanban-column"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    e.currentTarget.classList.add('drag-over-column');
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                      e.currentTarget.classList.remove('drag-over-column');
                     }
-                  } else if (shiftId) {
-                    onMoveShift(shiftId, day.date, null);
-                  }
-                }}
-              >
-                <header className="day-header-pixel premium-kanban-header">
-                  <span className="day-number premium-day-num">{day.dayNum}</span>
-                  <span className="day-name">{day.label}</span>
-                  <div className="day-shift-count">
-                    {dayShifts.length}
-                  </div>
-                </header>
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('drag-over-column');
 
-                <div className="day-schedule-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                  {dayShifts.length === 0 ? (
-                    <div className="empty-day-pixel" style={{ border: '2px dashed rgba(255,255,255,0.05)', borderRadius: '12px', opacity: 0.5 }}>
-                      LIVRE
+                    let activityData = e.dataTransfer.getData('application/json');
+                    if (!activityData) activityData = e.dataTransfer.getData('activity');
+                    const shiftId = e.dataTransfer.getData('shiftId');
+
+                    if (activityData && activityData !== 'null') {
+                      try {
+                        const activity = JSON.parse(activityData);
+                        setTimeModal({ isOpen: true, activity, date: day.date, time: '08:00' });
+                      } catch (err) {
+                        console.error('[ShiftGrid] Error parsing drag data:', err);
+                      }
+                    } else if (shiftId) {
+                      onMoveShift(shiftId, day.date, null);
+                    }
+                  }}
+                >
+                  <header className="day-header-pixel premium-kanban-header">
+                    <span className="day-number premium-day-num">{day.dayNum}</span>
+                    <span className="day-name">{day.label}</span>
+                    <div className="day-shift-count">
+                      {dayShifts.length}
                     </div>
-                  ) : (
-                    dayShifts.map(shift => (
-                      <EscalaCard 
-                        key={shift.id} 
-                        shift={shift} 
-                        onAddEmployee={() => onAddEmployee(shift.id)} 
-                        onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
-                        onCheckin={() => onCheckin(shift)}
-                        onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
-                      />
-                    ))
-                  )}
+                  </header>
+
+                  <div className="day-schedule-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                    {dayShifts.length === 0 ? (
+                      <div className="empty-day-pixel" style={{ border: '2px dashed rgba(255,255,255,0.05)', borderRadius: '12px', opacity: 0.5 }}>
+                        LIVRE
+                      </div>
+                    ) : (
+                      dayShifts.map(shift => (
+                        <EscalaCard 
+                          key={shift.id} 
+                          shift={shift} 
+                          onAddEmployee={() => onAddEmployee(shift.id)} 
+                          onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
+                          onCheckin={() => onCheckin(shift)}
+                          onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ➡️ Botão Próxima Semana */}
-      <button 
-        className="nav-arrow right" 
-        onClick={onNextWeek}
-        title="Próxima Semana"
-      >
-        <ChevronRight size={32} />
-      </button>
-
       <style>{`
-        .grid-nav-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 10px;
+        .grid-drag-container {
+          overflow-x: hidden;
+          background: rgba(255, 255, 255, 0.01);
+          border-radius: 24px;
+          margin: 0 -10px;
+          padding: 0 10px;
         }
-        .nav-arrow {
-          background: rgba(255,255,255,0.03);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: var(--accent-cyan, #00e5ff);
-          width: 50px;
-          height: 80px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 12px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          z-index: 10;
-          opacity: 0.4;
-        }
-        .nav-arrow:hover {
-          opacity: 1;
-          background: rgba(0,229,255,0.1);
-          border-color: var(--accent-cyan);
-          transform: translateY(-2px);
-          box-shadow: 0 0 20px rgba(0,229,255,0.15);
-        }
-        .nav-arrow:active {
-          transform: scale(0.95);
-        }
-        .nav-arrow.left {
-          left: -10px;
-        }
-        .nav-arrow.right {
-          right: -10px;
+        .grid-drag-content {
+          will-change: transform;
         }
         .drag-over-column {
           background: rgba(0, 229, 255, 0.06) !important;
           border: 2px dashed var(--accent-cyan, #00e5ff) !important;
           box-shadow: inset 0 0 20px rgba(0,229,255,0.05);
         }
-        /* ... outros estilos ... */
+        .drag-over-column .empty-day-pixel {
+          border-color: var(--accent-cyan, #00e5ff) !important;
+          opacity: 1 !important;
+          color: var(--accent-cyan, #00e5ff) !important;
+        }
+        /* Garante que cards de escala nunca selecionem texto */
+        .escala-card-pixel, .premium-shift-card {
+          user-select: none !important;
+          -webkit-user-select: none !important;
+        }
+        .premium-shift-card:active {
+          cursor: grabbing !important;
+        }
       `}</style>
     </div>
 
