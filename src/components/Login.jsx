@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, EyeOff, Eye } from 'lucide-react';
+import { X, EyeOff, Eye, Sparkles, Check } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { supabase } from '../supabaseClient';
 import './Login.css';
@@ -171,147 +171,174 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card-new">
-        {!isResetting && (
-          <div className="login-tabs">
-            <div 
-              className={`login-tab ${!isRegistering ? 'active' : ''}`}
-              onClick={() => { setIsRegistering(false); setErrorMsg(''); setSuccessMsg(''); }}
-            >
-              Entrar
-            </div>
-            <div 
-              className={`login-tab ${isRegistering ? 'active' : ''}`}
-              onClick={() => { setIsRegistering(true); setErrorMsg(''); setSuccessMsg(''); }}
-            >
-              Cadastre-se
-            </div>
+    <div className="login-split-container">
+      {/* COLUNA ESQUERDA: BRANDING & IMPACTO */}
+      <div className="login-branding-side">
+        <div className="branding-content">
+          <div className="branding-logo">
+            <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 0 20px rgba(0, 229, 255, 0.4))' }}>🏢</span>
           </div>
-        )}
-
-        {isResetting && (
-          <div className="login-tabs">
-            <div className="login-tab active">Recuperar Senha</div>
-          </div>
-        )}
-        
-        {errorMsg && <div className="login-error">{errorMsg}</div>}
-        {successMsg && <div className="login-success" style={{
-           background: 'rgba(34, 197, 94, 0.1)',
-           border: '1px solid rgba(34, 197, 94, 0.3)',
-           color: '#4ade80',
-           padding: '1rem',
-           borderRadius: '12px',
-           marginBottom: '2rem',
-           fontSize: '0.85rem',
-           textAlign: 'center'
-        }}>{successMsg}</div>}
-        
-        <form className="login-form-new" onSubmit={handleSubmit}>
-          <div className="input-group-new">
-            <label>Endereço de Email</label>
-            <div className="input-wrapper-new">
-              <input 
-                type="email" 
-                placeholder="exemplo@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-          </div>
+          <h1>Bem-vindo ao <span>Kabania</span></h1>
+          <p>
+            Uma plataforma com tecnologia de ponta para gerenciar suas equipes, 
+            condomínios e processos com a inteligência da IA.
+          </p>
           
+          <div className="branding-badges">
+            <div className="badge-item">
+              <Sparkles size={16} /> <span>IA Integrada</span>
+            </div>
+            <div className="badge-item">
+              <Check size={16} /> <span>Gestão 360º</span>
+            </div>
+          </div>
+        </div>
+        <div className="branding-overlay"></div>
+      </div>
+
+      {/* COLUNA DIREITA: FORMULÁRIO PREMIUM */}
+      <div className="login-form-side">
+        <div className="login-card-new">
           {!isResetting && (
-            <div className="input-group-new">
-              <div className="password-header">
-                <label>Senha</label>
-                {!isRegistering && (
-                  <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); setIsResetting(true); }}>
-                    Esqueceu a senha?
-                  </a>
-                )}
+            <div className="login-tabs">
+              <div 
+                className={`login-tab ${!isRegistering ? 'active' : ''}`}
+                onClick={() => { setIsRegistering(false); setErrorMsg(''); setSuccessMsg(''); }}
+              >
+                Entrar
               </div>
-              <div className="input-wrapper-new">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required={!isResetting}
-                />
-                <button 
-                  type="button" 
-                  className="toggle-password-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex="-1"
-                >
-                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
-                </button>
+              <div 
+                className={`login-tab ${isRegistering ? 'active' : ''}`}
+                onClick={() => { setIsRegistering(true); setErrorMsg(''); setSuccessMsg(''); }}
+              >
+                Cadastre-se
               </div>
-              {isRegistering && password && (
-                <div className="strength-meter-new">
-                  <div className={`strength-bar-new ${getPasswordStrength(password)}`}></div>
-                </div>
-              )}
             </div>
           )}
-
-          {!isResetting && !isRegistering && (
-            <div className="remember-me-new" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <input 
-                type="checkbox" 
-                id="remember" 
-                checked={rememberMe} 
-                onChange={(e) => setRememberMe(e.target.checked)}
-                style={{ cursor: 'pointer' }}
-              />
-              <label htmlFor="remember" style={{ fontSize: '0.8rem', color: '#94a3b8', cursor: 'pointer' }}>
-                Lembrar-me neste dispositivo
-              </label>
-            </div>
-          )}
-          
-          <button type="submit" className={`login-button-primary ${isLoading ? 'loading' : ''}`} disabled={isLoading}>
-            {isLoading ? <div className="spinner-new"></div> : (
-              isResetting ? "Enviar Link de Recuperação" : 
-              (isRegistering ? "Criar Minha Conta" : "Entrar no Sistema")
-            )}
-          </button>
 
           {isResetting && (
-            <button 
-              type="button" 
-              className="cs-btn-secondary" 
-              onClick={() => setIsResetting(false)}
-              style={{ width: '100%', border: 'none', background: 'transparent' }}
-            >
-              Voltar ao Login
-            </button>
+            <div className="login-tabs">
+              <div className="login-tab active">Recuperar Senha</div>
+            </div>
           )}
-        </form>
-
-        {!isResetting && (
-          <>
-            <div className="login-divider">
-              <span>OU</span>
+          
+          {errorMsg && <div className="login-error">{errorMsg}</div>}
+          {successMsg && <div className="login-success" style={{
+             background: 'rgba(34, 197, 94, 0.1)',
+             border: '1px solid rgba(34, 197, 94, 0.3)',
+             color: '#4ade80',
+             padding: '1rem',
+             borderRadius: '12px',
+             marginBottom: '2rem',
+             fontSize: '0.85rem',
+             textAlign: 'center'
+          }}>{successMsg}</div>}
+          
+          <form className="login-form-new" onSubmit={handleSubmit}>
+            <div className="input-group-new">
+              <label>Endereço de Email</label>
+              <div className="input-wrapper-new">
+                <input 
+                  type="email" 
+                  placeholder="exemplo@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
             </div>
+            
+            {!isResetting && (
+              <div className="input-group-new">
+                <div className="password-header">
+                  <label>Senha</label>
+                  {!isRegistering && (
+                    <a href="#" className="forgot-password" onClick={(e) => { e.preventDefault(); setIsResetting(true); }}>
+                      Esqueceu a senha?
+                    </a>
+                  )}
+                </div>
+                <div className="input-wrapper-new">
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required={!isResetting}
+                  />
+                  <button 
+                    type="button" 
+                    className="toggle-password-btn"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
+                  >
+                    {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                {isRegistering && password && (
+                  <div className="strength-meter-new">
+                    <div className={`strength-bar-new ${getPasswordStrength(password)}`}></div>
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="login-google-wrapper">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                text="continue_with"
-                shape="rectangular"
-                logo_alignment="left"
-                locale="pt-BR"
-                theme="filled_blue"
-                size="large"
-                width="320"
-              />
-            </div>
-          </>
-        )}
+            {!isResetting && !isRegistering && (
+              <div className="remember-me-new" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input 
+                  type="checkbox" 
+                  id="remember" 
+                  checked={rememberMe} 
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label htmlFor="remember" style={{ fontSize: '0.8rem', color: '#94a3b8', cursor: 'pointer' }}>
+                  Lembrar-me neste dispositivo
+                </label>
+              </div>
+            )}
+            
+            <button type="submit" className={`login-button-primary ${isLoading ? 'loading' : ''}`} disabled={isLoading}>
+              {isLoading ? <div className="spinner-new"></div> : (
+                isResetting ? "Enviar Link de Recuperação" : 
+                (isRegistering ? "Criar Minha Conta" : "Entrar no Sistema")
+              )}
+            </button>
+
+            {isResetting && (
+              <button 
+                type="button" 
+                className="cs-btn-secondary" 
+                onClick={() => setIsResetting(false)}
+                style={{ width: '100%', border: 'none', background: 'transparent' }}
+              >
+                Voltar ao Login
+              </button>
+            )}
+          </form>
+
+          {!isResetting && (
+            <>
+              <div className="login-divider">
+                <span>OU</span>
+              </div>
+
+              <div className="login-google-wrapper">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="continue_with"
+                  shape="rectangular"
+                  logo_alignment="left"
+                  locale="pt-BR"
+                  theme="filled_blue"
+                  size="large"
+                  width="320"
+                />
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
