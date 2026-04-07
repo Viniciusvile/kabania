@@ -239,44 +239,66 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
 
                 {/* Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: colTextColors[col], background: colColors[col], border: `1px solid ${colBorders[col]}`, padding: '2px 7px', borderRadius: '5px' }}>
+                  <span style={{ 
+                    fontSize: '10px', 
+                    fontWeight: 900, 
+                    letterSpacing: '0.05em', 
+                    textTransform: 'uppercase', 
+                    color: colTextColors[col], 
+                    background: colColors[col], 
+                    border: `1px solid ${colBorders[col]}`, 
+                    padding: '3px 10px', 
+                    borderRadius: '8px',
+                    boxShadow: `0 2px 8px ${colBorders[col]}`
+                  }}>
                     {colLabels[col] || col.toUpperCase()}
                   </span>
                   {isOverdue && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: '#f87171', fontWeight: 800 }}>
-                      <AlertTriangle size={10} /> Atrasado
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#f87171', fontWeight: 800 }}>
+                      <AlertTriangle size={12} /> ATRASADO
                     </span>
                   )}
                 </div>
 
-                {/* Title */}
-                <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.01em', lineHeight: 1.3 }}>
-                  {act.title}
+                {/* Title - Clean up redundant prefixes if they exist */}
+                <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-main, #fff)' }}>
+                  {act.title.replace(/^(TITULO|TITLE):\s*/i, '')}
                 </div>
 
                 {/* Description */}
                 {act.desc && (
-                  <p style={{ fontSize: '11px', opacity: 0.55, marginBottom: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {act.desc}
+                  <p style={{ fontSize: '11px', opacity: 0.7, marginBottom: '12px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {act.desc.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')}
                   </p>
                 )}
 
                 {/* Footer */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {act.customer_name && (
-                      <span style={{ fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '5px', background: 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.2)' }}>
-                        {act.customer_name}
+                      <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', border: '1px solid rgba(168,85,247,0.3)' }}>
+                        👤 {act.customer_name}
                       </span>
                     )}
                     {hasDeadline && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', color: isOverdue ? '#f87171' : 'var(--text-muted)', fontWeight: 700 }}>
-                        <Calendar size={9} /> {new Date(act.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: isOverdue ? '#f87171' : 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
+                        <Calendar size={10} /> {new Date(act.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </span>
                     )}
                   </div>
-                  <button style={scheduleBtn(false)} onClick={() => onQuickSchedule(act)}>
-                    <Plus size={12} /> Agendar
+                  <button 
+                    style={{
+                      ...scheduleBtn(false),
+                      background: 'var(--accent-gradient, linear-gradient(135deg, #00e5ff 0%, #1200ff 100%))',
+                      color: '#fff',
+                      padding: '8px 16px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 12px rgba(0,229,255,0.2)'
+                    }} 
+                    onClick={() => onQuickSchedule(act)}
+                  >
+                    <Plus size={14} /> Agendar
                   </button>
                 </div>
               </div>
