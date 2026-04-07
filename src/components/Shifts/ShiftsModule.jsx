@@ -116,6 +116,18 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     };
   });
 
+  const handlePrevWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() - 7);
+    setWeekStart(d);
+  };
+
+  const handleNextWeek = () => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 7);
+    setWeekStart(d);
+  };
+
   const filteredShifts = useMemo(() => {
     return shifts.filter(s => {
       if (filterStatus === 'ativos') return s.status === 'in_progress' || s.status === 'open';
@@ -524,6 +536,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             setIsSyncing={setIsSyncing}
             onCheckin={(shift) => setCheckinModal({ isOpen: true, shift })}
             onDeleteShift={handleDeleteShift}
+            onPrevWeek={handlePrevWeek}
+            onNextWeek={handleNextWeek}
           />
         </div>
 

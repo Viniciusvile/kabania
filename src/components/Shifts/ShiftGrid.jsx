@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2 } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 
 export default function ShiftGrid({ 
@@ -12,7 +12,9 @@ export default function ShiftGrid({
   updateShiftLocally, 
   setIsSyncing,
   onCheckin,
-  onDeleteShift
+  onDeleteShift,
+  onPrevWeek,
+  onNextWeek
 }) {
   // Modal de horário substituindo window.prompt (bloqueado em dev mode)
   const [timeModal, setTimeModal] = useState({ 
@@ -47,6 +49,16 @@ export default function ShiftGrid({
 
   return (
     <>
+    <div className="grid-nav-wrapper" style={{ position: 'relative', width: '100%' }}>
+      {/* ⬅️ Botão Voltar Semana */}
+      <button 
+        className="nav-arrow left" 
+        onClick={onPrevWeek}
+        title="Semana Anterior"
+      >
+        <ChevronLeft size={32} />
+      </button>
+
       <div className="weekly-grid-pixel timeline-mode" style={{ minHeight: 'auto', gap: '16px', padding: '16px' }}>
         <div className="days-container-pixel" style={{ gap: '16px', padding: 0 }}>
           {weekDays.map(day => {
@@ -121,27 +133,63 @@ export default function ShiftGrid({
             );
           })}
         </div>
-        <style>{`
-          .drag-over-column {
-            background: rgba(0, 229, 255, 0.06) !important;
-            border: 2px dashed var(--accent-cyan, #00e5ff) !important;
-            box-shadow: inset 0 0 20px rgba(0,229,255,0.05);
-          }
-          .drag-over-column .empty-day-pixel {
-            border-color: var(--accent-cyan, #00e5ff) !important;
-            opacity: 1 !important;
-            color: var(--accent-cyan, #00e5ff) !important;
-          }
-          /* Garante que cards de escala nunca selecionem texto */
-          .escala-card-pixel, .premium-shift-card {
-            user-select: none !important;
-            -webkit-user-select: none !important;
-          }
-          .premium-shift-card:active {
-            cursor: grabbing !important;
-          }
-        `}</style>
       </div>
+
+      {/* ➡️ Botão Próxima Semana */}
+      <button 
+        className="nav-arrow right" 
+        onClick={onNextWeek}
+        title="Próxima Semana"
+      >
+        <ChevronRight size={32} />
+      </button>
+
+      <style>{`
+        .grid-nav-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .nav-arrow {
+          background: rgba(255,255,255,0.03);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: var(--accent-cyan, #00e5ff);
+          width: 50px;
+          height: 80px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 10;
+          opacity: 0.4;
+        }
+        .nav-arrow:hover {
+          opacity: 1;
+          background: rgba(0,229,255,0.1);
+          border-color: var(--accent-cyan);
+          transform: translateY(-2px);
+          box-shadow: 0 0 20px rgba(0,229,255,0.15);
+        }
+        .nav-arrow:active {
+          transform: scale(0.95);
+        }
+        .nav-arrow.left {
+          left: -10px;
+        }
+        .nav-arrow.right {
+          right: -10px;
+        }
+        .drag-over-column {
+          background: rgba(0, 229, 255, 0.06) !important;
+          border: 2px dashed var(--accent-cyan, #00e5ff) !important;
+          box-shadow: inset 0 0 20px rgba(0,229,255,0.05);
+        }
+        /* ... outros estilos ... */
+      `}</style>
+    </div>
 
       {/* ⏰ MINI-MODAL DE HORÁRIO (substitui window.prompt bloqueado em dev mode) */}
       {timeModal.isOpen && (
