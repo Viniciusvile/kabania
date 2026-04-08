@@ -351,28 +351,20 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
   const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const locationName = shift.work_environments?.name || 'Local Não Definido';
-  const activityName = shift.work_activities?.name || 'Nenhuma Atividade Associada';
+  const activityName = shift.work_activities?.name || 'NENHUMA ATIVIDADE ASSOCIADA';
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData('shiftId', shift.id);
     e.dataTransfer.effectAllowed = 'move';
-    // Ghost image customizada com o horário — visual de qualidade
     const ghost = document.createElement('div');
     ghost.style.cssText = [
       'position:fixed', 'top:-9999px', 'left:-9999px',
       'width:200px', 'height:44px',
       'background:rgba(15,20,40,0.95)',
       'border:1px solid rgba(0,229,255,0.5)',
-      'border-radius:12px',
-      'padding:0 14px',
-      'color:#00e5ff',
-      'font-size:13px',
-      'font-weight:800',
-      'font-family:inherit',
-      'display:flex',
-      'align-items:center',
-      'gap:8px',
-      'box-shadow:0 8px 24px rgba(0,229,255,0.2)',
+      'border-radius:12px', 'padding:0 14px',
+      'color:#00e5ff', 'font-size:13px', 'font-weight:800',
+      'display:flex', 'align-items:center', 'gap:8px',
     ].join(';');
     ghost.innerHTML = `<span style="opacity:0.5">⏰</span> ${startTime} – ${endTime}`;
     document.body.appendChild(ghost);
@@ -380,141 +372,82 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
     setTimeout(() => { if (ghost.parentNode) document.body.removeChild(ghost); }, 0);
   };
 
-  // Previne drag em elementos filhos interativos (botões, inputs)
   const stopChildDrag = (e) => e.stopPropagation();
 
   return (
     <div 
-      className={`escala-card-pixel premium-shift-card ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
+      className={`premium-shift-card ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
       draggable
       onDragStart={handleDragStart}
-      style={{
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        MozUserSelect: 'none',
-        cursor: 'grab',
-      }}
     >
-      {/* Indicador de Status Glow */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
-        background: isProblem ? 'var(--escala-danger)' : inProgress ? 'var(--escala-success)' : isConcluded ? 'var(--text-muted)' : 'var(--accent-cyan)',
-        boxShadow: `0 0 15px ${isProblem ? 'var(--escala-danger)' : inProgress ? 'var(--escala-success)' : 'transparent'}`
-      }} />
+      {/* Indicador Lateral */}
+      <div className="card-status-strip" />
 
-      {/* ⏰ HEADER: grip + horário + status + delete */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="premium-time-badge" style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+      {/* ⏰ HEADER RE-DESIGNED */}
+      <div className="card-top-row">
+        <div className="time-box-pill">
           <GripIcon />
-          <Clock size={12} className="text-accent-cyan" /> 
-          <span className="premium-time-text" style={{ fontSize: '11px', fontWeight: 'bold' }}>
-            {startTime} - {endTime}
-          </span>
+          <Clock size={12} className="text-slate-400" />
+          <span className="time-label">{startTime} - {endTime}</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          <div style={{ 
-            fontSize: '10px', textTransform: 'uppercase', fontWeight: 800, 
-            padding: '2px 8px', borderRadius: '12px',
-            background: isProblem ? 'rgba(239, 68, 68, 0.1)' : inProgress ? 'rgba(16, 185, 129, 0.1)' : 'var(--badge-bg, rgba(255,255,255,0.05))',
-            color: isProblem ? '#ef4444' : inProgress ? '#10b981' : 'var(--text-muted)'
-          }}>
+        <div className="flex items-center gap-2">
+          <span className="card-status-label">
             {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
-          </div>
+          </span>
           <button
-            draggable={false}
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             onDragStart={stopChildDrag}
-            title="Excluir escala"
-            style={{
-              width: '28px', height: '28px', borderRadius: '8px', border: 'none',
-              background: 'rgba(239,68,68,0.1)', color: '#ef4444',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)'; e.currentTarget.style.transform = 'scale(1.15)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.transform = 'scale(1)'; }}
+            className="card-delete-btn"
           >
             <Trash2 size={13} />
           </button>
         </div>
       </div>
 
-      {/* 📍 LOCATION & ACTIVITY */}
-      <div>
-        <div className="premium-location-text" style={{ fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.01em', marginBottom: '6px' }}>
-          <MapPin size={16} className="text-accent-cyan" />
-          {locationName}
+      {/* 📍 CONTENT RE-DESIGNED */}
+      <div className="card-main-content">
+        <div className="location-row-premium">
+          <MapPin size={18} className="text-slate-400" />
+          <span className="location-name">{locationName}</span>
         </div>
-        <div className="activity-pill-premium" style={{ display: 'inline-flex', padding: '4px 10px', fontSize: '10px' }}>
-          <Briefcase size={12} className="icon-accent" /> 
-          {activityName}
-        </div>
-      </div>
 
-      {/* 👥 PERSONNEL LIST */}
-      <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '12px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {shift.assigned_employees?.map(emp => (
-            <div key={emp.assignment_id || emp.id} className="premium-emp-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: '10px' }}>
-              <div className="emp-avatar-small" style={{ width: '26px', height: '26px', fontSize: '10px', borderRadius: '8px' }}>
-                {emp.avatar_url 
-                  ? <img src={emp.avatar_url} alt="" draggable={false} onDragStart={stopChildDrag} /> 
-                  : <span>{emp.name[0]}</span>
-                }
-              </div>
-              <div className="premium-emp-name" style={{ fontSize: '12px', fontWeight: 'bold' }}>
-                {emp.name}
-              </div>
-            </div>
-          ))}
-          {!shift.assigned_employees?.length && (
-            <button 
-              draggable={false}
-              className="glow-btn-ghost" 
-              onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
-              onDragStart={stopChildDrag}
-              style={{ padding: '8px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', borderRadius: '10px', borderStyle: 'dashed' }}
-            >
-              <Plus size={14} /> Atribuir Colaborador
-            </button>
-          )}
+        <div className="activity-pill-premium">
+           <Briefcase size={12} className="opacity-50" />
+           <span className="uppercase tracking-tighter">{activityName}</span>
         </div>
       </div>
 
-      {/* ⚙️ STATUS CONTROLS */}
-      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-        {!inProgress && !isConcluded && (
-          <button
-            draggable={false}
-            onClick={(e) => { e.stopPropagation(); onCheckin(); }}
+      {/* 👥 ASSIGNMENTS / BUTTONS */}
+      <div className="card-interaction-zone">
+        {shift.assigned_employees?.length > 0 ? (
+          <div className="avatar-stack-premium">
+             {shift.assigned_employees.map(emp => (
+               <div key={emp.id} className="emp-row-mini">
+                 <div className="emp-avatar-box">{emp.name[0]}</div>
+                 <span className="emp-name-text">{emp.name}</span>
+               </div>
+             ))}
+          </div>
+        ) : (
+          <button 
+            className="emp-assign-ghost-btn"
+            onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
             onDragStart={stopChildDrag}
-            className="glow-btn-primary"
-            style={{ flex: 1, padding: '10px', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }}
           >
-            <MapPin size={14} /> Bater Ponto
+            <Plus size={16} /> Atribuir Colaborador
           </button>
         )}
 
-        {inProgress && (
-          <button
-            draggable={false}
-            onClick={(e) => { e.stopPropagation(); if (!isConcluded) onUpdateStatus('completed'); }}
-            onDragStart={stopChildDrag}
-            style={{
-              flex: 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-              background: isConcluded ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.2)',
-              border: '1px solid rgba(16, 185, 129, 0.5)',
-              color: '#10b981', padding: '10px', borderRadius: '10px',
-              fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase',
-              cursor: isConcluded ? 'default' : 'pointer',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
-            }}
-          >
-            <CheckCircle size={14} /> {isConcluded ? 'Concluído' : 'Finalizar Turno'}
-          </button>
-        )}
+        <button 
+          className="shift-action-btn-main"
+          disabled={isConcluded}
+          onClick={(e) => { e.stopPropagation(); onCheckin(); }}
+          onDragStart={stopChildDrag}
+        >
+          <MapPin size={16} />
+          <span>{inProgress ? 'Finalizar Turno' : 'Bater Ponto'}</span>
+        </button>
       </div>
     </div>
   );
