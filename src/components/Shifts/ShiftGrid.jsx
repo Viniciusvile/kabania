@@ -380,10 +380,9 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
       draggable
       onDragStart={handleDragStart}
     >
-      {/* Indicador Lateral */}
       <div className="card-status-strip" />
 
-      {/* ⏰ HEADER RE-DESIGNED */}
+      {/* ⏰ HEADER */}
       <div className="card-top-row">
         <div className="time-box-pill">
           <GripIcon />
@@ -405,33 +404,42 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
         </div>
       </div>
 
-      {/* 📍 CONTENT RE-DESIGNED */}
+      {/* 📍 LOCATION HIERARCHY (Premium Refinement) */}
       <div className="card-main-content">
-        <div className="location-row-premium">
-          <MapPin size={18} className="text-slate-400" />
-          <span className="location-name">{locationName}</span>
+        <div className="location-stack">
+          <div className="flex items-center gap-1.5 mb-1">
+             <span className="label-tiny-cyan">LOCAL</span>
+             <div className="h-[1px] flex-1 bg-cyan-500/10" />
+          </div>
+          <div className="location-row-premium">
+            <MapPin size={18} className="text-cyan-500/40" />
+            <span className="location-name-large">{locationName}</span>
+          </div>
         </div>
 
         <div className="activity-pill-premium">
-           <Briefcase size={12} className="opacity-50" />
-           <span className="uppercase tracking-tighter">{activityName}</span>
+           <Briefcase size={11} className="opacity-40" />
+           <span className="uppercase tracking-tight">{activityName}</span>
         </div>
       </div>
 
-      {/* 👥 ASSIGNMENTS / BUTTONS */}
+      {/* 👥 ASSIGNMENTS / FOOTER */}
       <div className="card-interaction-zone">
         {shift.assigned_employees?.length > 0 ? (
           <div className="avatar-stack-premium">
              {shift.assigned_employees.map(emp => (
-               <div key={emp.id} className="emp-row-mini">
-                 <div className="emp-avatar-box">{emp.name[0]}</div>
-                 <span className="emp-name-text">{emp.name}</span>
+               <div key={emp.id} className="emp-row-premium">
+                 <div className="emp-avatar-box-refined">{emp.name[0]}</div>
+                 <div className="flex flex-col">
+                   <span className="emp-name-bold">{emp.name}</span>
+                   <span className="text-[9px] opacity-40 uppercase font-bold">Colaborador Ativo</span>
+                 </div>
                </div>
              ))}
           </div>
         ) : (
           <button 
-            className="emp-assign-ghost-btn"
+            className="emp-assign-ghost-btn-refined"
             onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
             onDragStart={stopChildDrag}
           >
@@ -440,13 +448,13 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
         )}
 
         <button 
-          className="shift-action-btn-main"
+          className="shift-action-btn-main-premium"
           disabled={isConcluded}
           onClick={(e) => { e.stopPropagation(); onCheckin(); }}
           onDragStart={stopChildDrag}
         >
-          <MapPin size={16} />
-          <span>{inProgress ? 'Finalizar Turno' : 'Bater Ponto'}</span>
+          <Zap size={16} className="text-white" />
+          <span>{inProgress ? 'FINALIZAR TURNO' : 'BATER PONTO AGORA'}</span>
         </button>
       </div>
     </div>
