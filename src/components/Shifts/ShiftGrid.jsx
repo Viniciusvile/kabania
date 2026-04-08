@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
+import './ShiftsPremium.css';
 
 export default function ShiftGrid({ 
   shifts, 
@@ -30,7 +31,7 @@ export default function ShiftGrid({
 
   const handleMouseDown = (e) => {
     // Se o clique for em um card ou botão, não inicia o arraste do grid
-    if (e.target.closest('.premium-shift-card') || e.target.closest('button')) return;
+    if (e.target.closest('.premium-shift-card') || e.target.closest('.kabania-v2-card') || e.target.closest('button')) return;
     setDragStart(e.clientX);
   };
 
@@ -411,7 +412,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
           <MapPin size={20} />
         </div>
         <div className="kabania-v2-local-info">
-          <span className="kabania-v2-label-loc uppercase">Local</span>
+          <span className="kabania-v2-label-loc">LOCAL</span>
           <span className="kabania-v2-loc-name">{locationName}</span>
         </div>
       </div>

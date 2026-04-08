@@ -1688,214 +1688,309 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 .ponto-close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; transform: rotate(90deg); }
 
 /* ============================================================
-   🗃️ PREMIUM SHIFT CARD (STRICT TRIPLE-A DESIGN)
+   💎 KABANIA SHIFT CARD V2 (REFINED - PIXEL PERFECT)
    ============================================================ */
 
-.premium-shift-card {
-  position: relative;
-  background: white;
+.kabania-v2-card {
+  background: #18181f;
   border-radius: 20px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-  border: 1px solid rgba(0,0,0,0.03);
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
   overflow: hidden;
+  max-width: 320px;
 }
 
-.premium-shift-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+.kabania-v2-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 229, 255, 0.2);
+  box-shadow: 0 12px 35px rgba(0, 229, 255, 0.08);
 }
 
-.card-status-strip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 6px;
-  height: 100%;
-  background: #3b82f6;
-}
-
-.normal .card-status-strip { background: #3b82f6; }
-.progress .card-status-strip { background: #10b981; }
-.problem .card-status-strip { background: #f43f5e; }
-.concluded .card-status-strip { background: #94a3b8; }
-
-.card-top-row {
+.kabania-v2-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 34px;
 }
 
-.time-box-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f8fafc;
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
-}
-
-.time-label {
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.card-status-label-monospace {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.card-delete-btn-pink {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fff1f2;
-  color: #f43f5e;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.card-delete-btn-pink:hover {
-  background: #ffe4e6;
-  transform: scale(1.15) rotate(15deg);
-}
-
-.card-main-content.text-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.location-row-premium {
+.kabania-v2-header-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.location-name-bold {
-  font-size: 1.25rem;
-  font-weight: 900;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-}
-
-.activity-pill-premium {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(6, 182, 212, 0.08);
-  color: #0891b2;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  border: 1px solid rgba(6, 182, 212, 0.15);
-  width: fit-content;
-}
-
-.card-interaction-zone {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 0.5rem;
-}
-
-.avatar-stack-premium {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.emp-row-mini {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px;
-}
-
-.emp-avatar-box {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 900;
-  color: #475569;
-}
-
-.emp-name-text {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #334155;
-}
-
-.emp-assign-ghost-btn {
-  width: 100%;
-  padding: 12px;
-  background: white;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  color: #64748b;
-  font-size: 0.75rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.emp-assign-ghost-btn:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
-  color: #1e293b;
-}
-
-.shift-action-btn-gradient {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  border: none;
-  border-radius: 16px;
+.kabania-v2-grip {
   color: white;
-  font-size: 0.85rem;
-  font-weight: 900;
+  opacity: 0.12;
+  cursor: grab;
+}
+
+.kabania-v2-time-pill {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 14px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #cbd5e1;
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  letter-spacing: 0.01em;
+}
+
+.kabania-v2-header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.kabania-v2-action-sq {
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+  transition: all 0.2s;
+}
+
+.kabania-v2-action-sq:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255,255,255,0.15);
+  color: white;
+}
+
+/* 📍 LOCAL BLOCK REFINED */
+.kabania-v2-local-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kabania-v2-icon-box {
+  width: 46px;
+  height: 46px;
+  background: rgba(0, 180, 170, 0.12);
+  border: 1px solid rgba(0, 229, 200, 0.18);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00e5c8;
+  flex-shrink: 0;
+}
+
+.kabania-v2-local-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.kabania-v2-label-loc {
+  font-size: 9px;
+  font-weight: 900;
+  color: #00e5c8;
+  opacity: 0.6;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.kabania-v2-loc-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* 📋 ACTIVITY & STATUS REFINED */
+.kabania-v2-act-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.kabania-v2-act-pill {
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.kabania-v2-status-badge {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.kabania-v2-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.05);
+  margin: 2px 0;
+}
+
+/* 🔘 FOOTER BUTTONS REFINED */
+.kabania-v2-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.kabania-v2-dashed-btn {
+  background: transparent;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  height: 50px;
+  transition: all 0.2s;
+  letter-spacing: 0.01em;
+}
+
+.kabania-v2-dashed-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.kabania-v2-gradient-btn {
+  background: linear-gradient(135deg, #00cfff 0%, #1d4fe8 100%);
+  border: none;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 14px;
+  color: white;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  height: 50px;
+  box-shadow: 0 6px 22px rgba(0, 180, 255, 0.3);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.shift-action-btn-gradient:hover:not(:disabled) {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.45);
+.kabania-v2-gradient-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  filter: brightness(1.08);
+  box-shadow: 0 14px 32px rgba(0, 180, 255, 0.45);
 }
 
-.shift-action-btn-gradient:disabled {
-  background: #f1f5f9;
-  color: #cbd5e1;
+.kabania-v2-gradient-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
-  box-shadow: none;
+  filter: grayscale(0.4);
+}
+
+.kabania-v2-gradient-btn span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.kabania-v2-gradient-btn b {
+  display: block;
+  font-weight: 900;
+  font-size: 13.5px;
+}
+
+/* 🌙 LIGHT MODE OVERRIDES - KABANIA V2 REFINED */
+[data-theme='light'] .kabania-v2-card {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .kabania-v2-card:hover {
+  border-color: rgba(0, 180, 255, 0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .kabania-v2-grip {
+  color: #0f172a;
+  opacity: 0.15;
+}
+
+[data-theme='light'] .kabania-v2-time-pill {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #475569;
+}
+
+[data-theme='light'] .kabania-v2-action-sq {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.06);
+  color: #64748b;
+}
+
+[data-theme='light'] .kabania-v2-action-sq:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme='light'] .kabania-v2-loc-name {
+  color: #0f172a;
+}
+
+[data-theme='light'] .kabania-v2-act-pill {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+[data-theme='light'] .kabania-v2-status-badge {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #94a3b8;
+}
+
+[data-theme='light'] .kabania-v2-divider {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .kabania-v2-dashed-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #64748b;
+}
+
+[data-theme='light'] .kabania-v2-dashed-btn:hover {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #0f172a;
 }
