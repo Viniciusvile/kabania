@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 
 export default function ShiftGrid({ 
@@ -351,7 +351,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
   const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const locationName = shift.work_environments?.name || 'Local Não Definido';
-  const activityName = shift.work_activities?.name || 'NENHUMA ATIVIDADE ASSOCIADA';
+  const activityName = shift.work_activities?.name || 'Nenhuma Atividade Associada';
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData('shiftId', shift.id);
@@ -376,75 +376,82 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
 
   return (
     <div 
-      className={`premium-shift-card ${isProblem ? 'problem' : inProgress ? 'progress' : isConcluded ? 'concluded' : 'normal'}`}
+      className="kabania-v2-card"
       draggable
       onDragStart={handleDragStart}
     >
-      <div className="card-status-strip" />
-
-      {/* ⏰ HEADER - STRICT DESIGN */}
-      <div className="card-top-row">
-        <div className="time-box-pill">
-          <GripIcon />
-          <Clock size={12} className="opacity-40" />
-          <span className="time-label">{startTime} - {endTime}</span>
+      {/* ⏰ HEADER - KABANIA V2 */}
+      <div className="kabania-v2-header">
+        <div className="kabania-v2-header-left">
+          <GripVertical className="kabania-v2-grip" size={16} />
+          <div className="kabania-v2-time-pill">
+            <Clock size={12} className="opacity-50" />
+            <span>{startTime} - {endTime}</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="card-status-label-monospace">
-            {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
-          </span>
-          <button
+        <div className="kabania-v2-header-right">
+          <button className="kabania-v2-action-sq" title="Editar">
+            <Edit2 size={14} />
+          </button>
+          <button 
+            className="kabania-v2-action-sq" 
+            title="Excluir"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             onDragStart={stopChildDrag}
-            className="card-delete-btn-pink"
           >
-            <Trash2 size={13} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
 
-      {/* 📍 CONTENT - STICK TO IMAGE */}
-      <div className="card-main-content text-center">
-        <div className="location-row-premium justify-center">
-          <MapPin size={18} className="text-blue-500" />
-          <span className="location-name-bold">{locationName}</span>
+      {/* 📍 LOCAL BLOCK - KABANIA V2 */}
+      <div className="kabania-v2-local-row">
+        <div className="kabania-v2-icon-box">
+          <MapPin size={20} />
         </div>
-
-        <div className="activity-pill-premium mt-1">
-           <Briefcase size={12} className="opacity-40" />
-           <span className="uppercase">{activityName}</span>
+        <div className="kabania-v2-local-info">
+          <span className="kabania-v2-label-loc uppercase">Local</span>
+          <span className="kabania-v2-loc-name">{locationName}</span>
         </div>
       </div>
 
-      {/* 👥 ASSIGNMENTS / ACTION */}
-      <div className="card-interaction-zone">
-        <div className="avatar-stack-premium">
-          {shift.assigned_employees?.map(emp => (
-            <div key={emp.id} className="emp-row-mini">
-              <div className="emp-avatar-box">{emp.name[0]}</div>
-              <span className="emp-name-text">{emp.name}</span>
-            </div>
-          ))}
-          {!shift.assigned_employees?.length && (
-            <button 
-              className="emp-assign-ghost-btn"
-              onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
-              onDragStart={stopChildDrag}
-            >
-              <Plus size={16} /> Atribuir Colaborador
-            </button>
-          )}
+      {/* 📋 ACTIVITY & STATUS - KABANIA V2 */}
+      <div className="kabania-v2-act-row">
+        <div className="kabania-v2-act-pill">
+          <Briefcase size={12} className="opacity-50" />
+          <span>{activityName}</span>
         </div>
+        
+        <div className="kabania-v2-status-badge">
+          {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
+        </div>
+      </div>
+
+      <div className="kabania-v2-divider" />
+
+      {/* 👥 FOOTER BUTTONS - KABANIA V2 */}
+      <div className="kabania-v2-footer">
+        <button 
+          className="kabania-v2-dashed-btn"
+          onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
+          onDragStart={stopChildDrag}
+        >
+          <Plus size={16} />
+          <span>Atribuir</span>
+        </button>
 
         <button 
-          className="shift-action-btn-gradient"
+          className="kabania-v2-gradient-btn"
           disabled={isConcluded}
           onClick={(e) => { e.stopPropagation(); onCheckin(); }}
           onDragStart={stopChildDrag}
         >
-          <MapPin size={16} />
-          <span>{inProgress ? 'Finalizar Turno' : 'Bater Ponto'}</span>
+          <MapPin size={18} />
+          <span>
+            <b>Bater</b>
+            <b>Ponto</b>
+          </span>
         </button>
       </div>
     </div>
