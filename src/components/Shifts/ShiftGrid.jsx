@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 
 export default function ShiftGrid({ 
