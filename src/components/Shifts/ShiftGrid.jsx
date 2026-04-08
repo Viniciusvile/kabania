@@ -382,79 +382,69 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
     >
       <div className="card-status-strip" />
 
-      {/* ⏰ HEADER */}
+      {/* ⏰ HEADER - STRICT DESIGN */}
       <div className="card-top-row">
         <div className="time-box-pill">
           <GripIcon />
-          <Clock size={12} className="text-slate-400" />
+          <Clock size={12} className="opacity-40" />
           <span className="time-label">{startTime} - {endTime}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="card-status-label">
+          <span className="card-status-label-monospace">
             {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             onDragStart={stopChildDrag}
-            className="card-delete-btn"
+            className="card-delete-btn-pink"
           >
             <Trash2 size={13} />
           </button>
         </div>
       </div>
 
-      {/* 📍 LOCATION HIERARCHY (Premium Refinement) */}
-      <div className="card-main-content">
-        <div className="location-stack">
-          <div className="flex items-center gap-1.5 mb-1">
-             <span className="label-tiny-cyan">LOCAL</span>
-             <div className="h-[1px] flex-1 bg-cyan-500/10" />
-          </div>
-          <div className="location-row-premium">
-            <MapPin size={18} className="text-cyan-500/40" />
-            <span className="location-name-large">{locationName}</span>
-          </div>
+      {/* 📍 CONTENT - STICK TO IMAGE */}
+      <div className="card-main-content text-center">
+        <div className="location-row-premium justify-center">
+          <MapPin size={18} className="text-blue-500" />
+          <span className="location-name-bold">{locationName}</span>
         </div>
 
-        <div className="activity-pill-premium">
-           <Briefcase size={11} className="opacity-40" />
-           <span className="uppercase tracking-tight">{activityName}</span>
+        <div className="activity-pill-premium mt-1">
+           <Briefcase size={12} className="opacity-40" />
+           <span className="uppercase">{activityName}</span>
         </div>
       </div>
 
-      {/* 👥 ASSIGNMENTS / FOOTER */}
+      {/* 👥 ASSIGNMENTS / ACTION */}
       <div className="card-interaction-zone">
-        {shift.assigned_employees?.length > 0 ? (
-          <div className="avatar-stack-premium">
-             {shift.assigned_employees.map(emp => (
-               <div key={emp.id} className="emp-row-premium">
-                 <div className="emp-avatar-box-refined">{emp.name[0]}</div>
-                 <div className="flex flex-col">
-                   <span className="emp-name-bold">{emp.name}</span>
-                   <span className="text-[9px] opacity-40 uppercase font-bold">Colaborador Ativo</span>
-                 </div>
-               </div>
-             ))}
-          </div>
-        ) : (
-          <button 
-            className="emp-assign-ghost-btn-refined"
-            onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
-            onDragStart={stopChildDrag}
-          >
-            <Plus size={16} /> Atribuir Colaborador
-          </button>
-        )}
+        <div className="avatar-stack-premium">
+          {shift.assigned_employees?.map(emp => (
+            <div key={emp.id} className="emp-row-mini">
+              <div className="emp-avatar-box">{emp.name[0]}</div>
+              <span className="emp-name-text">{emp.name}</span>
+            </div>
+          ))}
+          {!shift.assigned_employees?.length && (
+            <button 
+              className="emp-assign-ghost-btn"
+              onClick={(e) => { e.stopPropagation(); onAddEmployee(); }}
+              onDragStart={stopChildDrag}
+            >
+              <Plus size={16} /> Atribuir Colaborador
+            </button>
+          )}
+        </div>
 
         <button 
-          className="shift-action-btn-main-premium"
+          className="shift-action-btn-gradient"
           disabled={isConcluded}
           onClick={(e) => { e.stopPropagation(); onCheckin(); }}
           onDragStart={stopChildDrag}
         >
-          <Zap size={16} className="text-white" />
-          <span>{inProgress ? 'FINALIZAR TURNO' : 'BATER PONTO AGORA'}</span>
+          <MapPin size={16} />
+          <span>{inProgress ? 'Finalizar Turno' : 'Bater Ponto'}</span>
         </button>
       </div>
     </div>
