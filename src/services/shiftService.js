@@ -310,6 +310,25 @@ export const updateShiftStatus = async (shiftId, status) => {
     );
 };
 
+export const updateShift = async (shiftId, updateData, userId) => {
+    try {
+        const { data, error } = await supabase
+            .from('shifts')
+            .update(updateData)
+            .eq('id', shiftId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        logEvent(updateData.company_id, userId, 'SHIFT_UPDATED', `Escala ${shiftId} personalizada`);
+        return data;
+    } catch (err) {
+        console.error('[updateShift] ❌ Erro ao atualizar escala:', err);
+        throw err;
+    }
+};
+
 export const deleteShift = async (shiftId) => {
     return await safeQuery(
         () => supabase.from('shifts').delete().eq('id', shiftId),

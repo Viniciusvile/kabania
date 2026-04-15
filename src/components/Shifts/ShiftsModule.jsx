@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX, Wand2 } from 'lucide-react';
-import { addEmployeeToShift, moveShift, createShift, deleteShift } from '../../services/shiftService';
+import { addEmployeeToShift, moveShift, createShift, deleteShift, updateShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
@@ -41,6 +41,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState('field');
+  const [editingShiftId, setEditingShiftId] = useState(null);
   const [kanbanTasks, setKanbanTasks] = useState(() => {
     try {
       const cached = localStorage.getItem(`kanban_tasks_cache_${companyId}`);
@@ -104,6 +105,24 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  const formatForInput = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const handleEditShift = (shift) => {
+    setEditingShiftId(shift.id);
+    setNewShiftData({
+      environment_id: shift.environment_id || '',
+      activity_id: shift.activity_id || '',
+      start_time: formatForInput(shift.start_time),
+      end_time: formatForInput(shift.end_time)
+    });
+    setIsModalOpen(true);
   };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -268,33 +287,32 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     try {
       setIsSyncing(true);
       
-      // DIAGNOSTIC LOGGING: Confirm current context before write
-      console.log("[CreateShift] Payload Início:", {
-        companyId,
-        environment_id: newShiftData.environment_id,
-        user: currentUser
-      });
-
-      const data = await createShift({
+      const payload = {
         company_id: companyId,
         environment_id: newShiftData.environment_id || null,
         activity_id: newShiftData.activity_id || null,
         start_time: new Date(newShiftData.start_time).toISOString(),
         end_time: new Date(newShiftData.end_time).toISOString(),
-        status: 'scheduled'
-      }, currentUser);
+        status: editingShiftId ? undefined : 'scheduled' // Don't change status on personalization unless needed
+      };
+
+      let result;
+      if (editingShiftId) {
+        result = await updateShift(editingShiftId, payload, currentUser);
+        if (updateShiftLocally) updateShiftLocally(editingShiftId, result);
+      } else {
+        result = await createShift(payload, currentUser);
+        if (addShiftLocally && result) addShiftLocally(result);
+      }
       
       setIsModalOpen(false);
+      setEditingShiftId(null);
       setNewShiftData({ environment_id: '', activity_id: '', start_time: '', end_time: '' });
       
-      // Injeção Instantânea
-      if (addShiftLocally && data) addShiftLocally(data);
-      
-      // await refresh(); // Removido para ganho de velocidade instantânea
     } catch (err) {
       const detailedMsg = err.details ? `\nDetalhe: ${err.details}` : '';
       const codeMsg = err.code ? ` [Código: ${err.code}]` : '';
-      alert(`Erro ao criar escala:${codeMsg}\n${err.message}${detailedMsg}\n\nDICA: Tente atualizar a página (F5) para sincronizar seu perfil.`);
+      alert(`Erro ao ${editingShiftId ? 'atualizar' : 'criar'} escala:${codeMsg}\n${err.message}${detailedMsg}`);
     } finally {
       setIsSyncing(false);
     }
@@ -538,6 +556,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             onDeleteShift={handleDeleteShift}
             onPrevWeek={handlePrevWeek}
             onNextWeek={handleNextWeek}
+            onEditShift={handleEditShift}
           />
         </div>
 
@@ -728,9 +747,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 <div className="icon-badge-premium bg-blue-glow">
                    <Users className="text-accent-cyan" size={18} />
                 </div>
-                <h3>Agendar Nova Escala Inteligente</h3>
+                <h3>{editingShiftId ? 'Personalizar Escala Existente' : 'Agendar Nova Escala Inteligente'}</h3>
               </div>
-              <button className="premium-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
+              <button className="premium-close-btn" onClick={() => { setIsModalOpen(false); setEditingShiftId(null); }}>×</button>
             </div>
             
             <form className="modal-form p-8" onSubmit={handleCreateShift}>
@@ -816,7 +835,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 <button 
                   type="button" 
                   className="glow-btn-ghost py-3" 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setEditingShiftId(null); }}
                 >
                   Cancelar
                 </button>
@@ -826,7 +845,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                   disabled={isSyncing}
                 >
                   {isSyncing ? <Loader2 size={16} className="animate-spin" /> : null}
-                  Criar Escala
+                  {editingShiftId ? 'Salvar Alterações' : 'Criar Escala'}
                 </button>
               </div>
             </form>

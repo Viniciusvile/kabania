@@ -15,7 +15,8 @@ export default function ShiftGrid({
   onCheckin,
   onDeleteShift,
   onPrevWeek,
-  onNextWeek
+  onNextWeek,
+  onEditShift
 }) {
   // Modal de horário substituindo window.prompt (bloqueado em dev mode)
   const [timeModal, setTimeModal] = useState({ 
@@ -165,6 +166,7 @@ export default function ShiftGrid({
                           onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
                           onCheckin={() => onCheckin(shift)}
                           onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
+                          onEdit={onEditShift}
                         />
                       ))
                     )}
@@ -343,7 +345,7 @@ function GripIcon() {
 }
 
 // ── EscalaCard ────────────────────────────────────────────────────────────
-function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete }) {
+function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit }) {
   const isProblem = shift.status === 'open' || (shift.open_calls_count > 0);
   const isConcluded = shift.status === 'completed' || shift.status === 'concluded';
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
@@ -392,7 +394,11 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete 
         </div>
 
         <div className="kabania-v2-header-right">
-          <button className="kabania-v2-action-sq" title="Editar">
+          <button 
+            className="kabania-v2-action-sq" 
+            title="Editar"
+            onClick={() => onEdit && onEdit(shift)}
+          >
             <Edit2 size={14} />
           </button>
           <button 
