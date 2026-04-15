@@ -102,22 +102,7 @@ function App() {
   });
   const [isLoginProcessing, setIsLoginProcessing] = useState(false);
 
-  // FINAL FIX: Listen to auth state changes to ensure currentUser is ALWAYS synced
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[AuthChange] Evento: ${event}, Usuário: ${session?.user?.email}`);
-      if (session?.user?.email) {
-        setCurrentUser(session.user.email);
-        localStorage.setItem('synapseCurrentUser', session.user.email);
-        setIsAuthenticated(true);
-        localStorage.setItem('synapseAuth', 'true');
-      } else if (event === 'SIGNED_OUT') {
-        handleLogoutLocal();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // FINAL FIX: Combined Auth state logic is now unified in the main useEffect below to prevent race conditions.
   const [workspaceTab, setWorkspaceTab] = useState('kanban');
   const [theme, setTheme] = useState(() => 
     localStorage.getItem('synapseTheme') || 'dark'
@@ -140,10 +125,9 @@ function App() {
     localStorage.setItem('synapseCurrentView', currentView);
   }, [currentView]);
 
-  // Changed: isSessionLoading starts as false if we have local info, skipping the flicker
-  const [isSessionLoading, setIsSessionLoading] = useState(() => {
-    return localStorage.getItem('synapseAuth') !== 'true';
-  });
+  // Changed: isSessionLoading starts as true to ensure we always verify with Supabase on boot, 
+  // preventing "Optimistic" UI errors where we show incorrect screens before data arrives.
+  const [isSessionLoading, setIsSessionLoading] = useState(true);
   
   // Multi-project state
   const [projects, setProjects] = useState([]);
@@ -455,6 +439,7 @@ function App() {
     setCurrentCompany(null);
     setUserRole('member');
     setCurrentUser('');
+    setIsLoginProcessing(false); // ENSURE LOGIN IS OPERATIVE
     localStorage.removeItem('synapseAuth');
     localStorage.removeItem('synapseCurrentUser');
     localStorage.removeItem('synapseCurrentCompany');
@@ -514,26 +499,32 @@ function App() {
     initSession();
 
     const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const subscription = data?.subscription;
-      if (isMounted) {
-        if (event === 'SIGNED_IN' && session?.user?.email) {
+      if (!isMounted) return;
+
+      console.log(`[AuthChange] Evento: ${event}`, session?.user?.email);
+
+      if (event === 'SIGNED_IN' && session?.user?.email) {
+        // Only run handleLogin if we aren't already logged in to this user
+        if (currentUser !== session.user.email || !isAuthenticated) {
           await handleLogin(session.user.email);
-          setIsSessionLoading(false);
-        } else if (event === 'SIGNED_OUT') {
-          handleLogoutLocal();
-          setIsSessionLoading(false);
-        } else if (event === 'INITIAL_SESSION') {
-          if (!session) setIsSessionLoading(false);
-        } else if (event === 'TOKEN_REFRESHED') {
-          setIsSessionLoading(false);
         }
+        setIsSessionLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        handleLogoutLocal();
+        setIsSessionLoading(false);
+      } else if (event === 'INITIAL_SESSION') {
+        if (session?.user?.email) {
+          await handleLogin(session.user.email);
+        }
+        setIsSessionLoading(false);
+      } else if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        setIsSessionLoading(false);
       }
     });
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      // Opcional: Se data/subscription falhou, não tenta desinscrever
       if (data?.subscription) {
         data.subscription.unsubscribe();
       }
@@ -619,7 +610,7 @@ function App() {
 
   return (
     <>
-      {!isAuthenticated || isLoginProcessing ? (
+      {!isAuthenticated ? (
         <Login onLogin={handleLogin} isLoading={isLoginProcessing} />
       ) : !currentCompany && !isSessionLoading ? (
         <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} onLogout={handleLogout} />

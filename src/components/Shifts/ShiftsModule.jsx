@@ -596,12 +596,16 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       )}
 
       {checkinModal.isOpen && (
-        <ShiftCheckinModal 
-          shift={checkinModal.shift} 
-          currentUserEmail={currentUser} 
-          onClose={() => setCheckinModal({ isOpen: false, shift: null })} 
-          onSuccess={() => refresh()}
-        />
+        <div className="modal-overlay-pixel glass-morphism" style={{ zIndex: 9999 }}>
+          <div style={{ width: '100%', maxWidth: '440px' }}>
+            <ShiftCheckinModal 
+              shift={checkinModal.shift} 
+              currentUserEmail={currentUser} 
+              onClose={() => setCheckinModal({ isOpen: false, shift: null })} 
+              onSuccess={() => refresh()}
+            />
+          </div>
+        </div>
       )}
 
       {/* 🤝 ASSIGNMENT MODAL OVERHAUL */}

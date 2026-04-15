@@ -195,6 +195,12 @@ export default function Login({ onLogin, isLoading: externalLoading }) {
 
       {/* COLUNA DIREITA: FORMULÁRIO PREMIUM */}
       <div className="login-form-side">
+        {externalLoading && (
+          <div className="login-loading-overlay">
+            <div className="spinner-new large"></div>
+            <p>Processando...</p>
+          </div>
+        )}
         <div className="login-card-new">
           {!isResetting && (
             <div className="login-tabs">

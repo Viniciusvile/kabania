@@ -130,10 +130,12 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
     display: 'flex', alignItems: 'center', gap: '5px',
     padding: '6px 14px', borderRadius: '8px', border: 'none',
     fontSize: '11px', fontWeight: 800, cursor: 'pointer',
-    background: isRoutine ? 'rgba(168,85,247,0.15)' : 'var(--accent-cyan, #00e5ff)',
-    color: isRoutine ? '#c084fc' : '#000',
+    background: isRoutine 
+      ? 'rgba(168,85,247,0.15)' 
+      : 'var(--accent-gradient, linear-gradient(135deg, #0088ff 0%, #0052cc 100%))',
+    color: isRoutine ? '#c084fc' : '#ffffff',
     transition: 'all 0.2s',
-    boxShadow: isRoutine ? 'none' : '0 4px 12px rgba(0,229,255,0.25)',
+    boxShadow: isRoutine ? 'none' : '0 4px 12px rgba(0, 82, 204, 0.2)',
   });
 
   return (
@@ -289,12 +291,9 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
                   <button 
                     style={{
                       ...scheduleBtn(false),
-                      background: 'var(--accent-gradient, linear-gradient(135deg, #00e5ff 0%, #1200ff 100%))',
-                      color: '#fff',
                       padding: '8px 16px',
                       borderRadius: '10px',
                       fontSize: '11px',
-                      boxShadow: '0 4px 12px rgba(0,229,255,0.2)'
                     }} 
                     onClick={() => onQuickSchedule(act)}
                   >

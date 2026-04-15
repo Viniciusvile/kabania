@@ -551,7 +551,7 @@ export default function CalendarIntegrationSettings({ currentCompany }) {
                     onClick={handleSave}
                     disabled={saving}
                     className="btn-save-premium"
-                    style={{ flex: 1, background: 'var(--accent-cyan)', color: '#000' }}
+                    style={{ flex: 1 }}
                   >
                     {saving ? 'Salvando...' : 'Salvar Configurações'}
                   </button>

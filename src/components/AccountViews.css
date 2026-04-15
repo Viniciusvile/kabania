@@ -243,9 +243,9 @@
   cursor: default;
 }
 [data-theme='light'] .btn-save-premium {
-  background: #0ea5e9;
+  background: var(--accent-gradient);
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(14, 165, 233, 0.25);
+  box-shadow: 0 8px 20px rgba(0, 136, 255, 0.25);
 }
 [data-theme='light'] .btn-save-premium.success {
   background: #16a34a;

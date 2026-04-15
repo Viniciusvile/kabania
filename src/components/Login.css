@@ -253,3 +253,49 @@
   margin-bottom: 1.5rem;
   text-align: center;
 }
+
+/* ── LOADING STATES ── */
+.login-button-primary.loading {
+  opacity: 0.8;
+  cursor: wait;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-new {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin-new 0.8s linear infinite;
+}
+
+.spinner-new.large {
+  width: 40px;
+  height: 40px;
+  border-width: 3px;
+  margin-bottom: 1rem;
+}
+
+.login-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 15, 26, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: 24px;
+  color: #00e5ff;
+  font-weight: 700;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes spin-new {
+  to { transform: rotate(360deg); }
+}

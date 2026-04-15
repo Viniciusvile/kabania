@@ -850,3 +850,68 @@
     border: none;
     cursor: pointer;
 }
+
+/* 🌙 LIGHT MODE THEME OVERRIDES */
+[data-theme='light'] .escalas-page {
+    background: var(--bg-app);
+}
+
+[data-theme='light'] .stat-card-pixel {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .filter-pills-pixel {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .filter-pills-pixel button.active {
+    background: var(--accent-cyan);
+    color: #ffffff;
+    box-shadow: 0 4px 12px var(--accent-cyan-dim);
+}
+
+[data-theme='light'] .period-selector-pixel {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='light'] .weekly-grid-pixel {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .grid-column-pixel.drag-over {
+    background: rgba(0, 82, 204, 0.03);
+    box-shadow: inset 0 0 20px rgba(0, 82, 204, 0.05);
+}
+
+[data-theme='light'] .empty-day-pixel {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .sidebar-header {
+    background: #ffffff;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+[data-theme='light'] .sidebar-header h3 {
+    color: #0f172a;
+}
+
+[data-theme='light'] .pending-activities-sidebar {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .modal-content-pixel {
+    background: #ffffff;
+}
+
+[data-theme='light'] .modal-header {
+    border-bottom-color: #f1f5f9;
+}

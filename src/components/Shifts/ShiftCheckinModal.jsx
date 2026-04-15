@@ -117,7 +117,11 @@ export default function ShiftCheckinModal({ shift, currentUserEmail, onClose, on
                 </div>
                 <div className="timeline-content">
                    <span className="step-label">{step.label}</span>
-                   <span className="step-time">{step.time ? new Date(step.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--'}</span>
+                   <span className="step-time">
+                     {step.time && step.time !== '--:--' 
+                       ? new Date(step.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) 
+                       : '--:--'}
+                   </span>
                 </div>
                 {step.done && <ShieldCheck size={16} className="text-emerald-400" />}
               </div>

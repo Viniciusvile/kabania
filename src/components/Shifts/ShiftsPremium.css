@@ -1707,6 +1707,81 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 
 .ponto-close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; transform: rotate(90deg); }
 
+/* 🌙 LIGHT MODE OVERRIDES: PONTO ELETRÔNICO */
+[data-theme='light'] .ponto-nebula-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .ponto-nebula-header::before {
+  background: radial-gradient(circle at 30% 30%, rgba(0, 229, 255, 0.05) 0%, transparent 40%);
+}
+
+[data-theme='light'] .ponto-digital-clock {
+  color: #0f172a;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .ponto-date-label {
+  color: #64748b;
+  opacity: 1;
+}
+
+[data-theme='light'] .modal-body-scrollable {
+  background: #ffffff;
+}
+
+[data-theme='light'] .step-time {
+  color: #0f172a;
+}
+
+[data-theme='light'] .step-label {
+  color: #94a3b8;
+}
+
+[data-theme='light'] .timeline-row {
+  opacity: 0.6;
+}
+
+[data-theme='light'] .timeline-row.is-done,
+[data-theme='light'] .timeline-row.is-active {
+  opacity: 1;
+}
+
+[data-theme='light'] .ponto-radar-surface {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .ponto-footer-dock {
+  background: #f8fafc;
+  border-top-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .btn-ponto-action {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .btn-oi:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.05);
+}
+
+[data-theme='light'] .btn-tchau:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.05);
+}
+
+[data-theme='light'] .ponto-close-btn {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+[data-theme='light'] .ponto-branding h2 {
+    color: #0f172a;
+}
+
 /* ============================================================
    💎 KABANIA SHIFT CARD V2 (REFINED - PIXEL PERFECT)
    ============================================================ */
@@ -1737,6 +1812,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   justify-content: space-between;
   align-items: center;
   min-height: 34px;
+  gap: 16px;
 }
 
 .kabania-v2-header-left {
@@ -2013,4 +2089,100 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background: rgba(0, 0, 0, 0.02);
   border-color: rgba(0, 0, 0, 0.2);
   color: #0f172a;
+}
+
+/* 🌙 LIGHT MODE PREMIUM ENHANCEMENTS */
+[data-theme='light'] .shifts-header-row-premium {
+  border-bottom: 0px;
+}
+
+[data-theme='light'] .grid-drag-container {
+    background: transparent;
+}
+
+[data-theme='light'] .sidebar-header-premium {
+  background: #ffffff;
+  border-bottom-color: #f1f5f9;
+}
+
+[data-theme='light'] .header-title-row h3 {
+  color: #0f172a;
+}
+
+[data-theme='light'] .pending-list-premium {
+    background: #ffffff;
+}
+
+[data-theme='light'] .glow-btn-primary {
+  background: linear-gradient(135deg, #0088ff 0%, #0052cc 100%) !important;
+  box-shadow: 0 4px 15px rgba(0, 82, 204, 0.2) !important;
+}
+
+[data-theme='light'] .glow-btn-primary:hover {
+  box-shadow: 0 8px 25px rgba(0, 82, 204, 0.3) !important;
+}
+
+[data-theme='light'] .glow-btn-ghost {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme='light'] .glow-btn-ghost:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .premium-form-container {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .premium-modal-pixel {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme='light'] .premium-modal-header {
+  background: #f8fafc !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+
+[data-theme='light'] .premium-modal-header h3 {
+  background: none;
+  -webkit-text-fill-color: #0f172a;
+  color: #0f172a;
+}
+
+[data-theme='light'] .premium-close-btn {
+  background: #f1f5f9;
+  border-color: rgba(0, 0, 0, 0.05);
+  color: #64748b;
+}
+
+[data-theme='light'] .premium-search-input {
+  background: #f1f5f9 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .assignment-search-container {
+  border-bottom-color: #f1f5f9;
+}
+
+[data-theme='light'] .accordion-section-premium {
+  border-bottom-color: #f1f5f9;
+}
+
+[data-theme='light'] .btn-ask-brain {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 🌀 GLOBAL ACCENT OVERRIDE FOR LIGHT MODE */
+[data-theme='light'] {
+  --accent-gradient: linear-gradient(135deg, #0088ff 0%, #0052cc 100%);
 }
