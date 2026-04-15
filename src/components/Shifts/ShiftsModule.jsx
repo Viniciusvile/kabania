@@ -70,8 +70,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     fetchKanbanTasks();
   }, [companyId]);
 
-  // Workspace mostra APENAS os cards do Kanban (backlog, todo, in progress)
-  const workspaceItems = useMemo(() => [...kanbanTasks], [kanbanTasks]);
+  // Workspace mostra cards do Kanban + Solicitações/Atividades Pendentes
+  const workspaceItems = useMemo(() => [
+    ...kanbanTasks, 
+    ...pendingActivities
+  ], [kanbanTasks, pendingActivities]);
 
   const handleDeleteShift = (shiftId) => {
     // Abre modal customizado em vez de window.confirm (que é bloqueado em dev/localhost)
@@ -562,7 +565,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
         <ShiftSidebar 
           pendingActivities={workspaceItems} 
-          routineActivities={activities}
+          routineActivities={pendingActivities}
           onQuickSchedule={handleQuickSchedule} 
           onAutoPilot={handleRunAutoPilot}
           isAutoPilotLoading={isAutoPilotLoading}

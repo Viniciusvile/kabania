@@ -37,8 +37,11 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
 
   const filteredRoutine = useMemo(() => {
     if (!searchTerm) return routineActivities;
+    const s = searchTerm.toLowerCase();
     return routineActivities.filter(a =>
-      a.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      (a.name || '').toLowerCase().includes(s) ||
+      (a.location || '').toLowerCase().includes(s) ||
+      (a.type || '').toLowerCase().includes(s)
     );
   }, [routineActivities, searchTerm]);
 
@@ -388,10 +391,11 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>
                 <Activity size={12} style={{ color: '#c084fc', flexShrink: 0 }} />
-                {act.name}
+                {act.location || act.name}
               </div>
 
               <p style={{ fontSize: '11px', opacity: 0.5, marginBottom: '10px' }}>
+                {act.type ? `${act.type} — ` : ''}
                 Arraste para o grid ou clique para programar.
               </p>
 

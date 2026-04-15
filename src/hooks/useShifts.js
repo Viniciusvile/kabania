@@ -69,7 +69,7 @@ export function useShifts(companyId) {
         getCollaborators(companyId).catch(() => []),
         supabase.from('service_requests').select('*').eq('company_id', companyId)
           .then(r => r.data || []).catch(() => []),
-        supabase.from('activities').select('*').eq('company_id', companyId)
+        supabase.from('activities').select('id, location, type, status, created, company_id').eq('company_id', companyId)
           .then(r => r.data || []).catch(() => [])
       ]);
 
@@ -195,8 +195,14 @@ export function useShifts(companyId) {
         }));
 
       const unifiedPending = [...pendingSRs, ...pendingActual]
-        .sort((a, b) => new Date(b.created) - new Date(a.created));
+        .filter(a => a.id) // Ensure valid ID
+        .sort((a, b) => {
+          const dateA = new Date(a.created || 0);
+          const dateB = new Date(b.created || 0);
+          return dateB - dateA;
+        });
 
+      console.log('DEBUG: Unified Pending Count:', unifiedPending.length);
       setPendingActivities(unifiedPending);
 
       // Salvar cache para Instant Hydration
