@@ -722,7 +722,7 @@ function App() {
               ) : currentView === 'inventory' ? (
                 <InventoryModule companyId={currentCompany?.id} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'digital_twin' ? (
-                <DigitalTwinModule currentCompany={currentCompany} />
+                <DigitalTwinModule currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} onProfileUpdate={handleProfileUpdate} />
               ) : currentView === 'settings' ? (

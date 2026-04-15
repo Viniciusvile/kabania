@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" preserveAspectRatio="none">
+  <defs>
+    <!-- Filtro de sombra suave -->
+    <filter id="soft-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.04"/>
+    </filter>
+    
+    <g id="chair-left">
+      <path d="M 0 0 a 14 18 0 0 0 0 36 L 0 0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5" />
+    </g>
+    <g id="chair-right">
+      <path d="M 0 0 a 14 18 0 0 1 0 36 L 0 0" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2.5" />
+    </g>
+
+    <g id="desk-cluster">
+      <rect x="0" y="0" width="140" height="260" fill="#ffffff" stroke="#cbd5e1" stroke-width="2.5" rx="6" filter="url(#soft-shadow)"/>
+      <!-- divisor vertical -->
+      <line x1="70" y1="0" x2="70" y2="260" stroke="#e2e8f0" stroke-width="2.5"/>
+      <!-- divisores horizontais -->
+      <line x1="0" y1="86.6" x2="140" y2="86.6" stroke="#e2e8f0" stroke-width="2.5"/>
+      <line x1="0" y1="173.3" x2="140" y2="173.3" stroke="#e2e8f0" stroke-width="2.5"/>
+      
+      <!-- Cadeiras esquerda -->
+      <use href="#chair-left" x="0" y="25" />
+      <use href="#chair-left" x="0" y="112" />
+      <use href="#chair-left" x="0" y="198" />
+      
+      <!-- Cadeiras direita -->
+      <use href="#chair-right" x="140" y="25" />
+      <use href="#chair-right" x="140" y="112" />
+      <use href="#chair-right" x="140" y="198" />
+      
+      <!-- Monitores (detalhe opcional) -->
+      <rect x="45" y="33" width="16" height="20" fill="#e2e8f0" rx="3" />
+      <rect x="45" y="120" width="16" height="20" fill="#e2e8f0" rx="3" />
+      <rect x="45" y="206" width="16" height="20" fill="#e2e8f0" rx="3" />
+      
+      <rect x="79" y="33" width="16" height="20" fill="#e2e8f0" rx="3" />
+      <rect x="79" y="120" width="16" height="20" fill="#e2e8f0" rx="3" />
+      <rect x="79" y="206" width="16" height="20" fill="#e2e8f0" rx="3" />
+    </g>
+  </defs>
+  
+  <rect width="1000" height="800" fill="#f4f7fb"/>
+  
+  <!-- Fila Superior -->
+  <use href="#desk-cluster" x="150" y="120" />
+  <use href="#desk-cluster" x="430" y="120" />
+  <use href="#desk-cluster" x="710" y="120" />
+  
+  <!-- Fila Inferior -->
+  <use href="#desk-cluster" x="150" y="500" />
+  <use href="#desk-cluster" x="430" y="500" />
+  <use href="#desk-cluster" x="710" y="500" />
+</svg>
