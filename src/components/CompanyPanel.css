@@ -101,8 +101,8 @@
 }
 
 [data-theme='dark'] .cp-card-premium {
-  background: #0f172a;
-  border-color: rgba(255, 255, 255, 0.05);
+  background: var(--bg-panel);
+  border-color: var(--border-light);
   box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
@@ -117,7 +117,7 @@
 }
 
 .cp-card-title svg {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
 }
 
 
@@ -150,8 +150,8 @@
 }
 
 .cp-tab:hover {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+  background: var(--bg-card-hover);
 }
 
 .cp-tab.active {
@@ -364,13 +364,13 @@
 }
 
 [data-theme='dark'] .cp-member-row {
-  background: #1e293b;
-  border-color: rgba(255, 255, 255, 0.03);
+  background: var(--bg-card);
+  border-color: var(--border-light);
 }
 
 .cp-member-row:hover {
-  background: #25334a;
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
+  border-color: var(--accent-cyan-dim);
   transform: translateX(4px);
 }
 
@@ -499,7 +499,7 @@
 .cp-skeleton-row {
   height: 60px;
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--border-light);
   border-radius: 12px;
   position: relative;
   overflow: hidden;
@@ -584,7 +584,7 @@
 
 .cp-input-small:focus {
   border-color: #00e5ff;
-  background: rgba(15, 23, 42, 0.9);
+  background: var(--bg-panel);
 }
 
 .cp-form-actions {
@@ -670,4 +670,31 @@
   font-size: 0.75rem;
   color: #22c55e;
   font-weight: 600;
+}
+.leaderboard-row:hover {
+  background: var(--bg-card-hover) !important;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.rank-badge.rank-gold {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
+.rank-badge.rank-silver {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.rank-badge.rank-bronze {
+  color: #b45309;
+  background: rgba(180, 83, 9, 0.1);
+  border-color: rgba(180, 83, 9, 0.2);
+}
+
+[data-theme='light'] .rank-badge.rank-silver {
+    color: #475569;
 }

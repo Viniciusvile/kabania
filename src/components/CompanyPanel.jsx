@@ -479,9 +479,9 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                 .map((member, index) => {
                   const isTopOne = index === 0;
                   const rankColors = [
-                    'text-amber-400 bg-amber-400/10 border-amber-400/20', // Ouro
-                    'text-slate-300 bg-slate-400/10 border-slate-400/20', // Prata
-                    'text-amber-700 bg-amber-700/10 border-amber-700/20'  // Bronze
+                    'rank-gold',
+                    'rank-silver',
+                    'rank-bronze'
                   ];
                   
                   return (

@@ -79,14 +79,14 @@ export default function EnvironmentsManager({ companyId }) {
         </div>
 
         {showEnvForm && (
-          <form onSubmit={handleAddEnv} className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+          <form onSubmit={handleAddEnv} className="premium-form-container animate-slide-up">
             <div className="flex gap-4 mb-4">
               <input 
-                type="text" placeholder="Nome do Ambiente (ex: Recepção)" className="bg-dark/50 border border-white/10 rounded-lg px-4 py-2 flex-1 text-white" 
+                type="text" placeholder="Nome do Ambiente (ex: Recepção)" className="premium-input-field flex-1" 
                 value={newEnv.name} onChange={e => setNewEnv({...newEnv, name: e.target.value})} required 
               />
               <input 
-                type="number" placeholder="Cobertura Mínima" className="w-40 bg-dark/50 border border-white/10 rounded-lg px-4 py-2 text-white" 
+                type="number" placeholder="Cobertura Mínima" className="premium-input-field w-40" 
                 min="1" value={newEnv.min_coverage} onChange={e => setNewEnv({...newEnv, min_coverage: parseInt(e.target.value)})} title="Cobertura Mínima de Funcionários" required 
               />
             </div>
@@ -119,9 +119,9 @@ export default function EnvironmentsManager({ companyId }) {
         </div>
 
         {showActForm && (
-          <form onSubmit={handleAddAct} className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10">
+          <form onSubmit={handleAddAct} className="premium-form-container animate-slide-up">
             <select 
-              className="w-full mb-3 bg-dark/50 border border-white/10 rounded-lg px-4 py-2 text-white"
+              className="w-full mb-3 premium-input-field"
               value={newAct.environment_id} onChange={e => setNewAct({...newAct, environment_id: e.target.value})} required
             >
               <option value="">Selecione o Ambiente...</option>
@@ -129,17 +129,17 @@ export default function EnvironmentsManager({ companyId }) {
             </select>
             
             <input 
-              type="text" placeholder="Nome da Atividade (ex: Triagem de Clientes)" className="w-full mb-3 bg-dark/50 border border-white/10 rounded-lg px-4 py-2 text-white" 
+              type="text" placeholder="Nome da Atividade (ex: Triagem de Clientes)" className="w-full mb-3 premium-input-field" 
               value={newAct.name} onChange={e => setNewAct({...newAct, name: e.target.value})} required 
             />
             
             <div className="flex gap-3 mb-4">
               <input 
-                type="text" placeholder="Cargo Exigido (ex: Recepcionista)" className="flex-1 bg-dark/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm" 
+                type="text" placeholder="Cargo Exigido (ex: Recepcionista)" className="flex-1 premium-input-field text-sm" 
                 value={newAct.required_role} onChange={e => setNewAct({...newAct, required_role: e.target.value})} title="Cargo exigido (Deixe Qualquer se livre)"
               />
                <input 
-                type="number" placeholder="Duração (min)" className="w-32 bg-dark/50 border border-white/10 rounded-lg px-4 py-2 text-white text-sm" 
+                type="number" placeholder="Duração (min)" className="w-32 premium-input-field text-sm" 
                 value={newAct.duration_minutes} onChange={e => setNewAct({...newAct, duration_minutes: parseInt(e.target.value)})} min="15" step="15" title="Duração do turno/atividade em minutos"
               />
             </div>

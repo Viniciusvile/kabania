@@ -10,7 +10,7 @@ const errorMap = {
   'Error sending confirmation email': 'Erro ao enviar email de confirmação. O servidor de emails do Supabase atingiu o limite. Tente usar o Login com Google.'
 };
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, isLoading: externalLoading }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [email, setEmail] = useState('');
@@ -295,8 +295,8 @@ export default function Login({ onLogin }) {
               </div>
             )}
             
-            <button type="submit" className={`login-button-primary ${isLoading ? 'loading' : ''}`} disabled={isLoading}>
-              {isLoading ? <div className="spinner-new"></div> : (
+            <button type="submit" className={`login-button-primary ${(isLoading || externalLoading) ? 'loading' : ''}`} disabled={isLoading || externalLoading}>
+              {(isLoading || externalLoading) ? <div className="spinner-new"></div> : (
                 isResetting ? "Enviar Link de Recuperação" : 
                 (isRegistering ? "Criar Minha Conta" : "Entrar no Sistema")
               )}

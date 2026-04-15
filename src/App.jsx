@@ -100,6 +100,7 @@ function App() {
     if (saved === 'kanban' || saved === 'academy') return 'workspace_hub';
     return saved || 'workspace_hub';
   });
+  const [isLoginProcessing, setIsLoginProcessing] = useState(false);
 
   // FINAL FIX: Listen to auth state changes to ensure currentUser is ALWAYS synced
   useEffect(() => {
@@ -335,6 +336,7 @@ function App() {
     try {
       isAuthenticating.current = true;
       lastAuthEmail.current = email;
+      setIsLoginProcessing(true); // START LOADING
       setCurrentUser(email);
       
       const fetchWithTimeout = async () => {
@@ -358,9 +360,9 @@ function App() {
         if (profError.code === 'PGRST116') {
           setCurrentCompany(null);
           setProfileData({ name: email.split('@')[0], avatar_url: null });
-          setIsAuthenticated(true);
-          localStorage.setItem('synapseAuth', 'true');
           localStorage.setItem('synapseCurrentUser', email);
+          setIsAuthenticated(true); // Now we know they need setup
+          localStorage.setItem('synapseAuth', 'true');
           return;
         }
         throw new Error(profError.message);
@@ -444,6 +446,7 @@ function App() {
       throw err;
     } finally {
       isAuthenticating.current = false;
+      setIsLoginProcessing(false); // END LOADING
     }
   };
 
@@ -616,8 +619,8 @@ function App() {
 
   return (
     <>
-      {!isAuthenticated ? (
-        <Login onLogin={handleLogin} />
+      {!isAuthenticated || isLoginProcessing ? (
+        <Login onLogin={handleLogin} isLoading={isLoginProcessing} />
       ) : !currentCompany && !isSessionLoading ? (
         <CompanySetup currentUser={currentUser} onComplete={handleCompanySetupComplete} onLogout={handleLogout} />
       ) : !currentCompany && isSessionLoading ? (
