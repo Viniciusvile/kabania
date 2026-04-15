@@ -175,9 +175,6 @@ export default function Login({ onLogin }) {
       {/* COLUNA ESQUERDA: BRANDING & IMPACTO */}
       <div className="login-branding-side">
         <div className="branding-content">
-          <div className="branding-logo">
-            <span style={{ fontSize: '3rem', filter: 'drop-shadow(0 0 20px rgba(0, 229, 255, 0.4))' }}>🏢</span>
-          </div>
           <h1>Bem-vindo ao <span>Synapse Smart</span></h1>
           <p>
             Uma plataforma com tecnologia de ponta para gerenciar suas equipes, 
