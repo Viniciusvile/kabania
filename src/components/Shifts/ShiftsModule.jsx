@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX, Wand2 } from 'lucide-react';
-import { addEmployeeToShift, moveShift, createShift, deleteShift, updateShift } from '../../services/shiftService';
+import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
+import { addEmployeeToShift, moveShift, createShift, deleteShift, updateShift, replaceEmployeeInShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
 import ShiftStats from './ShiftStats';
@@ -28,7 +28,9 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     refresh,
     addShiftLocally,
     updateShiftLocally,
-    removeShiftLocally
+    removeShiftLocally,
+    removePendingLocally,
+    addPendingLocally
   } = useShifts(companyId);
 
   const [filterStatus, setFilterStatus] = useState('todos');
@@ -88,10 +90,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     setIsSyncing(true);
 
     try {
-      const { error } = await supabase
-        .from('shifts')
-        .delete()
-        .eq('id', shiftId);
+      const { error } = await deleteShift(shiftId, companyId);
 
       if (error) {
         console.error('[deleteShift] Erro no banco:', error);
@@ -116,9 +115,12 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
   const handleEditShift = (shift) => {
     setEditingShiftId(shift.id);
+    const assigned = shift.assigned_employees?.[0];
     setNewShiftData({
       environment_id: shift.environment_id || '',
       activity_id: shift.activity_id || '',
+      assigned_employee_id: assigned?.employee_id || assigned?.collaborator_id || '',
+      is_external: !!assigned?.collaborator_id,
       start_time: formatForInput(shift.start_time),
       end_time: formatForInput(shift.end_time)
     });
@@ -200,7 +202,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
       await addEmployeeToShift(targetId, profileId, isExternal);
       setAssignmentModal({ isOpen: false, shiftId: null });
-      await refresh();
+      // await refresh(); // Sincronizado via Realtime
       // Optional: success toast could go here
     } catch (err) {
       console.error("Erro detalhado de atribuição:", err);
@@ -234,7 +236,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         service_request_id: s.service_request_id,
         start_time: s.start_time,
         end_time: s.end_time,
-        status: 'scheduled',
+        status: 'draft',
         notes: `Agendado por IA Auto-Pilot: Confiança ${s.confidence}%`
       }));
 
@@ -269,6 +271,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const [newShiftData, setNewShiftData] = useState({
     environment_id: '',
     activity_id: '',
+    assigned_employee_id: '',
+    is_external: false,
     start_time: '',
     end_time: ''
   });
@@ -293,21 +297,48 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         activity_id: newShiftData.activity_id || null,
         start_time: new Date(newShiftData.start_time).toISOString(),
         end_time: new Date(newShiftData.end_time).toISOString(),
-        status: editingShiftId ? undefined : 'scheduled' // Don't change status on personalization unless needed
+        status: editingShiftId ? undefined : 'draft' // Default status is draft (rascunho)
       };
 
       let result;
       if (editingShiftId) {
         result = await updateShift(editingShiftId, payload, currentUser);
-        if (updateShiftLocally) updateShiftLocally(editingShiftId, result);
+        
+        // Se houver alteração de colaborador no modal de personalização
+        await replaceEmployeeInShift(editingShiftId, newShiftData.assigned_employee_id, newShiftData.is_external);
+
+        if (updateShiftLocally && result) {
+          const env = environments.find(e => e.id === result.environment_id);
+          const act = activities.find(a => a.id === result.activity_id);
+          const emp = employees.find(e => (e.shift_profile_id || e.id) === newShiftData.assigned_employee_id);
+          
+          const enriched = {
+            ...result,
+            work_environments: { name: env?.name || 'Local Não Definido' },
+            work_activities: {
+              name: act?.name || 'Atividade',
+              required_role: act?.required_role || result.required_role,
+              required_skills: act?.required_skills || result.required_skills || []
+            },
+            assigned_employees: emp ? [{ 
+              ...emp, 
+              employee_id: emp.shift_profile_id || emp.id,
+              name: emp.name 
+            }] : []
+          };
+          updateShiftLocally(editingShiftId, enriched);
+        }
       } else {
         result = await createShift(payload, currentUser);
+        if (newShiftData.assigned_employee_id) {
+          await addEmployeeToShift(result.id, newShiftData.assigned_employee_id, newShiftData.is_external);
+        }
         if (addShiftLocally && result) addShiftLocally(result);
       }
       
       setIsModalOpen(false);
       setEditingShiftId(null);
-      setNewShiftData({ environment_id: '', activity_id: '', start_time: '', end_time: '' });
+      setNewShiftData({ environment_id: '', activity_id: '', assigned_employee_id: '', is_external: false, start_time: '', end_time: '' });
       
     } catch (err) {
       const detailedMsg = err.details ? `\nDetalhe: ${err.details}` : '';
@@ -318,23 +349,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleSuggestTimes = () => {
-    const start = new Date();
-    start.setMinutes(start.getMinutes() > 30 ? 60 : 30, 0, 0);
-    const end = new Date(start.getTime() + (4 * 60 * 60000));
-    
-    // Format to YYYY-MM-DDTHH:mm for datetime-local
-    const format = (d) => {
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-
-    setNewShiftData(prev => ({
-      ...prev,
-      start_time: format(start),
-      end_time: format(end)
-    }));
-  };
 
   const handleQuickSchedule = async (activity) => {
     try {
@@ -347,11 +361,11 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         service_request_id: activity.id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
-        status: 'scheduled',
+        status: 'draft',
         notes: `Agendado via Inteligência Kabania`
       }, currentUser);
 
-      await refresh();
+      // await refresh(); // Sincronizado via Realtime
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
     } finally {
@@ -390,7 +404,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         environment_id: targetEnvId,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: 'scheduled',
+        status: 'draft',
         notes: isKanban
           ? `Agendado via Workspace (Kanban): ${label}`
           : `Agendado via Drag & Drop: ${activity.location || activity.name}`
@@ -419,12 +433,69 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       if (data && addShiftLocally) {
         addShiftLocally(data);
       }
+
+      // 🧹 REMOÇÃO LOCAL E DATABASE UPDATE (SIDEBAR)
+      if (isKanban) {
+        setKanbanTasks(prev => prev.filter(t => t.id !== activity.id));
+        // Marcar como agendado no banco para não reaparecer no refresh
+        // Guardamos o ID original no campo notes para poder reverter depois
+        payload.notes = `[KANBAN_ID:${activity.id}] ${activity.desc || activity.title}`;
+        await supabase.from('tasks').update({ column_id: 'scheduled' }).eq('id', activity.id);
+      } else {
+        if (removePendingLocally) removePendingLocally(activity.id);
+      }
       
       // await refresh(); // Usando injeção instantânea
     } catch (err) {
-      alert("Erro ao criar escala via drop: " + err.message);
-    } finally {
-      setIsSyncing(false);
+      console.error('Error dropping activity:', err);
+    }
+  };
+
+  const handleReturnShift = async (shift) => {
+    try {
+      console.log('Tentando devolver escala:', shift);
+      
+      // 1. Deletar do banco de dados
+      await deleteShift(shift.id);
+
+      // 2. Remover do estado local de escalas IMEDIATAMENTE (Otimista)
+      if (removeShiftLocally) removeShiftLocally(shift.id);
+
+      // 3. Restaurar o card na barra lateral
+      if (shift.service_request_id || shift.source === 'service_request') {
+        const activityData = {
+          id: shift.service_request_id || shift.id,
+          location: shift.work_environments?.name || 'Local Restaurado',
+          description: shift.work_activities?.name || 'Atividade Restaurada',
+          type: shift.work_activities?.required_role || 'Serviço',
+          created_at: new Date().toISOString(),
+          source: 'service_request'
+        };
+        if (addPendingLocally) addPendingLocally(activityData);
+      } else {
+        // Fallback para Workspace (Kanban) se não for Service Request
+        const match = shift.notes?.match(/\[KANBAN_ID:(.*?)\]/);
+        const originalTaskId = match ? match[1] : null;
+        
+        const kanbanData = {
+          id: originalTaskId || `restored-${Date.now()}`,
+          title: shift.work_activities?.name || shift.title || 'Tarefa Restaurada',
+          desc: shift.notes ? shift.notes.split(']')[1]?.trim() : (shift.description || ''),
+          column_id: 'todo',
+          source: 'kanban'
+        };
+        
+        setKanbanTasks(prev => [kanbanData, ...prev]);
+
+        // Tentar restaurar status no banco se tivermos o ID
+        if (originalTaskId && originalTaskId.length > 10) { // Check if it's a real ID
+          await supabase.from('tasks').update({ column_id: 'todo' }).eq('id', originalTaskId);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao devolver escala:', err);
+      alert('Não foi possível devolver a escala: ' + err.message);
+      refresh(); // Recarrega para evitar estado inconsistente
     }
   };
 
@@ -455,19 +526,17 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     });
 
     // 2. Background Sync (Silent)
-    moveShift(shiftId, newStart.toISOString(), newEnd.toISOString(), shift.environment_id)
+    moveShift(shiftId, newStart.toISOString(), newEnd.toISOString(), shift.environment_id, companyId)
       .then(result => {
         if (!result) throw new Error("Sem confirmação do servidor.");
         console.log("[MoveShift] ✅ Sincronizado Silenciosamente:", shiftId);
-        // Garantir que os dados estão 100% atualizados no hook
-        if (refresh) refresh();
+        // Sincronizado via Realtime
       })
       .catch(err => {
         console.error("[MoveShift] ❌ Falha na sincronização:", err);
         // Só alertamos o usuário se realmente falhar no banco
         updateShiftLocally(shiftId, originalTimes); 
         alert("Erro ao salvar mudança. A escala voltou para a posição original.");
-        if (refresh) refresh();
       });
   };
 
@@ -566,6 +635,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           onQuickSchedule={handleQuickSchedule} 
           onAutoPilot={handleRunAutoPilot}
           isAutoPilotLoading={isAutoPilotLoading}
+          onReturnShift={handleReturnShift}
         />
       </div>
 
@@ -790,7 +860,45 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                   </div>
                 </div>
 
-                <div className="date-time-flex flex gap-4">
+                <div className="form-group-premium full-width">
+                  <label className="premium-label flex items-center gap-2">
+                    <Users size={14} className="text-accent-cyan" /> COLABORADOR RESPONSÁVEL
+                  </label>
+                  <div className="premium-input-wrapper">
+                    <select 
+                      name="assigned_employee_id" 
+                      className="premium-input-field w-full"
+                      value={newShiftData.assigned_employee_id}
+                      onChange={(e) => {
+                        const selectedEmp = employees.find(emp => (emp.shift_profile_id || emp.id) === e.target.value);
+                        setNewShiftData({
+                          ...newShiftData, 
+                          assigned_employee_id: e.target.value,
+                          is_external: !!selectedEmp?.is_external
+                        });
+                      }}
+                    >
+                      <option value="">Nenhum colaborador atribuído</option>
+                      <optgroup label="Colaboradores de Campo">
+                        {fieldWorkers.map(emp => (
+                          <option key={emp.shift_profile_id || emp.id} value={emp.shift_profile_id || emp.id}>
+                            {emp.name} {emp.role ? `(${emp.role})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Equipe Interna">
+                        {staffMembers.map(emp => (
+                          <option key={emp.shift_profile_id || emp.id} value={emp.shift_profile_id || emp.id}>
+                            {emp.name} {emp.role ? `(${emp.role})` : ''}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </select>
+                    <ChevronDown className="input-icon-right" size={16} />
+                  </div>
+                </div>
+
+                <div className="date-time-flex flex" style={{ gap: '24px' }}>
                   <div className="form-group-premium flex-1">
                     <label className="premium-label">INÍCIO</label>
                     <input 
@@ -816,20 +924,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
                 </div>
               </div>
 
-              <div className="ai-suggestion-box mb-8 flex items-center justify-between" style={{ padding: '1.25rem' }}>
-                <div className="flex items-center gap-3">
-                  <div className="pulse-ai-dot"></div>
-                  <p className="text-sm font-semibold">Deseja que a IA sugira o melhor horário?</p>
-                </div>
-                <button 
-                  type="button" 
-                  className="btn-ask-brain mt-0"
-                  onClick={handleSuggestTimes}
-                >
-                  <Wand2 size={16} />
-                  Sugerir Horários
-                </button>
-              </div>
 
               <div className="modal-actions-premium flex justify-end gap-3 pt-6 border-t border-white/5">
                 <button 

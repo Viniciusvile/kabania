@@ -329,14 +329,18 @@ export const updateShift = async (shiftId, updateData, userId) => {
     }
 };
 
-export const deleteShift = async (shiftId) => {
+export const deleteShift = async (shiftId, companyId = null) => {
     return await safeQuery(
-        () => supabase.from('shifts').delete().eq('id', shiftId),
+        () => {
+            let query = supabase.from('shifts').delete().eq('id', shiftId);
+            if (companyId) query = query.eq('company_id', companyId);
+            return query;
+        },
         `Deletando escala ${shiftId}`
     );
 };
 
-export const moveShift = async (shiftId, startTime, endTime, environmentId = null) => {
+export const moveShift = async (shiftId, startTime, endTime, environmentId = null, companyId = null) => {
     // 0. Limpeza de ID para evitar erros de cast
     const cleanShiftId = shiftId;
     const cleanEnvId = environmentId === "" ? null : environmentId;
@@ -372,11 +376,12 @@ export const moveShift = async (shiftId, startTime, endTime, environmentId = nul
     }
     if (cleanEnvId) updatePayload.environment_id = cleanEnvId;
 
-    const { data: updatedRows, error: updateError } = await supabase
-        .from('shifts')
-        .update(updatePayload)
-        .eq('id', cleanShiftId)
-        .select('id');
+    let query = supabase.from('shifts').update(updatePayload).eq('id', cleanShiftId);
+    
+    // CRITICAL: Alinhamento com Obsidian (Segurança Multi-Tenant)
+    if (companyId) query = query.eq('company_id', companyId);
+
+    const { data: updatedRows, error: updateError } = await query.select('id');
 
     if (updateError) {
         console.error('[moveShift] ❌ Erro no UPDATE direto:', updateError);
@@ -424,6 +429,22 @@ export const removeEmployeeFromShift = async (assignmentId) => {
         .delete()
         .eq('id', assignmentId);
     if (error) throw error;
+};
+
+export const replaceEmployeeInShift = async (shiftId, personId, isExternal = false) => {
+    // 1. Remove existing assignments for this shift
+    const { error: delError } = await supabase
+        .from('shift_assignments')
+        .delete()
+        .eq('shift_id', shiftId);
+    
+    if (delError) throw delError;
+
+    // 2. Add the new one
+    if (personId) {
+        return await addEmployeeToShift(shiftId, personId, isExternal);
+    }
+    return { data: null };
 };
 
 export const updateAssignmentStatus = async (assignmentId, status) => {

@@ -1,10 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Clock, Plus, CheckCircle, MapPin, Activity, Timer, Layers, Search, GripVertical, LayoutGrid, AlertTriangle, Calendar } from 'lucide-react';
 
-export default function ShiftSidebar({ pendingActivities, routineActivities = [], onQuickSchedule, onAutoPilot, isAutoPilotLoading }) {
+export default function ShiftSidebar({ 
+  pendingActivities, 
+  routineActivities = [], 
+  onQuickSchedule, 
+  onAutoPilot, 
+  isAutoPilotLoading,
+  onReturnShift 
+}) {
   const [activeTab, setActiveTab] = useState('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [draggingId, setDraggingId] = useState(null);
+  const [dragCounter, setDragCounter] = useState(0);
+  const isDraggingOver = dragCounter > 0;
 
   const truncateUUID = (uuid) => {
     if (!uuid || uuid.length < 12) return uuid;
@@ -50,7 +59,7 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
     setDraggingId(item.id);
     e.dataTransfer.effectAllowed = 'move';
     const payload = isRoutine
-      ? { ...item, type: 'Rotina', location: item.name || 'Atividade Interna', source: 'routine' }
+      ? { ...item, type: 'Rotina', location: item.name || 'Atividade Interna', source: 'activity' }
       : { ...item, source: item.source || 'service_request' };
     e.dataTransfer.setData('application/json', JSON.stringify(payload));
     // Fallback key for legacy drop handlers
@@ -133,16 +142,78 @@ export default function ShiftSidebar({ pendingActivities, routineActivities = []
     display: 'flex', alignItems: 'center', gap: '5px',
     padding: '6px 14px', borderRadius: '8px', border: 'none',
     fontSize: '11px', fontWeight: 800, cursor: 'pointer',
-    background: isRoutine 
-      ? 'rgba(168,85,247,0.15)' 
-      : 'var(--accent-gradient, linear-gradient(135deg, #0088ff 0%, #0052cc 100%))',
-    color: isRoutine ? '#c084fc' : '#ffffff',
+    background: isRoutine
+      ? 'rgba(168,85,247,0.15)'
+      : 'var(--accent-cyan)',
+    color: isRoutine ? '#c084fc' : 'var(--bg-app)',
     transition: 'all 0.2s',
-    boxShadow: isRoutine ? 'none' : '0 4px 12px rgba(0, 82, 204, 0.2)',
+    boxShadow: isRoutine ? 'none' : '0 4px 12px var(--accent-cyan-dim)',
   });
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    try {
+      const jsonStr = e.dataTransfer.getData('application/json');
+      const textId = e.dataTransfer.getData('shiftId');
+      
+      let data = {};
+      if (jsonStr) {
+        data = JSON.parse(jsonStr);
+      } else if (textId) {
+        data = { id: textId, type: 'shift' };
+      }
+
+      if ((data.type === 'shift' || textId) && onReturnShift) {
+        onReturnShift(data);
+      }
+    } catch (err) {
+      console.error('Error handling drop in sidebar:', err);
+    }
+  };
+
   return (
-    <aside style={sidebarStyle}>
+    <aside 
+      style={{ ...sidebarStyle, position: 'relative' }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        // Verificação extra para ver se é um shift vindo do grid
+        const types = e.dataTransfer.types;
+        const isShift = types.includes('shiftid') || types.includes('application/json');
+        
+        if (isShift && !draggingId && !isDraggingOver) {
+          setDragCounter(prev => prev + 1);
+        }
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        // Só ativa o overlay se NÃO estivermos arrastando um item DA própria barra lateral
+        if (!draggingId) {
+          setDragCounter(prev => prev + 1);
+        }
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        if (!draggingId) {
+          setDragCounter(prev => Math.max(0, prev - 1));
+        }
+      }}
+      onDrop={(e) => {
+        setDragCounter(0);
+        console.log('Drop detectado na barra lateral');
+        handleDrop(e);
+      }}
+    >
+      {/* 📥 Drop Overlay Feedback */}
+      {isDraggingOver && (
+        <div className="sidebar-drop-overlay">
+          <div className="drop-overlay-icon">
+            <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
+          </div>
+          <span className="drop-overlay-text">Solte para Desagendar</span>
+        </div>
+      )}
       {/* ── Tabs ── */}
       <div style={{ display: 'flex', padding: '10px', gap: '6px', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))' }}>
         <button style={tabStyle(activeTab === 'pending')} onClick={() => setActiveTab('pending')}>

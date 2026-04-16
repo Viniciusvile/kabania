@@ -146,9 +146,9 @@ export function useShifts(companyId) {
       const total = transformedShifts.length;
       const computedStats = {
         total,
-        open: transformedShifts.filter(s => s.status === 'open' || s.status === 'scheduled').length,
-        inProgress: transformedShifts.filter(s => s.status === 'in_progress' || s.status === 'active').length,
-        concluded: `${transformedShifts.filter(s => s.status === 'completed' || s.status === 'concluded').length}/${total}`
+        open: transformedShifts.filter(s => s.status === 'draft' || s.status === 'published').length,
+        inProgress: transformedShifts.filter(s => s.status === 'confirmed' || s.status === 'in_progress').length,
+        concluded: `${transformedShifts.filter(s => s.status === 'completed' || s.status === 'concluded' || s.status === 'closed').length}/${total}`
       };
       setStats(computedStats);
 
@@ -202,7 +202,7 @@ export function useShifts(companyId) {
           return dateB - dateA;
         });
 
-      console.log('DEBUG: Unified Pending Count:', unifiedPending.length);
+      // console.log('DEBUG: Unified Pending Count:', unifiedPending.length);
       setPendingActivities(unifiedPending);
 
       // Salvar cache para Instant Hydration
@@ -317,6 +317,22 @@ export function useShifts(companyId) {
         setShifts(prev => {
             const updated = prev.filter(s => s.id !== shiftId);
             localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
+            return updated;
+        });
+    },
+    removePendingLocally: (activityId) => {
+        setPendingActivities(prev => {
+            const updated = prev.filter(a => String(a.id) !== String(activityId));
+            localStorage.setItem(`${cacheKey}_pending`, JSON.stringify(updated));
+            return updated;
+        });
+    },
+    addPendingLocally: (activity) => {
+        setPendingActivities(prev => {
+            // Evitar duplicidade caso o realtime já tenha adicionado
+            if (prev.find(a => String(a.id) === String(activity.id))) return prev;
+            const updated = [activity, ...prev];
+            localStorage.setItem(`${cacheKey}_pending`, JSON.stringify(updated));
             return updated;
         });
     }

@@ -210,117 +210,109 @@ export default function ShiftGrid({
       `}</style>
     </div>
 
-      {/* ⏰ MINI-MODAL DE HORÁRIO (substitui window.prompt bloqueado em dev mode) */}
+      {/* ⏰ MODAL DE HORÁRIO — Padrão do sistema (modal-overlay-pixel + premium-modal-pixel) */}
       {timeModal.isOpen && (
-        <div 
-          style={{ 
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
+        <div
+          className="modal-overlay-pixel"
+          style={{
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
           }}
+          onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
         >
-          <div style={{
-            background: 'var(--bg-card, #1a1f2e)',
-            border: '1px solid rgba(0,229,255,0.2)',
-            borderRadius: '20px',
-            padding: '2rem',
-            width: '100%',
-            maxWidth: '340px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(0,229,255,0.05)',
-          }}>
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon + Title */}
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{
-                width: '52px', height: '52px', borderRadius: '50%',
-                background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.25)',
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'var(--bg-app, #f8fafc)', border: '1px solid var(--border-light, #e2e8f0)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 0.75rem'
+                margin: '0 auto 1rem',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
               }}>
-                <Clock size={22} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <Clock size={24} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
               </div>
-              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '4px' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main, #0f172a)' }}>
                 Agendar Escala
               </h3>
-              <p style={{ fontSize: '12px', opacity: 0.55 }}>
-                {timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name}
+              <p style={{ fontSize: '13px', opacity: 0.7, color: 'var(--text-muted, #64748b)' }}>
+                Defina o horário de início da escala
               </p>
             </div>
 
+            {/* Activity Info */}
             <div style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '10px',
-              padding: '10px 14px',
-              marginBottom: '1rem',
-              fontSize: '12px',
+              background: 'var(--bg-secondary, #f1f5f9)',
+              border: '1px solid var(--border-light, #e2e8f0)',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              marginBottom: '1.25rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              color: 'rgba(255,255,255,0.6)'
+              gap: '10px'
             }}>
-              <MapPin size={13} style={{ color: 'var(--accent-cyan, #00e5ff)', flexShrink: 0 }} />
-              {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+              <Zap size={14} style={{ color: 'var(--accent-cyan, #00e5ff)', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
+                  {timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name}
+                </div>
+                <div style={{ fontSize: '11px', opacity: 0.7, color: 'var(--text-muted, #64748b)' }}>
+                  {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                </div>
+              </div>
             </div>
 
+            {/* Time Input */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ 
-                display: 'block', fontSize: '10px', fontWeight: 800, 
+              <label style={{
+                display: 'block', fontSize: '11px', fontWeight: 700,
                 textTransform: 'uppercase', letterSpacing: '0.08em',
-                opacity: 0.5, marginBottom: '6px'
+                opacity: 0.5, marginBottom: '8px'
               }}>
                 Horário de início
               </label>
               <input
                 type="time"
+                className="premium-input-field"
                 value={timeModal.time}
                 onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
                 autoFocus
                 style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  background: 'rgba(0,229,255,0.05)',
-                  border: '1px solid rgba(0,229,255,0.3)',
-                  borderRadius: '10px',
-                  color: 'var(--accent-cyan, #00e5ff)',
-                  fontSize: '1.5rem',
+                  fontSize: '1.8rem',
                   fontWeight: 800,
                   textAlign: 'center',
-                  outline: 'none',
                   fontFamily: 'inherit',
-                  boxSizing: 'border-box',
+                  padding: '14px 16px',
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleConfirmDrop();
                   if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
                 }}
               />
-              <p style={{ fontSize: '10px', opacity: 0.4, textAlign: 'center', marginTop: '6px' }}>
-                A escala terá duração padrão de 4 horas
+              <p style={{ fontSize: '11px', opacity: 0.4, textAlign: 'center', marginTop: '8px' }}>
+                Duração padrão: 4 horas
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
+                className="glow-btn-ghost py-3"
+                style={{ flex: 1 }}
                 onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
-                style={{
-                  flex: 1, padding: '10px', borderRadius: '10px',
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                  color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 700,
-                  cursor: 'pointer', transition: 'all 0.2s'
-                }}
               >
                 Cancelar
               </button>
               <button
+                className="glow-btn-primary py-3"
+                style={{ flex: 1 }}
                 onClick={handleConfirmDrop}
-                style={{
-                  flex: 2, padding: '10px', borderRadius: '10px',
-                  background: 'var(--accent-cyan, #00e5ff)', border: 'none',
-                  color: '#000', fontSize: '13px', fontWeight: 800,
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  boxShadow: '0 4px 15px rgba(0,229,255,0.3)'
-                }}
               >
-                ⚡ Agendar Escala
+                ⚡ Agendar
               </button>
             </div>
           </div>
@@ -346,9 +338,11 @@ function GripIcon() {
 
 // ── EscalaCard ────────────────────────────────────────────────────────────
 function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit }) {
-  const isProblem = shift.status === 'open' || (shift.open_calls_count > 0);
-  const isConcluded = shift.status === 'completed' || shift.status === 'concluded';
+  const isDraft = shift.status === 'draft';
+  const isPublished = shift.status === 'published';
+  const isConfirmed = shift.status === 'confirmed';
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
+  const isConcluded = shift.status === 'completed' || shift.status === 'concluded' || shift.status === 'closed';
   
   const startTime = new Date(shift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -357,19 +351,34 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
   const activityName = shift.work_activities?.name || 'Nenhuma Atividade Associada';
 
   const handleDragStart = (e) => {
-    e.dataTransfer.setData('shiftId', shift.id);
     e.dataTransfer.effectAllowed = 'move';
+    
+    // Configurar os dados para o Drop
+    const dragData = {
+      ...shift,
+      type: 'shift',
+      id: shift.id,
+      title: activityName,
+      location: locationName
+    };
+    
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.setData('shiftId', shift.id); // Compatibilidade legado
+    
+    // Ghost image customizada (Kabania V2 style)
     const ghost = document.createElement('div');
     ghost.style.cssText = [
       'position:fixed', 'top:-9999px', 'left:-9999px',
       'width:200px', 'height:44px',
-      'background:rgba(15,20,40,0.95)',
-      'border:1px solid rgba(0,229,255,0.5)',
+      'background:rgba(15,23,42,0.98)',
+      'border:1px solid rgba(0,229,255,0.6)',
       'border-radius:12px', 'padding:0 14px',
       'color:#00e5ff', 'font-size:13px', 'font-weight:800',
       'display:flex', 'align-items:center', 'gap:8px',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
+      'z-index:9999'
     ].join(';');
-    ghost.innerHTML = `<span style="opacity:0.5">⏰</span> ${startTime} – ${endTime}`;
+    ghost.innerHTML = `<span style="opacity:0.7">⏰</span> ${startTime} – ${endTime}`;
     document.body.appendChild(ghost);
     e.dataTransfer.setDragImage(ghost, 100, 22);
     setTimeout(() => { if (ghost.parentNode) document.body.removeChild(ghost); }, 0);
@@ -377,9 +386,19 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
 
   const stopChildDrag = (e) => e.stopPropagation();
 
+  // Mapeamento de label e estilo de status
+  const getStatusLabel = () => {
+    if (inProgress) return 'EM ANDAMENTO';
+    if (isConcluded) return 'CONCLUÍDO';
+    if (isConfirmed) return 'CONFIRMADO';
+    if (isPublished) return 'PUBLICADO';
+    if (isDraft) return 'RASCUNHO';
+    return shift.status?.toUpperCase() || 'AGENDADO';
+  };
+
   return (
     <div 
-      className="kabania-v2-card"
+      className={`kabania-v2-card status-${shift.status || 'draft'}`}
       draggable
       onDragStart={handleDragStart}
     >
@@ -430,10 +449,37 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
           <span>{activityName}</span>
         </div>
         
-        <div className="kabania-v2-status-badge">
-          {isProblem ? 'ALERTA' : inProgress ? 'EM ANDAMENTO' : isConcluded ? 'CONCLUÍDO' : 'AGENDADO'}
+        <div className={`kabania-v2-status-badge status-${shift.status || 'draft'}`}>
+          {getStatusLabel()}
         </div>
       </div>
+
+      {/* 👥 ASSIGNED EMPLOYEES - KABANIA V2 */}
+      {shift.assigned_employees && shift.assigned_employees.length > 0 && (
+        <div className="kabania-v2-employees-row">
+          <div className="flex -space-x-2 overflow-hidden">
+            {shift.assigned_employees.map((emp, idx) => (
+              <div 
+                key={emp.assignment_id || idx} 
+                className="emp-avatar-small ring-2 ring-slate-900"
+                title={emp.name}
+                style={{ width: '28px', height: '28px' }}
+              >
+                {emp.avatar_url ? (
+                  <img src={emp.avatar_url} alt={emp.name} />
+                ) : (
+                  <span>{emp.name?.[0] || '?'}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <span className="text-[10px] font-bold opacity-70 truncate max-w-[120px]">
+            {shift.assigned_employees.length === 1 
+              ? shift.assigned_employees[0].name 
+              : `${shift.assigned_employees[0].name} +${shift.assigned_employees.length - 1}`}
+          </span>
+        </div>
+      )}
 
       <div className="kabania-v2-divider" />
 
