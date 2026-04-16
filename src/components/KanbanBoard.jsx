@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { processTaskWithAI } from '../services/geminiService';
 import {
@@ -10,7 +10,7 @@ import {
 } from '../services/notificationService';
 import {
   MoreHorizontal, Plus, AlertTriangle, Sparkles, Trash2, Edit2,
-  Calendar, Users, MessageSquare, X, Check, Clock
+  Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle
 } from 'lucide-react';
 import {
   DndContext, closestCorners, KeyboardSensor, PointerSensor,
@@ -131,6 +131,11 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
               {task.tag}
             </span>
           )}
+          {task.isScheduled && (
+            <span className="badge" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <CheckCircle size={10} /> Agendado
+            </span>
+          )}
           {commentCount > 0 && (
             <span className="card-comment-badge" onPointerDown={e => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}>
               <MessageSquare size={11} /> {commentCount}
@@ -227,6 +232,40 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [editingTask, setEditingTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
   const [dragStartColumn, setDragStartColumn] = useState(null);
+  const [shifts, setShifts] = useState([]);
+
+  // Sincronização de Escalas (Shifts) para mostrar o selo "Agendado"
+  useEffect(() => {
+    const fetchShifts = async () => {
+      if (!currentCompany?.id) return;
+      const { data, error } = await supabase
+        .from('shifts')
+        .select('id, notes')
+        .eq('company_id', currentCompany.id);
+      if (!error && data) setShifts(data);
+    };
+
+    fetchShifts();
+
+    const shiftsChannel = supabase.channel(`kanban-shifts-${currentCompany?.id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'shifts', 
+        filter: `company_id=eq.${currentCompany?.id}` 
+      }, () => fetchShifts())
+      .subscribe();
+
+    return () => { supabase.removeChannel(shiftsChannel); };
+  }, [currentCompany?.id]);
+
+  // Enriquecer tarefas com isScheduled
+  const processedTasks = useMemo(() => {
+    return tasks.map(t => ({
+      ...t,
+      isScheduled: shifts.some(s => s.notes?.includes(`[KANBAN_ID:${t.id}]`))
+    }));
+  }, [tasks, shifts]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
@@ -778,7 +817,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="kanban-board">
           {COLUMNS.map(col => {
-            const colTasks = tasks.filter(t => {
+            const colTasks = processedTasks.filter(t => {
               if (t.columnId !== col.id) return false;
               // Strict Project filtering
               if (projectId && t.projectId !== projectId) return false;
@@ -800,7 +839,14 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           })}
         </div>
         <DragOverlay>
-          {activeTask ? <SortableTaskCard task={activeTask} onDelete={() => {}} onEdit={() => {}} onOpenDetail={() => {}} /> : null}
+          {activeTask ? (
+            <SortableTaskCard 
+              task={processedTasks.find(t => t.id === activeTask.id) || activeTask} 
+              onDelete={() => {}} 
+              onEdit={() => {}} 
+              onOpenDetail={() => {}} 
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
 

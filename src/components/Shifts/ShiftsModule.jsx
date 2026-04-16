@@ -72,8 +72,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     fetchKanbanTasks();
   }, [companyId]);
 
-  // Workspace mostra APENAS os cards do Kanban (backlog, todo, in progress)
-  const workspaceItems = useMemo(() => [...kanbanTasks], [kanbanTasks]);
+  // Workspace mostra os cards do Kanban enriquecidos com status de agendamento
+  const workspaceItems = useMemo(() => {
+    return kanbanTasks
+      .map(task => {
+        const isScheduled = shifts.some(s => s.notes?.includes(`[KANBAN_ID:${task.id}]`));
+        return { ...task, isScheduled };
+      })
+      .filter(task => !task.isScheduled); // Filtra para que suma da lista ao agendar
+  }, [kanbanTasks, shifts]);
 
   const handleDeleteShift = (shiftId) => {
     // Abre modal customizado em vez de window.confirm (que é bloqueado em dev/localhost)
@@ -353,19 +360,29 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   const handleQuickSchedule = async (activity) => {
     try {
       setIsSyncing(true);
+      const isKanban = activity.source === 'kanban';
       const startDate = activity.last_appointment ? new Date(activity.last_appointment) : new Date();
       const endDate = new Date(startDate.getTime() + (60 * 60000));
       
-      await createShift({
+      const payload = {
         company_id: companyId,
-        service_request_id: activity.id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         status: 'draft',
-        notes: `Agendado via Inteligência Kabania`
-      }, currentUser);
+        notes: isKanban 
+          ? `[KANBAN_ID:${activity.id}] ${activity.desc || activity.title}`
+          : `Agendado via Inteligência Kabania`
+      };
 
-      // await refresh(); // Sincronizado via Realtime
+      if (!isKanban) {
+        payload.service_request_id = activity.id;
+      }
+
+      const data = await createShift(payload, currentUser);
+      
+      if (data && addShiftLocally) {
+        addShiftLocally(data);
+      }
     } catch (err) {
       alert("Erro ao criar escala: " + err.message);
     } finally {
@@ -406,7 +423,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         end_time: endTime.toISOString(),
         status: 'draft',
         notes: isKanban
-          ? `Agendado via Workspace (Kanban): ${label}`
+          ? `[KANBAN_ID:${activity.id}] ${activity.desc || activity.title}`
           : `Agendado via Drag & Drop: ${activity.location || activity.name}`
       };
 
@@ -434,20 +451,14 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         addShiftLocally(data);
       }
 
-      // 🧹 REMOÇÃO LOCAL E DATABASE UPDATE (SIDEBAR)
-      if (isKanban) {
-        setKanbanTasks(prev => prev.filter(t => t.id !== activity.id));
-        // Marcar como agendado no banco para não reaparecer no refresh
-        // Guardamos o ID original no campo notes para poder reverter depois
-        payload.notes = `[KANBAN_ID:${activity.id}] ${activity.desc || activity.title}`;
-        await supabase.from('tasks').update({ column_id: 'scheduled' }).eq('id', activity.id);
-      } else {
-        if (removePendingLocally) removePendingLocally(activity.id);
+      // 🧹 REMOÇÃO LOCAL PARA OUTROS TIPOS
+      if (!isKanban && removePendingLocally) {
+        removePendingLocally(activity.id);
       }
-      
-      // await refresh(); // Usando injeção instantânea
     } catch (err) {
       console.error('Error dropping activity:', err);
+    } finally {
+      setIsSyncing(false);
     }
   };
 

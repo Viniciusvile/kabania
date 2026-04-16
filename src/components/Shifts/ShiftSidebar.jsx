@@ -361,6 +361,23 @@ export default function ShiftSidebar({
                         <Calendar size={10} /> {new Date(act.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </span>
                     )}
+                    {act.isScheduled && (
+                      <span style={{ 
+                        fontSize: '10px', 
+                        fontWeight: 900, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        padding: '3px 10px', 
+                        borderRadius: '8px', 
+                        background: 'rgba(34,197,94,0.15)', 
+                        color: '#4ade80', 
+                        border: '1px solid rgba(34,197,94,0.3)',
+                        boxShadow: '0 2px 10px rgba(34,197,94,0.1)'
+                      }}>
+                        <CheckCircle size={10} /> AGENDADO
+                      </span>
+                    )}
                   </div>
                   <button 
                     style={{
