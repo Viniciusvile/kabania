@@ -20,7 +20,7 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem; /* Otimizado para não gastar espaço vertical (antes era 2rem) */
 }
 
 .shifts-title-premium {
@@ -36,7 +36,7 @@
   grid-template-columns: 1fr 340px;
   gap: 1.5rem;
   align-items: start;
-  padding: 0.5rem;
+  padding: 0; /* Removido padding interno para subir o layout inteiro */
   margin-bottom: 2rem;
 }
 
@@ -333,6 +333,13 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
   overflow: hidden;
   color: white;
+}
+
+[data-theme='light'] .premium-modal-pixel {
+  background: var(--bg-app) !important;
+  border: 1px solid var(--border-light) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .modal-header-content {

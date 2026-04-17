@@ -15,12 +15,12 @@
 }
 
 .escalas-page {
-    padding: 1rem;
+    padding: 0 1rem 1rem 1rem; /* Zerei o padding-top para colar mais no header principal */
     max-width: 1600px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 32px;
+    gap: 16px; /* Reduzido de 32px para apertar mais o layout contra o topo */
     background: var(--escala-bg);
     min-height: 100%;
 }

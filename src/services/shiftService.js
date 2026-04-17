@@ -330,14 +330,23 @@ export const updateShift = async (shiftId, updateData, userId) => {
 };
 
 export const deleteShift = async (shiftId, companyId = null) => {
-    return await safeQuery(
-        () => {
-            let query = supabase.from('shifts').delete().eq('id', shiftId);
-            if (companyId) query = query.eq('company_id', companyId);
-            return query;
-        },
-        `Deletando escala ${shiftId}`
-    );
+    try {
+        // 1. Limpar atribuições primeiro para evitar erro de FK (Foreign Key)
+        await supabase.from('shift_assignments').delete().eq('shift_id', shiftId);
+
+        // 2. Deletar a escala
+        return await safeQuery(
+            () => {
+                let query = supabase.from('shifts').delete().eq('id', shiftId);
+                if (companyId) query = query.eq('company_id', companyId);
+                return query;
+            },
+            `Deletando escala ${shiftId}`
+        );
+    } catch (err) {
+        console.error('[deleteShift] Erro ao deletar escala e vínculos:', err);
+        throw err;
+    }
 };
 
 export const moveShift = async (shiftId, startTime, endTime, environmentId = null, companyId = null) => {

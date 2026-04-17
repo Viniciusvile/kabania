@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical } from 'lucide-react';
+import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical, Calendar, Timer } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 import './ShiftsPremium.css';
 
@@ -26,30 +26,32 @@ export default function ShiftGrid({
     time: '08:00' 
   });
 
-  // 🖱️ Horizontal Drag Logic
-  const [dragStart, setDragStart] = useState(null);
-  const [offsetX, setOffsetX] = useState(0);
+  // 🖱️ Horizontal Drag Logic (Native Scroll)
+  const scrollRef = React.useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   const handleMouseDown = (e) => {
-    // Se o clique for em um card ou botão, não inicia o arraste do grid
     if (e.target.closest('.premium-shift-card') || e.target.closest('.kabania-v2-card') || e.target.closest('button')) return;
-    setDragStart(e.clientX);
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
   };
 
   const handleMouseMove = (e) => {
-    if (dragStart === null) return;
-    const diff = e.clientX - dragStart;
-    setOffsetX(diff);
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const scrollSpeed = 1.6; // Suavidade equilibrada
+    const walk = (x - startX) * scrollSpeed;
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollLeft - walk;
+    }
   };
 
-  const handleMouseUp = () => {
-    if (dragStart === null) return;
-    const threshold = 120; // Sensibilidade do arraste
-    if (offsetX > threshold) onPrevWeek();
-    else if (offsetX < -threshold) onNextWeek();
-    
-    setDragStart(null);
-    setOffsetX(0);
+  const handleMouseUpOrLeave = () => {
+    setIsDragging(false);
   };
 
   const handleUpdateStatus = async (shiftId, status) => {
@@ -78,26 +80,31 @@ export default function ShiftGrid({
   return (
     <>
     <div 
-      className="grid-drag-container" 
+      className={`grid-drag-container custom-scrollbar ${isDragging ? 'is-dragging' : ''}`} 
+      ref={scrollRef}
       style={{ 
         position: 'relative', 
         width: '100%', 
-        cursor: dragStart ? 'grabbing' : 'grab',
-        overflow: 'hidden'
+        cursor: isDragging ? 'grabbing' : 'grab',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        paddingBottom: '16px', // Protege elementos com sombra de serem cortados
+        userSelect: isDragging ? 'none' : 'auto' // Bloqueia seleção de texto
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseLeave={handleMouseUpOrLeave}
     >
       <div 
         className="grid-drag-content"
         style={{
-          transform: `translateX(${offsetX}px)`,
-          transition: dragStart ? 'none' : 'transform 0.4s cubic-bezier(0.19, 1, 0.22, 1)',
           display: 'flex',
           flexDirection: 'column',
-          width: '100%'
+          width: 'fit-content',
+          minWidth: '100%',
+          pointerEvents: isDragging ? 'none' : 'auto' // ⚡ TRUQUE MÁGICO: Evita lag impedindo interação com filhos no drag
         }}
       >
         <div className="weekly-grid-pixel timeline-mode" style={{ minHeight: 'auto', gap: '16px', padding: '16px' }}>
@@ -130,17 +137,29 @@ export default function ShiftGrid({
 
                     let activityData = e.dataTransfer.getData('application/json');
                     if (!activityData) activityData = e.dataTransfer.getData('activity');
-                    const shiftId = e.dataTransfer.getData('shiftId');
+                    const shiftId = e.dataTransfer.getData('shiftId') || e.dataTransfer.getData('shiftid');
 
+                    // 🚀 PRIORIDADE: Se for um Shift ID (movimentação no grid), move direto
+                    if (shiftId) {
+                      onMoveShift(shiftId, day.date, null);
+                      return;
+                    }
+
+                    // Se for dados de atividade (sidebar -> grid)
                     if (activityData && activityData !== 'null') {
                       try {
-                        const activity = JSON.parse(activityData);
-                        setTimeModal({ isOpen: true, activity, date: day.date, time: '08:00' });
+                        const data = JSON.parse(activityData);
+                        
+                        // Verificação dupla: se for um shift mas sem shiftId explícito no dataTransfer
+                        if (data.type === 'shift') {
+                          onMoveShift(data.id, day.date, null);
+                        } else {
+                          // Agendamento de NOVA atividade
+                          setTimeModal({ isOpen: true, activity: data, date: day.date, time: '08:00' });
+                        }
                       } catch (err) {
                         console.error('[ShiftGrid] Error parsing drag data:', err);
                       }
-                    } else if (shiftId) {
-                      onMoveShift(shiftId, day.date, null);
                     }
                   }}
                 >
@@ -216,64 +235,72 @@ export default function ShiftGrid({
           className="modal-overlay-pixel"
           style={{
             zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.4)',
+            background: 'rgba(0, 0, 0, 0.5)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
           onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
         >
-          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem 2rem' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Icon + Title */}
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <div style={{
-                width: '56px', height: '56px', borderRadius: '50%',
-                background: 'var(--bg-app, #f8fafc)', border: '1px solid var(--border-light, #e2e8f0)',
+                width: '64px', height: '64px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(168, 85, 247, 0.1))',
+                border: '1px solid var(--border-color)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1rem',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+                margin: '0 auto 1.25rem',
+                boxShadow: '0 8px 32px rgba(0, 229, 255, 0.15)'
               }}>
-                <Clock size={24} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <Clock size={28} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
               </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '0.4rem', color: 'var(--text-main, #0f172a)' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
                 Agendar Escala
               </h3>
-              <p style={{ fontSize: '13px', opacity: 0.7, color: 'var(--text-muted, #64748b)' }}>
+              <p style={{ fontSize: '13px', opacity: 0.8, color: 'var(--text-muted)' }}>
                 Defina o horário de início da escala
               </p>
             </div>
 
             {/* Activity Info */}
             <div style={{
-              background: 'var(--bg-secondary, #f1f5f9)',
-              border: '1px solid var(--border-light, #e2e8f0)',
-              borderRadius: '12px',
-              padding: '12px 14px',
-              marginBottom: '1.25rem',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '16px',
+              marginBottom: '1.5rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px'
+              gap: '12px'
             }}>
-              <Zap size={14} style={{ color: 'var(--accent-cyan, #00e5ff)', flexShrink: 0 }} />
+              <div style={{ 
+                 background: 'rgba(0, 229, 255, 0.1)', 
+                 padding: '10px', 
+                 borderRadius: '12px',
+                 display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                 <Zap size={16} style={{ color: 'var(--accent-cyan)' }} />
+              </div>
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
-                  {timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name}
+                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
+                  {(timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name || 'Local Não Definido').replace(/^(TITULO|TITLE):\s*/i, '')}
                 </div>
-                <div style={{ fontSize: '11px', opacity: 0.7, color: 'var(--text-muted, #64748b)' }}>
-                  {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Calendar size={12} /> {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </div>
               </div>
             </div>
 
             {/* Time Input */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '2rem' }}>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: 700,
+                display: 'block', fontSize: '11px', fontWeight: 800,
                 textTransform: 'uppercase', letterSpacing: '0.08em',
-                opacity: 0.5, marginBottom: '8px'
+                color: 'var(--accent-cyan)', opacity: 0.9, marginBottom: '10px'
               }}>
-                Horário de início
+                Horário de Início
               </label>
               <input
                 type="time"
@@ -282,37 +309,46 @@ export default function ShiftGrid({
                 onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
                 autoFocus
                 style={{
-                  fontSize: '1.8rem',
-                  fontWeight: 800,
+                  fontSize: '2rem',
+                  fontWeight: 900,
                   textAlign: 'center',
                   fontFamily: 'inherit',
-                  padding: '14px 16px',
+                  padding: '16px',
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-main)',
+                  borderRadius: '16px',
+                  boxShadow: 'var(--shadow-sm)',
+                  outline: 'none'
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleConfirmDrop();
                   if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
                 }}
               />
-              <p style={{ fontSize: '11px', opacity: 0.4, textAlign: 'center', marginTop: '8px' }}>
-                Duração padrão: 4 horas
+              <p style={{ 
+                fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', 
+                marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' 
+              }}>
+                <Timer size={12}/> Duração padrão: 4 horas
               </p>
             </div>
 
             {/* Actions */}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
-                className="glow-btn-ghost py-3"
-                style={{ flex: 1 }}
+                className="glow-btn-ghost py-3.5"
+                style={{ flex: 1, borderRadius: '14px', fontSize: '13px', fontWeight: 700 }}
                 onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
               >
                 Cancelar
               </button>
               <button
-                className="glow-btn-primary py-3"
-                style={{ flex: 1 }}
+                className="glow-btn-primary py-3.5"
+                style={{ flex: 1, borderRadius: '14px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 onClick={handleConfirmDrop}
               >
-                ⚡ Agendar
+                <Zap size={14} /> Agendar
               </button>
             </div>
           </div>
@@ -363,7 +399,9 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
     };
     
     e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-    e.dataTransfer.setData('shiftId', shift.id); // Compatibilidade legado
+    e.dataTransfer.setData('shiftId', shift.id);
+    e.dataTransfer.setData('shiftid', shift.id); // For browser-specific lowercase normalization
+    e.dataTransfer.setData('text/plain', shift.id); // Final fallback
     
     // Ghost image customizada (Kabania V2 style)
     const ghost = document.createElement('div');
@@ -436,17 +474,39 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
         <div className="kabania-v2-icon-box">
           <MapPin size={20} />
         </div>
-        <div className="kabania-v2-local-info">
+        <div className="kabania-v2-local-info" style={{ minWidth: 0, overflow: 'hidden' }}>
           <span className="kabania-v2-label-loc">LOCAL</span>
-          <span className="kabania-v2-loc-name">{locationName}</span>
+          <span className="kabania-v2-loc-name" style={{
+            display: '-webkit-box', 
+            WebkitLineClamp: 2, 
+            WebkitBoxOrient: 'vertical', 
+            overflow: 'hidden',
+            wordBreak: 'break-word'
+          }}>{locationName.replace(/^(TITULO|TITLE):\s*/i, '')}</span>
         </div>
       </div>
 
       {/* 📋 ACTIVITY & STATUS - KABANIA V2 */}
-      <div className="kabania-v2-act-row">
-        <div className="kabania-v2-act-pill">
-          <Briefcase size={12} className="opacity-50" />
-          <span>{activityName}</span>
+      <div className="kabania-v2-act-row" style={{ alignItems: 'flex-start' }}>
+        <div className="kabania-v2-act-pill" style={{ 
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          maxWidth: '100%', 
+          overflow: 'hidden',
+          padding: '4px 10px'
+        }}>
+          <Briefcase size={12} className="opacity-50 mt-[2px] flex-shrink-0" />
+          <span style={{ 
+            display: '-webkit-box', 
+            WebkitLineClamp: 2, 
+            WebkitBoxOrient: 'vertical', 
+            overflow: 'hidden',
+            wordBreak: 'break-word',
+            fontSize: '10px',
+            lineHeight: 1.4,
+            marginLeft: '6px',
+            whiteSpace: 'normal'
+          }}>{activityName.replace(/^(DESCRICAO|DESCRIPTION|TITULO|TITLE):\s*/i, '')}</span>
         </div>
         
         <div className={`kabania-v2-status-badge status-${shift.status || 'draft'}`}>

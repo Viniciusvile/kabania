@@ -54,6 +54,13 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, shiftId: null });
 
+  // ── Helper: Extrai ID do Kanban das notas ────────────────────────────
+  const getKanbanId = (notes) => {
+    if (!notes) return null;
+    const match = notes.match(/\[KANBAN_ID:([^\]]*)\]/);
+    return match ? match[1].trim() : null;
+  };
+
   // ── Busca Kanban tasks de todos projetos da empresa ──────────────────
   useEffect(() => {
     const fetchKanbanTasks = async () => {
@@ -77,10 +84,22 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     return kanbanTasks
       .map(task => {
         const isScheduled = shifts.some(s => s.notes?.includes(`[KANBAN_ID:${task.id}]`));
-        return { ...task, isScheduled };
+        return { ...task, isScheduled, source: 'kanban' }; // Garante source: 'kanban'
       })
-      .filter(task => !task.isScheduled); // Filtra para que suma da lista ao agendar
+      .filter(task => !task.isScheduled); 
   }, [kanbanTasks, shifts]);
+
+  // ── Separação de Atividades Pendentes (Solicitações vs Rotinas) ───────
+  const { sidebarServiceRequests, sidebarRoutines } = useMemo(() => {
+    return {
+      sidebarServiceRequests: pendingActivities.filter(p => p.source === 'service_request'),
+      sidebarRoutines: pendingActivities.filter(p => p.source === 'activity')
+    };
+  }, [pendingActivities]);
+
+  const unifiedWorkspaceItems = useMemo(() => {
+    return [...workspaceItems, ...sidebarServiceRequests];
+  }, [workspaceItems, sidebarServiceRequests]);
 
   const handleDeleteShift = (shiftId) => {
     // Abre modal customizado em vez de window.confirm (que é bloqueado em dev/localhost)
@@ -462,51 +481,59 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
-  const handleReturnShift = async (shift) => {
+  const handleReturnShift = async (shiftInput) => {
+    // Normalização: aceita ID direto ou objeto completo
+    const shift = (typeof shiftInput === 'string') 
+      ? shifts.find(s => s.id === shiftInput) 
+      : shiftInput;
+
+    if (!shift || !shift.id) {
+      console.warn('[handleReturnShift] Payload inválido ou ID não encontrado:', shiftInput);
+      return;
+    }
+
+    console.log('[handleReturnShift] 🔄 Iniciando devolução otimista:', shift.id);
+
+    // 1. Instant Optimistic UI: Remove do grid IMEDIATAMENTE
+    if (removeShiftLocally) removeShiftLocally(shift.id);
+
+    setIsSyncing(true);
+
+    // 🛡️ SAFETY TIMEOUT: Se o banco travar (Lock erro), libera a UI em 8s
+    const syncTimeout = setTimeout(() => {
+        setIsSyncing(false);
+        console.warn('[handleReturnShift] ⚠️ Timeout de sincronização atingido. Liberando UI.');
+    }, 8000);
+
     try {
-      console.log('Tentando devolver escala:', shift);
-      
-      // 1. Deletar do banco de dados
-      await deleteShift(shift.id);
+      const kanbanId = getKanbanId(shift.notes);
+      console.log('[handleReturnShift] Link detectado:', { kanbanId, srId: shift.service_request_id });
 
-      // 2. Remover do estado local de escalas IMEDIATAMENTE (Otimista)
-      if (removeShiftLocally) removeShiftLocally(shift.id);
+      // 2. Deletar a escala do banco de dados (Sincronização silenciosa)
+      const { error: deleteError } = await deleteShift(shift.id);
+      if (deleteError) throw deleteError;
 
-      // 3. Restaurar o card na barra lateral
-      if (shift.service_request_id || shift.source === 'service_request') {
-        const activityData = {
-          id: shift.service_request_id || shift.id,
-          location: shift.work_environments?.name || 'Local Restaurado',
-          description: shift.work_activities?.name || 'Atividade Restaurada',
-          type: shift.work_activities?.required_role || 'Serviço',
-          created_at: new Date().toISOString(),
-          source: 'service_request'
-        };
-        if (addPendingLocally) addPendingLocally(activityData);
-      } else {
-        // Fallback para Workspace (Kanban) se não for Service Request
-        const match = shift.notes?.match(/\[KANBAN_ID:(.*?)\]/);
-        const originalTaskId = match ? match[1] : null;
-        
-        const kanbanData = {
-          id: originalTaskId || `restored-${Date.now()}`,
-          title: shift.work_activities?.name || shift.title || 'Tarefa Restaurada',
-          desc: shift.notes ? shift.notes.split(']')[1]?.trim() : (shift.description || ''),
-          column_id: 'todo',
-          source: 'kanban'
-        };
-        
-        setKanbanTasks(prev => [kanbanData, ...prev]);
-
-        // Tentar restaurar status no banco se tivermos o ID
-        if (originalTaskId && originalTaskId.length > 10) { // Check if it's a real ID
-          await supabase.from('tasks').update({ column_id: 'todo' }).eq('id', originalTaskId);
-        }
+      // 3. Sincronizar origem (Kanban)
+      if (kanbanId) {
+        const { error: taskError } = await supabase
+          .from('tasks')
+          .update({ column_id: 'todo' })
+          .eq('id', kanbanId);
+        if (taskError) console.error('[handleReturnShift] Erro ao atualizar tarefa:', taskError);
       }
+      
+      console.log('[handleReturnShift] ✅ Sincronizado com sucesso');
+
     } catch (err) {
-      console.error('Erro ao devolver escala:', err);
-      alert('Não foi possível devolver a escala: ' + err.message);
-      refresh(); // Recarrega para evitar estado inconsistente
+      console.error('[handleReturnShift] ❌ Erro crítico na sincronização:', err);
+      // Notificamos mas não travamos a UI se for um erro de Lock (já lidado pelo timeout)
+      if (!err.message?.includes('Lock')) {
+        alert('Houve um erro técnico de conexão com o banco. A interface recarregará. ' + err.message);
+        if (refresh) refresh();
+      }
+    } finally {
+      clearTimeout(syncTimeout);
+      setIsSyncing(false);
     }
   };
 
@@ -553,8 +580,6 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
 
   return (
     <div className="escalas-page animate-fade-in premium-mode">
-      <ShiftStats stats={stats} />
-
       <div className="shifts-main-layout relative">
         {/* ✅ MINIMALIST SYNC INDICATOR (ANTI-ANXIETY) */}
         <style>{`
@@ -620,6 +645,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             setWeekStart={setWeekStart}
             weekDays={weekDays}
             setIsModalOpen={setIsModalOpen}
+            stats={stats}
           />
 
           <ShiftGrid 
@@ -641,8 +667,8 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         </div>
 
         <ShiftSidebar 
-          pendingActivities={workspaceItems} 
-          routineActivities={pendingActivities}
+          pendingActivities={unifiedWorkspaceItems} 
+          routineActivities={sidebarRoutines}
           onQuickSchedule={handleQuickSchedule} 
           onAutoPilot={handleRunAutoPilot}
           isAutoPilotLoading={isAutoPilotLoading}

@@ -121,13 +121,18 @@ export function useShifts(companyId) {
         const env = envMap[shift.environment_id];
         const act = actMap[shift.activity_id];
         const sr = srMap[String(shift.service_request_id)] || actualActMap[String(shift.service_request_id)];
+        
+        // 📋 Resolução de Título: Prioridade para Kanban nas Notas, depois Routine (act), depois SR
+        const kanbanMatch = shift.notes?.match(/\[KANBAN_ID:[^\]]*\]\s*(.*)/);
+        const kanbanTitle = kanbanMatch ? kanbanMatch[1].trim() : null;
+
         return {
           ...shift,
           work_environments: { 
             name: env?.name || (sr ? (sr.customer_name || sr.location || 'Local') : 'Local Não Definido')
           },
           work_activities: { 
-            name: act?.name || sr?.service_type || sr?.type || 'Atividade',
+            name: kanbanTitle || act?.name || sr?.service_type || sr?.type || 'Atividade',
             required_role: act?.required_role || shift.required_role,
             required_skills: act?.required_skills || shift.required_skills || []
           },
@@ -231,9 +236,12 @@ export function useShifts(companyId) {
 
     const debounceLoad = () => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      // 🔥 Atraso maior (1000ms) com jitter para evitar que múltiplas abas ou componentes 
+      // colidam no lock do IndexedDB do Supabase ao mesmo tempo.
+      const jitter = Math.random() * 500;
       refreshTimerRef.current = setTimeout(() => {
         loadAllData();
-      }, 400); 
+      }, 1000 + jitter); 
     };
 
     const applyRealtimeUpdate = (payload) => {
@@ -315,8 +323,37 @@ export function useShifts(companyId) {
     },
     removeShiftLocally: (shiftId) => {
         setShifts(prev => {
+            const shiftToRemove = prev.find(s => s.id === shiftId);
             const updated = prev.filter(s => s.id !== shiftId);
             localStorage.setItem(`${cacheKey}_shifts`, JSON.stringify(updated));
+
+            // 🚀 Optimistic Restoration: Se a escala tinha vínculo, devolve para a lateral IMEDIATAMENTE
+            if (shiftToRemove && (shiftToRemove.service_request_id || shiftToRemove.activity_id)) {
+                // Determine source exactly as useShifts logic does
+                const isSR = !!shiftToRemove.service_request_id;
+                const restoredActivity = {
+                   id: shiftToRemove.service_request_id || shiftToRemove.activity_id,
+                   location: shiftToRemove.work_environments?.name || (isSR ? 'Solicitação Restaurada' : 'Atividade Restaurada'),
+                   type: shiftToRemove.work_activities?.name || 'Serviço',
+                   created: new Date().toISOString(),
+                   source: isSR ? 'service_request' : 'activity',
+                   isOptimistic: true 
+                };
+                
+                setPendingActivities(pending => {
+                   if (pending.find(p => String(p.id) === String(restoredActivity.id))) return pending;
+                   
+                   // 🛡️ Safety Net: Remove o item otimista após 12 segundos se o Realtime falhar
+                   setTimeout(() => {
+                       setPendingActivities(current => 
+                           current.filter(p => !(p.id === restoredActivity.id && p.isOptimistic))
+                       );
+                   }, 12000);
+
+                   return [restoredActivity, ...pending];
+                });
+            }
+
             return updated;
         });
     },

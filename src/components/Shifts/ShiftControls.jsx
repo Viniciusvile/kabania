@@ -7,10 +7,11 @@ export default function ShiftControls({
   weekStart, 
   setWeekStart, 
   weekDays, 
-  setIsModalOpen 
+  setIsModalOpen,
+  stats
 }) {
   return (
-    <div className="controls-bar-pixel">
+    <div className="controls-bar-pixel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
       <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <div className="filter-pills-pixel">
           <button className={filterStatus === 'todos' ? 'active' : ''} onClick={() => setFilterStatus('todos')}>Todos</button>
@@ -34,6 +35,39 @@ export default function ShiftControls({
           }}><ChevronRight size={16} /></button>
         </div>
       </div>
+
+      {stats && (
+        <div className="inline-stats-premium" style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '24px', 
+          background: 'var(--bg-panel)',
+          padding: '6px 24px',
+          borderRadius: '100px',
+          border: '1px solid var(--border-light)',
+          margin: '0 auto' 
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</span>
+            <span style={{ fontSize: '15px', color: '#3b82f6', fontWeight: 900 }}>{stats.total}</span>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-light)', opacity: 0.5 }}></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Abertas</span>
+            <span style={{ fontSize: '15px', color: '#ef4444', fontWeight: 900 }}>{stats.open}</span>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-light)', opacity: 0.5 }}></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Em Curso</span>
+            <span style={{ fontSize: '15px', color: '#10b981', fontWeight: 900 }}>{stats.inProgress}</span>
+          </div>
+          <div style={{ width: '1px', height: '24px', background: 'var(--border-light)', opacity: 0.5 }}></div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Concluídas</span>
+            <span style={{ fontSize: '15px', color: '#8b5cf6', fontWeight: 900 }}>{stats.concluded}</span>
+          </div>
+        </div>
+      )}
 
       <button className="glow-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
         <Wand2 size={16} />

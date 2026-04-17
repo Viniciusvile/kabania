@@ -111,7 +111,7 @@ export default function ShiftSidebar({
     background: 'var(--bg-card, rgba(255,255,255,0.04))',
     border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : isRoutine ? 'rgba(168,85,247,0.2)' : 'var(--border-color, rgba(255,255,255,0.08))'}`,
     borderRadius: '16px',
-    padding: '1.125rem',
+    padding: '0.875rem',
     position: 'relative',
     overflow: 'hidden',
     transition: 'all 0.25s cubic-bezier(0.175,0.885,0.32,1.275)',
@@ -154,17 +154,24 @@ export default function ShiftSidebar({
     e.preventDefault();
     try {
       const jsonStr = e.dataTransfer.getData('application/json');
-      const textId = e.dataTransfer.getData('shiftId');
+      const textId = e.dataTransfer.getData('shiftId') || e.dataTransfer.getData('shiftid') || e.dataTransfer.getData('text/plain');
       
-      let data = {};
-      if (jsonStr) {
-        data = JSON.parse(jsonStr);
-      } else if (textId) {
-        data = { id: textId, type: 'shift' };
-      }
+      console.log('[ShiftSidebar] Drop data received:', { hasJson: !!jsonStr, textId });
 
-      if ((data.type === 'shift' || textId) && onReturnShift) {
-        onReturnShift(data);
+      let data = null;
+      if (jsonStr) {
+        try {
+          data = JSON.parse(jsonStr);
+        } catch (e) {
+          console.warn('[ShiftSidebar] JSON parse failed, falling back to textId');
+        }
+      }
+      
+      // Se não temos objeto completo mas temos ID, tentamos reconstruir ou passar o ID
+      const finalPayload = data?.id ? data : (textId ? textId : null);
+
+      if (finalPayload && onReturnShift) {
+        onReturnShift(finalPayload);
       }
     } catch (err) {
       console.error('Error handling drop in sidebar:', err);
@@ -300,7 +307,7 @@ export default function ShiftSidebar({
                 style={{
                   background: colColors[col] || 'rgba(255,255,255,0.03)',
                   border: `1px solid ${colBorders[col] || 'rgba(255,255,255,0.08)'}`,
-                  borderRadius: '16px', padding: '1.125rem', position: 'relative',
+                  borderRadius: '14px', padding: '0.875rem', position: 'relative',
                   overflow: 'hidden', cursor: 'grab',
                   opacity: draggingId === act.id ? 0.5 : 1,
                   transition: 'all 0.25s',
@@ -314,7 +321,7 @@ export default function ShiftSidebar({
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: colTextColors[col] || '#94a3b8', borderRadius: '16px 0 0 16px' }} />
 
                 {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <span style={{ 
                     fontSize: '10px', 
                     fontWeight: 900, 
@@ -337,13 +344,13 @@ export default function ShiftSidebar({
                 </div>
 
                 {/* Title - Clean up redundant prefixes if they exist */}
-                <div style={{ fontSize: '14px', fontWeight: 800, marginBottom: '6px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-main, #fff)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, marginBottom: '4px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-main, #fff)' }}>
                   {act.title.replace(/^(TITULO|TITLE):\s*/i, '')}
                 </div>
 
                 {/* Description */}
                 {act.desc && (
-                  <p style={{ fontSize: '11px', opacity: 0.7, marginBottom: '12px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  <p style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {act.desc.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')}
                   </p>
                 )}
@@ -382,9 +389,9 @@ export default function ShiftSidebar({
                   <button 
                     style={{
                       ...scheduleBtn(false),
-                      padding: '8px 16px',
-                      borderRadius: '10px',
-                      fontSize: '11px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      fontSize: '10px',
                     }} 
                     onClick={() => onQuickSchedule(act)}
                   >
@@ -417,25 +424,49 @@ export default function ShiftSidebar({
               {/* Urgent line */}
               {isUrgent && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#ef4444', borderRadius: '16px 0 0 16px' }} />}
 
-              {/* Top row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <span style={badgeStyle('cyan')}>{act.id ? truncateUUID(act.id) : '#SR-NEW'}</span>
                 <span style={{ fontSize: '10px', opacity: 0.5, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Clock size={10} /> {getTimeAgo(act.created_at || act.created)}
                 </span>
               </div>
 
-              {/* Location */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, marginBottom: '4px', letterSpacing: '-0.01em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, marginBottom: '2px', letterSpacing: '-0.01em' }}>
                 <MapPin size={12} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                {act.location || 'Local não definido'}
+                {(act.location || 'Local não definido').replace(/^(TITULO|TITLE):\s*/i, '')}
               </div>
 
-              {/* Description */}
-              <p style={{ fontSize: '11px', opacity: 0.6, lineHeight: 1.5, margin: '0 0 10px', minHeight: '1.2rem' }}>
-                <span style={{ fontWeight: 600 }}>{act.type || act.service_type || 'Serviço'}</span>
-                {act.description && ` — ${act.description}`}
+              <p style={{ 
+                fontSize: '10px', 
+                opacity: 0.6, 
+                lineHeight: 1.4, 
+                margin: '0 0 8px', 
+                minHeight: 'auto',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
+                <span style={{ fontWeight: 600 }}>{(act.type || act.service_type || 'Serviço').replace(/^(TITULO|TITLE):\s*/i, '')}</span>
+                {act.description && ` — ${act.description.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')}`}
               </p>
+
+              {/* ✨ Optimistic Sync Indicator */}
+              {act.isOptimistic && (
+                <div style={{ 
+                  fontSize: '9px', 
+                  color: 'var(--accent-cyan)', 
+                  fontWeight: 800, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  marginBottom: '8px',
+                  opacity: 0.8,
+                  animation: 'pulse 1.5s infinite'
+                }}>
+                  <Timer size={10} className="animate-spin" style={{ animationDuration: '3s' }} /> RESTAURANDO DO BANCO...
+                </div>
+              )}
 
               {/* Footer */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
