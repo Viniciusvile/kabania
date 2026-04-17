@@ -2018,7 +2018,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .kabania-v2-gradient-btn {
-  background: linear-gradient(135deg, #00cfff 0%, #1d4fe8 100%);
+  background: var(--accent-gradient);
   border: none;
   border-radius: 14px;
   display: flex;
@@ -2031,7 +2031,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   font-weight: 900;
   cursor: pointer;
   height: 50px;
-  box-shadow: 0 6px 22px rgba(0, 180, 255, 0.3);
+  box-shadow: 0 6px 22px var(--accent-cyan-dim);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

@@ -308,7 +308,11 @@ function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme(prev => {
+      if (prev === 'dark') return 'light';
+      if (prev === 'light') return 'green';
+      return 'dark';
+    });
   };
 
   const handleLogin = async (email) => {
@@ -720,7 +724,7 @@ function App() {
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} onProfileUpdate={handleProfileUpdate} />
               ) : currentView === 'settings' ? (
-                <UserSettings theme={theme} onToggleTheme={toggleTheme} />
+                <UserSettings theme={theme} onSetTheme={setTheme} />
               ) : currentView === 'billing' ? (
                 <BillingView currentCompany={currentCompany} />
                 ) : currentView === 'calendar_settings' ? (

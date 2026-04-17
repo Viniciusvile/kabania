@@ -137,8 +137,8 @@
 
 /* AI Triage Box */
 .service-ai-triage-box {
-    background: rgba(0, 229, 255, 0.03);
-    border: 1px solid rgba(0, 229, 255, 0.1);
+    background: var(--accent-cyan-dim);
+    border: 1px solid var(--border-light);
     border-radius: 16px;
     padding: 1.25rem;
     display: flex;
@@ -218,15 +218,40 @@
 }
 
 .btn-service-accept {
-    background: var(--accent-cyan);
-    color: #000;
+    background: var(--accent-gradient);
+    color: #fff;
+    box-shadow: 0 4px 15px var(--accent-cyan-dim);
 }
 
 .btn-service-accept:hover {
-    background: #00e5ff;
+    filter: brightness(1.1);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 229, 255, 0.3);
+    box-shadow: 0 8px 25px var(--accent-cyan-dim);
 }
+
+/* Share Button refactored from inline to CSS */
+.btn-service-share {
+    background: var(--accent-cyan-dim);
+    color: var(--accent-cyan);
+    border: 1px solid var(--border-light);
+}
+
+.btn-service-share:hover {
+    background: rgba(4, 217, 79, 0.2);
+    border-color: var(--accent-cyan);
+    transform: translateY(-2px);
+}
+
+[data-theme='light'] .btn-service-share {
+    background: rgba(0, 82, 204, 0.1);
+}
+[data-theme='dark'] .btn-service-share {
+    background: rgba(0, 229, 255, 0.1);
+}
+[data-theme='green'] .btn-service-share {
+    background: rgba(4, 217, 79, 0.1);
+}
+
 
 .btn-service-reject {
     background: rgba(255, 255, 255, 0.05);

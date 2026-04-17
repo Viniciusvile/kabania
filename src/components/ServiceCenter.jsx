@@ -290,8 +290,7 @@ export default function ServiceCenter({ currentCompany, currentUser }) {
 
                 <div className="service-actions">
                   <button 
-                    className="btn-service flex-1"
-                    style={{ background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.2)' }}
+                    className="btn-service btn-service-share flex-1"
                     onClick={() => handleGenerateMagicLink(request)}
                   >
                     <Share2 size={16} /> Compartilhar Link

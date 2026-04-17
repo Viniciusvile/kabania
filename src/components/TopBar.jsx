@@ -3,7 +3,7 @@ import {
   Menu, Search, Bell, ChevronDown, Check, User, Settings,
   LogOut, FileText, Crown, Shield, BellRing, CheckCheck,
   AlertTriangle, ArrowRight, MessageSquare, Calendar, Sun, Moon, Plus, Trash2, X,
-  LayoutGrid, GraduationCap, BellOff
+  LayoutGrid, GraduationCap, BellOff, Sparkles
 } from 'lucide-react';
 import './WorkspaceHub/WorkspaceHub.css';
 import {
@@ -265,8 +265,18 @@ export default function TopBar({
           </div>
           
           {/* Theme Toggle */}
-          <div className="topbar-icon theme-toggle" onClick={onToggleTheme} title={theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}>
-            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          <div 
+            className="topbar-icon theme-toggle" 
+            onClick={onToggleTheme} 
+            title={
+              theme === 'dark' ? 'Mudar para Tema Claro' : 
+              theme === 'light' ? 'Mudar para Emerald Green' : 
+              'Mudar para Tema Escuro'
+            }
+          >
+            {theme === 'dark' && <Moon size={20} />}
+            {theme === 'light' && <Sun size={20} />}
+            {theme === 'green' && <Sparkles size={20} style={{ color: '#04D94F' }} />}
           </div>
 
         {/* Notifications Bell */}

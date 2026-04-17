@@ -26,7 +26,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
   </button>
 );
 
-export default function UserSettings({ theme, onToggleTheme }) {
+export default function UserSettings({ theme, onSetTheme }) {
   const [notifications, setNotifications] = useState({
     projects: true,
     activities: true,
@@ -39,6 +39,12 @@ export default function UserSettings({ theme, onToggleTheme }) {
     { key: 'projects', label: 'Alertas de Projetos', desc: 'Notificar quando uma tarefa for movida ou atribuída.' },
     { key: 'activities', label: 'Lembretes de Atividades', desc: 'Alertas sobre solicitações de serviço pendentes.' },
     { key: 'ai', label: 'Atualizações da IA', desc: 'Resumos semanais e insights de produtividade.' },
+  ];
+
+  const themes = [
+    { id: 'light', label: 'Light', icon: <Sun size={20} />, activeColor: '#f59e0b', desc: 'Visual claro e limpo' },
+    { id: 'dark', label: 'Dark', icon: <Moon size={20} />, activeColor: 'var(--accent-cyan)', desc: 'Foco e conforto visual' },
+    { id: 'green', label: 'Emerald', icon: <Sparkles size={20} />, activeColor: '#04D94F', desc: 'Estética High-Tech Verde' },
   ];
 
   return (
@@ -77,11 +83,11 @@ export default function UserSettings({ theme, onToggleTheme }) {
               Sistema
             </h4>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              {theme === 'dark'
-                ? <Moon size={14} style={{ color: 'var(--accent-cyan)' }} />
-                : <Sun size={14} style={{ color: '#f59e0b' }} />}
+              {theme === 'dark' ? <Moon size={14} style={{ color: 'var(--accent-cyan)' }} /> : 
+               theme === 'light' ? <Sun size={14} style={{ color: '#f59e0b' }} /> :
+               <Sparkles size={14} style={{ color: '#04D94F' }} />}
               <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-                {theme === 'dark' ? 'Modo Escuro' : 'Modo Claro'}
+                Modo {theme === 'dark' ? 'Escuro' : theme === 'light' ? 'Claro' : 'Emerald'}
               </span>
             </div>
             <div style={{ fontSize: '0.6rem', opacity: 0.45, marginTop: '0.25rem' }}>v2.4.1 — build estável</div>
@@ -95,7 +101,7 @@ export default function UserSettings({ theme, onToggleTheme }) {
 
               {/* ── Aparência ────────────────────────── */}
               <div style={{ padding: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
                   <div style={{ padding: '0.625rem', background: 'rgba(0,229,255,0.05)', borderRadius: '12px', border: '1px solid rgba(0,229,255,0.1)', display: 'flex' }}>
                     <Monitor size={20} style={{ color: 'var(--accent-cyan)' }} />
                   </div>
@@ -105,25 +111,52 @@ export default function UserSettings({ theme, onToggleTheme }) {
                   </div>
                 </div>
 
-                {/* Theme Toggle Row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: theme === 'dark' ? 'rgba(0,229,255,0.08)' : 'rgba(245,158,11,0.08)', border: `1px solid ${theme === 'dark' ? 'rgba(0,229,255,0.15)' : 'rgba(245,158,11,0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {theme === 'dark' ? <Moon size={18} style={{ color: 'var(--accent-cyan)' }} /> : <Sun size={18} style={{ color: '#f59e0b' }} />}
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 700, fontSize: '0.875rem' }}>Tema do Sistema</p>
-                      <p style={{ fontSize: '0.65rem', opacity: 0.5, marginTop: '0.125rem' }}>Atualmente em <strong>{theme === 'dark' ? 'modo escuro' : 'modo claro'}</strong></p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={onToggleTheme}
-                    className="btn-save-premium"
-                    style={{ padding: '0.6rem 1.25rem', fontSize: '0.7rem' }}
-                  >
-                    {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-                    {theme === 'dark' ? 'Modo Claro' : 'Modo Escuro'}
-                  </button>
+                {/* Theme Selection Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                  {themes.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => onSetTheme(t.id)}
+                      style={{
+                        padding: '1.25rem',
+                        borderRadius: '16px',
+                        background: theme === t.id ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.02)',
+                        border: `1px solid ${theme === t.id ? t.activeColor : 'rgba(255,255,255,0.06)'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: theme === t.id ? `0 8px 24px -8px ${t.activeColor}` : 'none',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {theme === t.id && (
+                        <div style={{ 
+                          position: 'absolute', 
+                          top: '10px', 
+                          right: '10px', 
+                          width: '8px', 
+                          height: '8px', 
+                          borderRadius: '50%', 
+                          background: t.activeColor,
+                          boxShadow: `0 0 8px ${t.activeColor}`
+                        }} />
+                      )}
+                      <div style={{ 
+                        color: theme === t.id ? t.activeColor : 'rgba(255,255,255,0.4)',
+                        transition: 'color 0.2s ease'
+                      }}>
+                        {t.icon}
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ fontWeight: 800, fontSize: '0.8rem', color: theme === t.id ? '#fff' : 'rgba(255,255,255,0.6)' }}>{t.label}</p>
+                        <p style={{ fontSize: '0.6rem', opacity: 0.4, marginTop: '2px' }}>{t.desc}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 

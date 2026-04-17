@@ -353,58 +353,61 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
 
   return (
     <div className="knowledge-base-container animate-fade-in">
-      <header className="kb-header">
-        <h1 className="kb-title">
-          <BookOpen color="var(--accent-cyan)" /> Base de Autorizações (TAGS) da IA
-        </h1>
-        <p className="kb-subtitle">
-          {currentCompany
-            ? `Base de conhecimento compartilhada da empresa "${currentCompany.name}". `
-            : ''}
-          Ative ou desative os temas autorizados. A IA só responderá se o tema possuir uma TAG ativa aqui.
-          {!isAdmin && <span className="kb-readonly-notice"> <Lock size={13} /> Somente administradores podem editar.</span>}
-        </p>
-      </header>
+      <div className="kb-sidebar-side">
+        <header className="kb-header">
+          <h1 className="kb-title">
+            <BookOpen color="var(--accent-cyan)" /> Base de Autorizações (TAGS) da IA
+          </h1>
+          <p className="kb-subtitle">
+            {currentCompany
+              ? `Base de conhecimento compartilhada da empresa "${currentCompany.name}". `
+              : ''}
+            Ative ou desative os temas autorizados. A IA só responderá se o tema possuir uma TAG ativa aqui.
+            {!isAdmin && <span className="kb-readonly-notice"> <Lock size={13} /> Somente administradores podem editar.</span>}
+          </p>
+        </header>
 
-      <div className="kb-actions-bar">
-        <div className="kb-search">
-          <Search size={18} color="var(--text-muted)" />
-          <input
-            type="text"
-            placeholder="Buscar temas / tags de liberação..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="kb-actions-btns">
-          {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector] && (
-            <button className="kb-btn-template" onClick={handleLoadTemplates} title="Recarregar temas padrão do setor">
-              <Sparkles size={18} /> Restaurar Preset
-            </button>
-          )}
-          {isAdmin && (
-            <div className="kb-upload-wrapper">
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".pdf,.docx,.txt,.csv"
-                onChange={handleFileUpload}
-              />
-              <button 
-                className="kb-btn-add" 
-                onClick={() => setIsUploadGuideOpen(true)}
-                disabled={isUploading}
-              >
-                {isUploading ? <RotateCcw className="animate-spin" size={18} /> : <Plus size={18} />}
-                {isUploading ? 'Lendo Arquivo...' : 'Conectar Nova Fonte'}
+        <div className="kb-actions-bar">
+          <div className="kb-search">
+            <Search size={18} color="var(--text-muted)" />
+            <input
+              type="text"
+              placeholder="Buscar temas / tags de liberação..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="kb-actions-btns">
+            {isAdmin && currentCompany?.sector && SECTOR_TEMPLATES[currentCompany.sector] && (
+              <button className="kb-btn-template" onClick={handleLoadTemplates} title="Recarregar temas padrão do setor">
+                <Sparkles size={18} /> Restaurar Preset
               </button>
-            </div>
-          )}
+            )}
+            {isAdmin && (
+              <div className="kb-upload-wrapper">
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept=".pdf,.docx,.txt,.csv"
+                  onChange={handleFileUpload}
+                />
+                <button 
+                  className="kb-btn-add" 
+                  onClick={() => setIsUploadGuideOpen(true)}
+                  disabled={isUploading}
+                >
+                  {isUploading ? <RotateCcw className="animate-spin" size={18} /> : <Plus size={18} />}
+                  {isUploading ? 'Lendo Arquivo...' : 'Conectar Nova Fonte'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="kb-sections-container">
+      <div className="kb-main-content">
+        <div className="kb-sections-container">
         {KB_SECTIONS.map(section => {
           const sectionItems = filteredItems.filter(item => (item.section || 'general') === section.id);
           if (sectionItems.length === 0 && searchTerm) return null; // Hide empty sections when searching
@@ -495,8 +498,9 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
           </div>
         )}
       </div>
+    </div>
 
-      {isModalOpen && isAdmin && (
+    {isModalOpen && isAdmin && (
         <div className="kb-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div className="kb-modal" onClick={e => e.stopPropagation()}>
             <div className="kb-modal-header">

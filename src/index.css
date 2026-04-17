@@ -15,15 +15,16 @@
   --accent-cyan-dim: rgba(0, 229, 255, 0.15);
   
   --text-main: #FFFFFF;
-  --text-muted: #8F95B2;
-  --text-dark: #646A85;
+  --text-muted: #94A3B8;
+  --text-dark: #64748B;
+  
+  --accent-gradient: linear-gradient(135deg, #00E5FF 0%, #7C3AED 100%);
   
   --color-green: #22C55E;
   --color-purple: #A855F7;
   --color-orange: #F97316;
   --color-red: #EF4444;
 
-  --accent-gradient: linear-gradient(135deg, var(--accent-cyan) 0%, var(--color-purple) 100%);
 
   --font-sans: 'Inter', sans-serif;
   --transition-theme: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
@@ -48,6 +49,31 @@
 
   /* Colors remain similar but can be adjusted if needed */
   --accent-gradient: linear-gradient(135deg, #0088ff 0%, #0052cc 100%);
+}
+
+[data-theme='green'] {
+  --bg-app: #0D0D0D;      /* Black Wash */
+  --bg-sidebar: #080808;
+  --bg-panel: #121212;
+  --bg-card: #1A1A1A;
+  --bg-card-hover: #222222;
+  
+  --border-color: #262626;
+  --border-light: rgba(255, 255, 255, 0.05);
+  
+  --accent-cyan: #04D94F;    /* Malachite - Vibrant Green */
+  --accent-cyan-dim: rgba(4, 217, 79, 0.15);
+  
+  --text-main: #F2F2F2;      /* Bleached Silk */
+  --text-muted: #888888;
+  --text-dark: #444444;
+
+  --accent-gradient: linear-gradient(135deg, #04D94F 0%, #078C36 100%);
+  
+  --color-green: #04D94F;
+  --color-purple: #8B5CF6;
+  --color-orange: #F59E0B;
+  --color-red: #EF4444;
 }
 
 * {

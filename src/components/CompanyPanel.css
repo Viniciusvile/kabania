@@ -39,7 +39,7 @@
 
 .cp-sector-tag {
   font-size: 0.8rem;
-  color: #22d3ee;
+  color: var(--accent-cyan);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -155,8 +155,8 @@
 }
 
 .cp-tab.active {
-  background: rgba(0, 229, 255, 0.12);
-  color: #00e5ff;
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -193,8 +193,8 @@
 }
 
 .cp-btn-new-customer {
-  background: #00e5ff;
-  color: #001820;
+  background: var(--accent-gradient);
+  color: #fff;
   border: none;
   padding: 0.6rem 1.2rem;
   border-radius: 8px;
@@ -208,9 +208,9 @@
 }
 
 .cp-btn-new-customer:hover {
-  background: #00f2ff;
+  filter: brightness(1.1);
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 4px 15px var(--accent-cyan-dim);
 }
 
 .cp-customers-grid {
@@ -275,8 +275,8 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: rgba(0, 229, 255, 0.04);
-  border: 1px solid rgba(0, 229, 255, 0.18);
+  background: var(--accent-cyan-dim);
+  border: 1px solid var(--accent-cyan-dim);
   border-radius: 10px;
   padding: 0.8rem 1rem;
 }
@@ -285,15 +285,15 @@
   font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: 0.3rem;
-  color: #00e5ff;
+  color: var(--accent-cyan);
   flex: 1;
   font-family: 'Courier New', monospace;
 }
 
 .cp-copy-btn {
-  background: rgba(0, 229, 255, 0.12);
-  color: #00e5ff;
-  border: 1px solid rgba(0, 229, 255, 0.25);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan-dim);
   border-radius: 8px;
   padding: 0.45rem 0.85rem;
   font-size: 0.75rem;
@@ -308,9 +308,9 @@
 }
 
 .cp-copy-btn:hover, .cp-copy-btn.copied {
-  background: #00e5ff;
-  color: #001820;
-  border-color: #00e5ff;
+  background: var(--accent-cyan);
+  color: #000;
+  border-color: var(--accent-cyan);
 }
 
 .cp-invite-hint {
