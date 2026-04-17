@@ -26,6 +26,8 @@ export default function ShiftGrid({
     time: '08:00' 
   });
 
+  const [inspectedShift, setInspectedShift] = useState(null);
+
   // 🖱️ Horizontal Drag Logic (Native Scroll)
   const scrollRef = React.useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -186,6 +188,7 @@ export default function ShiftGrid({
                           onCheckin={() => onCheckin(shift)}
                           onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
                           onEdit={onEditShift}
+                          onInspect={() => setInspectedShift(shift)}
                         />
                       ))
                     )}
@@ -354,6 +357,135 @@ export default function ShiftGrid({
           </div>
         </div>
       )}
+
+      {/* 🔍 DETALHES DA ESCALA (DOUBLE CLICK) */}
+      {inspectedShift && (
+        <div
+          className="modal-overlay-pixel"
+          style={{
+            zIndex: 10000,
+            background: 'transparent',
+            // blur removido a pedido do usuario
+          }}
+          onClick={() => setInspectedShift(null)}
+        >
+          <div 
+            className="premium-modal-pixel animate-slide-up" 
+            style={{ width: '100%', maxWidth: '440px', padding: '0', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with visual priority */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.05), rgba(168, 85, 247, 0.05))',
+              borderBottom: '1px solid var(--border-light)',
+              padding: '2rem 1.5rem 1.5rem',
+              position: 'relative',
+              textAlign: 'center'
+            }}>
+              <div style={{
+                position: 'absolute', top: '20px', right: '20px', cursor: 'pointer',
+                opacity: 0.6, transition: 'opacity 0.2s', padding: '4px'
+              }} onClick={() => setInspectedShift(null)}>
+                <span style={{ fontSize: '24px', fontWeight: 'bold', lineHeight: '10px' }}>×</span> 
+              </div>
+
+              <div style={{ 
+                margin: '0 auto 12px',
+                width: '48px', height: '48px', borderRadius: '12px',
+                background: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--accent-cyan)'
+              }}>
+                <Briefcase size={24} />
+              </div>
+
+              <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.6, marginBottom: '6px' }}>
+                 Escala #{inspectedShift.id?.substring(0, 8)}
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-main)', lineHeight: 1.3 }}>
+                {inspectedShift.work_activities?.name?.replace(/^(DESCRICAO|DESCRIPTION|TITULO|TITLE):\s*/i, '') || 'Nenhuma Atividade Associada'}
+              </h3>
+            </div>
+
+            {/* Content Body */}
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              
+              {/* Data e Hora */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-app)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <Clock size={18} style={{ color: 'var(--accent-purple, #a855f7)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                   <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Horário</span>
+                   <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
+                     {new Date(inspectedShift.start_time).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()} • {' '}
+                     {new Date(inspectedShift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(inspectedShift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                   </span>
+                </div>
+              </div>
+
+              {/* Local */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-app)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <MapPin size={18} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                   <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Local do Serviço</span>
+                   <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
+                     {inspectedShift.work_environments?.name?.replace(/^(TITULO|TITLE):\s*/i, '') || 'Local Não Definido'}
+                   </span>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 0' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Status da Escala</span>
+                <span className={`kabania-v2-status-badge status-${inspectedShift.status || 'draft'}`}>
+                   {inspectedShift.status?.toUpperCase() || 'AGENDADO'}
+                </span>
+              </div>
+
+              {/* Equipe */}
+              {inspectedShift.assigned_employees && inspectedShift.assigned_employees.length > 0 && (
+                <div style={{ marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px dashed var(--border-light)' }}>
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '12px', paddingLeft: '4px' }}>Membros da Equipe ({inspectedShift.assigned_employees.length})</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-app)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                    {inspectedShift.assigned_employees.map(emp => (
+                      <div key={emp.employee_id || emp.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-panel)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'bold',fontSize:'12px',color:'var(--text-main)'}}>{emp.name?.[0]}</div>}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>{emp.name}</span>
+                           {emp.role && <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{emp.role}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer with actions */}
+            <div style={{ padding: '1.25rem 1.5rem', background: 'var(--bg-app)', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '12px' }}>
+              <button 
+                className="glow-btn-ghost" 
+                style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 700 }}
+                onClick={() => setInspectedShift(null)}
+              >
+                Fechar
+              </button>
+              <button 
+                className="glow-btn-primary" 
+                style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
+                onClick={() => {
+                  const shiftToEdit = inspectedShift;
+                  setInspectedShift(null);
+                  if (onEditShift) onEditShift(shiftToEdit);
+                }}
+              >
+                <Edit2 size={14} /> Editar Escala
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -373,7 +505,7 @@ function GripIcon() {
 }
 
 // ── EscalaCard ────────────────────────────────────────────────────────────
-function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit }) {
+function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit, onInspect }) {
   const isDraft = shift.status === 'draft';
   const isPublished = shift.status === 'published';
   const isConfirmed = shift.status === 'confirmed';
@@ -439,6 +571,7 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
       className={`kabania-v2-card status-${shift.status || 'draft'}`}
       draggable
       onDragStart={handleDragStart}
+      onDoubleClick={(e) => { e.stopPropagation(); if (onInspect) onInspect(); }}
     >
       {/* ⏰ HEADER - KABANIA V2 */}
       <div className="kabania-v2-header">
