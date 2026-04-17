@@ -23,6 +23,7 @@ import UserSettings from './components/UserSettings';
 import BillingView from './components/BillingView';
 import ClientPortal from './components/Portal/ClientPortal';
 import DigitalTwinModule from './components/DigitalTwin/DigitalTwinModule';
+import ProjectsModule from './components/Projects/ProjectsModule';
 import CalendarIntegrationSettings from './components/CalendarIntegrationSettings';
 import AuthCallbackHandler from './components/AuthCallbackHandler';
 import { logEvent } from './services/historyService';
@@ -721,6 +722,12 @@ function App() {
                 <InventoryModule companyId={currentCompany?.id} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'digital_twin' ? (
                 <DigitalTwinModule currentCompany={currentCompany} currentUser={currentUser} />
+              ) : currentView === 'projects' ? (
+                <ProjectsModule
+                  companyId={currentCompany?.id}
+                  currentUser={currentUser}
+                  userRole={userRole}
+                />
               ) : currentView === 'profile' ? (
                 <UserProfile currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} onProfileUpdate={handleProfileUpdate} />
               ) : currentView === 'settings' ? (

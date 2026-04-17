@@ -10,6 +10,7 @@ import ShiftGrid from './ShiftGrid';
 import IntelligencePanel from './IntelligencePanel';
 import ShiftCheckinModal from './ShiftCheckinModal';
 import AutoPilotReview from './AutoPilotReview';
+import HoursReport from './HoursReport';
 import { generateAutoPilotSchedule } from '../../services/aiSchedulingService';
 import './ShiftsRedesign.css';
 import './ShiftsPremium.css';
@@ -53,6 +54,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, shiftId: null });
+  const [showHoursReport, setShowHoursReport] = useState(false);
 
   // ── Helper: Extrai ID do Kanban das notas ────────────────────────────
   const getKanbanId = (notes) => {
@@ -537,6 +539,21 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     }
   };
 
+  const handleTimeEdit = (shiftId, newStartISO, newEndISO, environmentId) => {
+    const shift = shifts.find(s => s.id === shiftId);
+    if (!shift) return;
+
+    const original = { start_time: shift.start_time, end_time: shift.end_time };
+    updateShiftLocally(shiftId, { start_time: newStartISO, end_time: newEndISO });
+
+    moveShift(shiftId, newStartISO, newEndISO, environmentId || shift.environment_id, companyId)
+      .catch(err => {
+        console.error('[handleTimeEdit] Erro:', err);
+        updateShiftLocally(shiftId, original);
+        alert('Erro ao salvar horário: ' + err.message);
+      });
+  };
+
   const handleMoveShift = (shiftId, newDate, newTime) => {
     console.log("[MoveShift] Iniciando mudança:", { shiftId, newDate, newTime });
     const shift = shifts.find(s => s.id === shiftId);
@@ -631,29 +648,30 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         <div className="shifts-grid-area">
           <div className="shifts-header-row-premium">
             <h2 className="shifts-title-premium">Gerenciar Escalas</h2>
-            {/* Indicador Minimalista de Sincronia */}
             <div className={`sync-status-minimal ${isSyncing ? 'visible' : ''}`}>
               <div className="sync-pulse-dot" />
               <span>Sincronizando...</span>
             </div>
           </div>
 
-          <ShiftControls 
+          <ShiftControls
             filterStatus={filterStatus}
             setFilterStatus={setFilterStatus}
             weekStart={weekStart}
             setWeekStart={setWeekStart}
             weekDays={weekDays}
             setIsModalOpen={setIsModalOpen}
+            onHoursReport={() => setShowHoursReport(true)}
             stats={stats}
           />
 
-          <ShiftGrid 
-            shifts={filteredShifts} 
-            weekDays={weekDays} 
-            onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })} 
+          <ShiftGrid
+            shifts={filteredShifts}
+            weekDays={weekDays}
+            onAddEmployee={(id) => setAssignmentModal({ isOpen: true, shiftId: id })}
             onDropActivity={handleDropActivity}
             onMoveShift={handleMoveShift}
+            onTimeEdit={handleTimeEdit}
             onRefresh={refresh}
             updateShiftLocally={updateShiftLocally}
             isSyncing={isSyncing}
@@ -676,8 +694,16 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         />
       </div>
 
+      {showHoursReport && (
+        <HoursReport
+          companyId={companyId}
+          employees={employees}
+          onClose={() => setShowHoursReport(false)}
+        />
+      )}
+
       {autoPilotResult && (
-        <AutoPilotReview 
+        <AutoPilotReview
            result={autoPilotResult}
            onConfirm={handleConfirmAutoPilot}
            onCancel={() => setAutoPilotResult(null)}

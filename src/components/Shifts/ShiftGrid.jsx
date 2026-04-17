@@ -3,14 +3,15 @@ import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, Chevr
 import { updateShiftStatus } from '../../services/shiftService';
 import './ShiftsPremium.css';
 
-export default function ShiftGrid({ 
-  shifts, 
-  weekDays, 
-  onAddEmployee, 
-  onDropActivity, 
-  onMoveShift, 
-  onRefresh, 
-  updateShiftLocally, 
+export default function ShiftGrid({
+  shifts,
+  weekDays,
+  onAddEmployee,
+  onDropActivity,
+  onMoveShift,
+  onTimeEdit,
+  onRefresh,
+  updateShiftLocally,
   setIsSyncing,
   onCheckin,
   onDeleteShift,
@@ -180,15 +181,16 @@ export default function ShiftGrid({
                       </div>
                     ) : (
                       dayShifts.map(shift => (
-                        <EscalaCard 
-                          key={shift.id} 
-                          shift={shift} 
-                          onAddEmployee={() => onAddEmployee(shift.id)} 
+                        <EscalaCard
+                          key={shift.id}
+                          shift={shift}
+                          onAddEmployee={() => onAddEmployee(shift.id)}
                           onUpdateStatus={(status) => handleUpdateStatus(shift.id, status)}
                           onCheckin={() => onCheckin(shift)}
                           onDelete={() => onDeleteShift && onDeleteShift(shift.id)}
                           onEdit={onEditShift}
                           onInspect={() => setInspectedShift(shift)}
+                          onTimeEdit={onTimeEdit}
                         />
                       ))
                     )}
@@ -229,6 +231,76 @@ export default function ShiftGrid({
         .premium-shift-card:active {
           cursor: grabbing !important;
         }
+
+        /* ── Inline time editing ── */
+        .kabania-v2-time-pill--clickable {
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+        }
+        .kabania-v2-time-pill--clickable:hover {
+          background: rgba(0,229,255,0.15);
+          color: var(--accent-cyan, #00e5ff);
+        }
+        .kabania-v2-time-pill--clickable:hover svg {
+          opacity: 1 !important;
+        }
+
+        .kabania-v2-time-edit {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          background: rgba(0,229,255,0.07);
+          border: 1px solid rgba(0,229,255,0.3);
+          border-radius: 100px;
+          padding: 3px 8px;
+          user-select: none;
+        }
+
+        .kabania-v2-time-input {
+          background: transparent;
+          border: none;
+          outline: none;
+          color: var(--accent-cyan, #00e5ff);
+          font-size: 12px;
+          font-weight: 800;
+          font-family: inherit;
+          width: 60px;
+          text-align: center;
+          cursor: text;
+        }
+        .kabania-v2-time-input::-webkit-calendar-picker-indicator {
+          display: none;
+        }
+
+        .kabania-v2-time-sep {
+          color: var(--text-muted);
+          font-size: 11px;
+          font-weight: 700;
+        }
+
+        .kabania-v2-time-confirm,
+        .kabania-v2-time-cancel {
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2px;
+          border-radius: 4px;
+          line-height: 1;
+          transition: color 0.15s;
+        }
+        .kabania-v2-time-confirm { color: #10b981; }
+        .kabania-v2-time-confirm:hover { color: #34d399; }
+        .kabania-v2-time-cancel  { color: var(--text-muted); font-size: 16px; }
+        .kabania-v2-time-cancel:hover  { color: #ef4444; }
+
+        [data-theme='light'] .kabania-v2-time-edit {
+          background: rgba(6,182,212,0.07);
+          border-color: rgba(6,182,212,0.3);
+        }
+        [data-theme='light'] .kabania-v2-time-input { color: #0891b2; }
       `}</style>
     </div>
 
@@ -504,16 +576,57 @@ function GripIcon() {
   );
 }
 
+// ── Helpers de horário ────────────────────────────────────────────────────
+function toTimeStr(isoDate) {
+  const d = new Date(isoDate);
+  return d.toTimeString().slice(0, 5); // "HH:MM"
+}
+function buildISO(originalISO, newTime) {
+  const d = new Date(originalISO);
+  const [h, m] = newTime.split(':').map(Number);
+  d.setHours(h, m, 0, 0);
+  return d.toISOString();
+}
+
 // ── EscalaCard ────────────────────────────────────────────────────────────
-function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit, onInspect }) {
+function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete, onEdit, onInspect, onTimeEdit }) {
   const isDraft = shift.status === 'draft';
   const isPublished = shift.status === 'published';
   const isConfirmed = shift.status === 'confirmed';
   const inProgress = shift.status === 'in_progress' || shift.status === 'active';
   const isConcluded = shift.status === 'completed' || shift.status === 'concluded' || shift.status === 'closed';
-  
+
   const startTime = new Date(shift.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const endTime = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endTime   = new Date(shift.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const [editingTime, setEditingTime] = useState(false);
+  const [draft, setDraft] = useState({ start: '', end: '' });
+
+  const openTimeEdit = (e) => {
+    e.stopPropagation();
+    setDraft({ start: toTimeStr(shift.start_time), end: toTimeStr(shift.end_time) });
+    setEditingTime(true);
+  };
+
+  const cancelTimeEdit = (e) => {
+    e?.stopPropagation();
+    setEditingTime(false);
+  };
+
+  const saveTimeEdit = (e) => {
+    e?.stopPropagation();
+    if (!draft.start || !draft.end) return;
+    const newStart = buildISO(shift.start_time, draft.start);
+    const newEnd   = buildISO(shift.end_time,   draft.end);
+    if (newEnd <= newStart) return; // horário inválido
+    onTimeEdit && onTimeEdit(shift.id, newStart, newEnd, shift.environment_id);
+    setEditingTime(false);
+  };
+
+  const handleTimeKeyDown = (e) => {
+    if (e.key === 'Enter') saveTimeEdit(e);
+    if (e.key === 'Escape') cancelTimeEdit(e);
+  };
 
   const locationName = shift.work_environments?.name || 'Local Não Definido';
   const activityName = shift.work_activities?.name || 'Nenhuma Atividade Associada';
@@ -577,22 +690,54 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
       <div className="kabania-v2-header">
         <div className="kabania-v2-header-left">
           <GripVertical className="kabania-v2-grip" size={16} />
-          <div className="kabania-v2-time-pill">
-            <Clock size={12} className="opacity-50" />
-            <span>{startTime} - {endTime}</span>
-          </div>
+
+          {editingTime ? (
+            <div className="kabania-v2-time-edit" onClick={e => e.stopPropagation()}>
+              <input
+                type="time"
+                className="kabania-v2-time-input"
+                value={draft.start}
+                onChange={e => setDraft(d => ({ ...d, start: e.target.value }))}
+                onKeyDown={handleTimeKeyDown}
+                autoFocus
+              />
+              <span className="kabania-v2-time-sep">–</span>
+              <input
+                type="time"
+                className="kabania-v2-time-input"
+                value={draft.end}
+                onChange={e => setDraft(d => ({ ...d, end: e.target.value }))}
+                onKeyDown={handleTimeKeyDown}
+              />
+              <button className="kabania-v2-time-confirm" onClick={saveTimeEdit} title="Salvar">
+                <CheckCircle size={14} />
+              </button>
+              <button className="kabania-v2-time-cancel" onClick={cancelTimeEdit} title="Cancelar">
+                <span style={{ fontSize: 16, lineHeight: 1 }}>×</span>
+              </button>
+            </div>
+          ) : (
+            <div
+              className="kabania-v2-time-pill kabania-v2-time-pill--clickable"
+              onClick={openTimeEdit}
+              title="Clique para editar horário"
+            >
+              <Clock size={12} className="opacity-50" />
+              <span>{startTime} - {endTime}</span>
+            </div>
+          )}
         </div>
 
         <div className="kabania-v2-header-right">
-          <button 
-            className="kabania-v2-action-sq" 
-            title="Editar"
+          <button
+            className="kabania-v2-action-sq"
+            title="Editar escala completa"
             onClick={() => onEdit && onEdit(shift)}
           >
             <Edit2 size={14} />
           </button>
-          <button 
-            className="kabania-v2-action-sq" 
+          <button
+            className="kabania-v2-action-sq"
             title="Excluir"
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             onDragStart={stopChildDrag}
