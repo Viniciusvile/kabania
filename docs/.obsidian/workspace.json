@@ -11,13 +11,32 @@
             "id": "c924bc4bccaeea60",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Visualização em gráfico"
+              "type": "markdown",
+              "state": {
+                "file": "obsidian/03-Componentes/COMP - TopBar.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "COMP - TopBar"
+            }
+          },
+          {
+            "id": "c145d066e948b729",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "obsidian/01-Design-System/DS - Sistema de Temas (Dark e Light).md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "DS - Sistema de Temas (Dark e Light)"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -176,33 +195,34 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "c924bc4bccaeea60",
+  "active": "c145d066e948b729",
   "lastOpenFiles": [
-    "obsidian/01-Design-System/DS - Paleta de Cores.md",
-    "obsidian/04-Negocio/NEG - Portal Público do Cliente.md",
     "obsidian/03-Componentes/COMP - TopBar.md",
+    "obsidian/03-Componentes/COMP - Sidebar.md",
+    "obsidian/03-Componentes/COMP - Portal do Cliente.md",
+    "obsidian/03-Componentes/COMP - KanbanBoard.md",
+    "obsidian/02-Arquitetura/ARQ - Segurança e RLS Multi-Tenant.md",
+    "obsidian/02-Arquitetura/ARQ - Fluxo de Autenticação.md",
+    "obsidian/01-Design-System/DS - Tipografia e Espaçamento.md",
+    "obsidian/01-Design-System/DS - Paleta de Cores.md",
+    "obsidian/01-Design-System/Design System - Hub.md",
+    "obsidian/00-Hub/00 - Hub Principal do Sistema.md",
+    "obsidian/04-Negocio/NEG - Portal Público do Cliente.md",
     "obsidian/04-Negocio/NEG - Sistema de Auditoria.md",
     "obsidian/04-Negocio/NEG - Integrações com IA (Gemini).md",
     "obsidian/04-Negocio/NEG - Módulo de Inventário.md",
     "obsidian/04-Negocio/NEG - Módulo de Escalas (Shifts).md",
     "obsidian/04-Negocio/NEG - Módulo Kanban e Tarefas.md",
     "obsidian/04-Negocio/NEG - Hub de Negócio.md",
-    "obsidian/03-Componentes/COMP - Portal do Cliente.md",
     "obsidian/03-Componentes/COMP - CompanySetup.md",
     "obsidian/03-Componentes/COMP - Login.md",
     "obsidian/03-Componentes/COMP - ShiftsModule.md",
-    "obsidian/03-Componentes/COMP - KanbanBoard.md",
-    "obsidian/03-Componentes/COMP - Sidebar.md",
     "obsidian/03-Componentes/COMP - App.jsx.md",
     "obsidian/03-Componentes/COMP - Hub de Componentes.md",
     "obsidian/02-Arquitetura/ARQ - Camada de Serviços.md",
-    "obsidian/02-Arquitetura/ARQ - Segurança e RLS Multi-Tenant.md",
-    "obsidian/02-Arquitetura/ARQ - Fluxo de Autenticação.md",
     "obsidian/02-Arquitetura/ARQ - Banco de Dados e Schemas.md",
     "obsidian/02-Arquitetura/ARQ - Banco de Dados e Schemas.md.tmp.412.1776342311361",
     "NEG - Sistema de Auditoria.md",
-    "obsidian/01-Design-System/DS - Sistema de Temas (Dark e Light).md",
-    "obsidian/01-Design-System/Design System - Hub.md",
-    "obsidian/00-Hub/00 - Hub Principal do Sistema.md"
+    "obsidian/01-Design-System/DS - Sistema de Temas (Dark e Light).md"
   ]
 }
