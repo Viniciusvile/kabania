@@ -615,3 +615,76 @@ export async function generateShiftInsights(shifts, employees, companyName = "Em
     return `Erro ao gerar insights: ${error.message}`;
   }
 }
+
+// ──────────────────────────────────────────────────────────────────
+// SMART ARTICLE RECOMMENDER — Knowledge Base
+// ──────────────────────────────────────────────────────────────────
+export async function getRelatedArticles(currentArticle, allArticles) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const candidates = allArticles
+      .filter(a => a.id !== currentArticle.id)
+      .map(a => ({ id: a.id, title: a.title, tags: a.tags || [], section: a.section }));
+
+    if (candidates.length === 0) return [];
+
+    const prompt = `Você é um assistente de base de conhecimento empresarial.
+
+Artigo atual:
+- Título: "${currentArticle.title}"
+- Descrição: "${(currentArticle.description || '').substring(0, 300)}"
+- Tags: ${(currentArticle.tags || []).join(', ')}
+- Seção: ${currentArticle.section}
+
+Artigos disponíveis:
+${JSON.stringify(candidates)}
+
+Retorne APENAS um JSON array com os IDs dos 3 artigos mais relevantes e relacionados ao artigo atual, ordenados por relevância decrescente.
+Se não houver artigos relacionados, retorne [].
+Formato exato: ["id1", "id2", "id3"]`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\[[\s\S]*?\]/);
+    if (!match) return [];
+    const ids = JSON.parse(match[0]);
+    return Array.isArray(ids) ? ids.slice(0, 3) : [];
+  } catch (error) {
+    console.error('[getRelatedArticles]', error);
+    return [];
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// AI-BASED ESTIMATION — Kanban Cards
+// ──────────────────────────────────────────────────────────────────
+export async function estimateCardEffort(title, description) {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const prompt = `Você é um especialista em gestão ágil de projetos.
+
+Tarefa Kanban:
+- Título: "${title}"
+- Descrição: "${(description || 'Sem descrição').substring(0, 500)}"
+
+Com base no título e descrição, estime o esforço necessário.
+Responda APENAS com JSON válido no formato:
+{"estimate": "2-4h", "complexity": "média", "reasoning": "Uma frase curta explicando o porquê"}
+
+Regras de complexidade:
+- baixa: bug fix simples, atualização de texto, ajuste visual → "30min" a "2h"
+- média: novo componente, integração de API, lógica de negócio → "2-8h"
+- alta: nova feature completa, refactoring, múltiplos sistemas → "1-3d"`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const match = text.match(/\{[\s\S]*?\}/);
+    if (!match) return null;
+    const parsed = JSON.parse(match[0]);
+    if (!parsed.estimate || !parsed.complexity) return null;
+    return parsed;
+  } catch (error) {
+    console.error('[estimateCardEffort]', error);
+    return null;
+  }
+}

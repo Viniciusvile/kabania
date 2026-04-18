@@ -11,6 +11,7 @@ import IntelligencePanel from './IntelligencePanel';
 import ShiftCheckinModal from './ShiftCheckinModal';
 import AutoPilotReview from './AutoPilotReview';
 import HoursReport from './HoursReport';
+import ShiftSwapMarketplace from './ShiftSwapMarketplace';
 import { generateAutoPilotSchedule } from '../../services/aiSchedulingService';
 import './ShiftsRedesign.css';
 import './ShiftsPremium.css';
@@ -55,6 +56,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
   });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, shiftId: null });
   const [showHoursReport, setShowHoursReport] = useState(false);
+  const [showSwapMarketplace, setShowSwapMarketplace] = useState(false);
 
   // ── Helper: Extrai ID do Kanban das notas ────────────────────────────
   const getKanbanId = (notes) => {
@@ -662,6 +664,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
             weekDays={weekDays}
             setIsModalOpen={setIsModalOpen}
             onHoursReport={() => setShowHoursReport(true)}
+            onSwapMarketplace={() => setShowSwapMarketplace(true)}
             stats={stats}
           />
 
@@ -699,6 +702,15 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           companyId={companyId}
           employees={employees}
           onClose={() => setShowHoursReport(false)}
+        />
+      )}
+
+      {showSwapMarketplace && (
+        <ShiftSwapMarketplace
+          companyId={companyId}
+          currentUser={currentUser}
+          userRole={userRole}
+          onClose={() => setShowSwapMarketplace(false)}
         />
       )}
 

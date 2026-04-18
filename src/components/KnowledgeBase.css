@@ -934,3 +934,170 @@
   border-color: #2563eb;
   color: #2563eb;
 }
+
+/* ======================================================
+   Related Articles (Smart Recommender)
+   ====================================================== */
+
+.kb-card--expanded {
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.15), 0 12px 40px rgba(0, 229, 255, 0.08);
+}
+
+.kb-related-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 229, 255, 0.07);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  color: var(--accent-cyan);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+
+.kb-related-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--accent-cyan);
+}
+
+.kb-related-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.kb-related-panel {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 229, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.12);
+  border-radius: 12px;
+  animation: fadeIn 0.2s ease;
+}
+
+.kb-related-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0 0 0.6rem;
+}
+
+.kb-related-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kb-related-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.kb-related-chip:hover {
+  background: rgba(0, 229, 255, 0.06);
+  border-color: rgba(0, 229, 255, 0.25);
+}
+
+.kb-related-chip-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.kb-related-chip-title {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kb-related-chip-status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.kb-related-chip-status.on {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.kb-related-chip-status.off {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-muted);
+}
+
+.kb-related-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.kb-related-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+  margin-top: 0.5rem;
+  padding: 0.3rem 0;
+}
+
+.kb-related-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Light theme overrides */
+[data-theme='light'] .kb-related-btn {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.2);
+  color: #2563eb;
+}
+
+[data-theme='light'] .kb-related-btn:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+[data-theme='light'] .kb-related-panel {
+  background: rgba(37, 99, 235, 0.03);
+  border-color: rgba(37, 99, 235, 0.1);
+}
+
+[data-theme='light'] .kb-related-chip {
+  background: white;
+  border-color: #e2e8f0;
+}
+
+[data-theme='light'] .kb-related-chip:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+/* Emerald theme overrides */
+[data-theme='green'] .kb-related-btn {
+  background: rgba(4, 217, 79, 0.07);
+  border-color: rgba(4, 217, 79, 0.2);
+  color: #04D94F;
+}
+
+[data-theme='green'] .kb-related-loading {
+  color: #04D94F;
+}

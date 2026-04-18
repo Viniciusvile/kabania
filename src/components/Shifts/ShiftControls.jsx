@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Wand2, ClipboardList } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Wand2, ClipboardList, ArrowLeftRight } from 'lucide-react';
 
 export default function ShiftControls({
   filterStatus,
@@ -9,6 +9,7 @@ export default function ShiftControls({
   weekDays,
   setIsModalOpen,
   onHoursReport,
+  onSwapMarketplace,
   stats
 }) {
   return (
@@ -74,6 +75,10 @@ export default function ShiftControls({
         <button className="glow-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={onHoursReport}>
           <ClipboardList size={16} />
           Folha de Ponto
+        </button>
+        <button className="glow-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={onSwapMarketplace}>
+          <ArrowLeftRight size={16} />
+          Trocas
         </button>
         <button className="glow-btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
           <Wand2 size={16} />

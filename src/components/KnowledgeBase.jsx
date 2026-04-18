@@ -3,7 +3,8 @@ import { BookOpen, Database, FileText, CheckCircle, Search, ToggleRight, ToggleL
 import { supabase } from '../supabaseClient';
 import { SECTOR_TEMPLATES } from './CompanySetup';
 import { fileProcessingService } from '../services/fileProcessingService';
-import { processKnowledgeFile, processKnowledgeRow } from '../services/geminiService';
+import { processKnowledgeFile } from '../services/geminiService';
+import { getRecommendations, invalidateCache } from '../services/kbService';
 import { logEvent } from '../services/historyService';
 import './KnowledgeBase.css';
 
@@ -29,7 +30,24 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadGuideOpen, setIsUploadGuideOpen] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState(null); // { action, suggested, explanation }
+  const [relatedMap, setRelatedMap] = useState({}); // { [articleId]: { loading, ids } }
   const fileInputRef = React.useRef(null);
+
+  const handleToggleRelated = async (item) => {
+    const id = item.id;
+    // Toggle off if already shown
+    if (relatedMap[id] && !relatedMap[id].loading) {
+      setRelatedMap(prev => { const n = { ...prev }; delete n[id]; return n; });
+      return;
+    }
+    // Already loading — ignore
+    if (relatedMap[id]?.loading) return;
+
+    setRelatedMap(prev => ({ ...prev, [id]: { loading: true, ids: [] } }));
+    // kbService handles caching internally (24h TTL in localStorage)
+    const ids = await getRecommendations(item, knowledgeItems, currentCompany?.id);
+    setRelatedMap(prev => ({ ...prev, [id]: { loading: false, ids } }));
+  };
 
   const showFeedback = (title, message, type = 'info', onConfirm = null) => {
     setFeedback({ isOpen: true, title, message, type, onConfirm });
@@ -235,7 +253,10 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
 
       if (error) {
         console.error("Update error:", error);
-        // Rollback would need previous state copy
+      } else {
+        // Invalidate stale recommendations for this article
+        invalidateCache(currentCompany?.id, editingItem.id);
+        setRelatedMap(prev => { const n = { ...prev }; delete n[editingItem.id]; return n; });
       }
     } else {
       const newItem = {
@@ -422,7 +443,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
               
               <div className="kb-grid">
                 {sectionItems.map(item => (
-                  <div key={item.id} className={`kb-card ${item.enabled ? 'enabled' : 'disabled'}`}>
+                  <div key={item.id} className={`kb-card ${item.enabled ? 'enabled' : 'disabled'} ${relatedMap[item.id] ? 'kb-card--expanded' : ''}`}>
                     <div className="kb-card-header">
                       <div className="kb-icon-wrapper">{getIconForType(item.type)}</div>
                       <div className="flex items-center gap-2">
@@ -463,6 +484,51 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
                         }
                       </div>
                     </div>
+
+                    {/* ✨ Related Articles */}
+                    <button
+                      className={`kb-related-btn ${relatedMap[item.id] ? 'active' : ''}`}
+                      onClick={() => handleToggleRelated(item)}
+                      title="Ver artigos relacionados por IA"
+                    >
+                      <Sparkles size={12} />
+                      {relatedMap[item.id]
+                        ? relatedMap[item.id].loading ? 'Buscando...' : 'Ocultar relacionados'
+                        : 'Ver relacionados IA'}
+                    </button>
+
+                    {relatedMap[item.id] && !relatedMap[item.id].loading && (
+                      <div className="kb-related-panel">
+                        {relatedMap[item.id].ids.length === 0 ? (
+                          <p className="kb-related-empty">Nenhum artigo relacionado encontrado.</p>
+                        ) : (
+                          <>
+                            <p className="kb-related-label">Artigos relacionados</p>
+                            <div className="kb-related-list">
+                              {relatedMap[item.id].ids.map(rid => {
+                                const rel = knowledgeItems.find(k => k.id === rid);
+                                if (!rel) return null;
+                                return (
+                                  <div key={rid} className="kb-related-chip">
+                                    <span className="kb-related-chip-icon">{getIconForType(rel.type)}</span>
+                                    <span className="kb-related-chip-title">{rel.title}</span>
+                                    <span className={`kb-related-chip-status ${rel.enabled ? 'on' : 'off'}`}>
+                                      {rel.enabled ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {relatedMap[item.id]?.loading && (
+                      <div className="kb-related-loading">
+                        <Sparkles size={12} className="kb-related-spin" /> Analisando artigos...
+                      </div>
+                    )}
                   </div>
                 ))}
                 

@@ -3,13 +3,14 @@ import {
   Menu, Search, Bell, ChevronDown, Check, User, Settings,
   LogOut, FileText, Crown, Shield,
   Calendar, Sun, Moon, Plus, Trash2, X,
-  Sparkles, FolderKanban
+  Sparkles, FolderKanban, Zap
 } from 'lucide-react';
 import './WorkspaceHub/WorkspaceHub.css';
 import { fetchNotifications, subscribeToNotifications } from '../services/notificationService';
 import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import NotificationHub from './NotificationHub';
+import QuickAccessToolbar from './QuickAccessToolbar';
 
 export default function TopBar({ 
   onToggleSidebar, searchQuery, onSearchChange, 
@@ -23,6 +24,7 @@ export default function TopBar({
   const [profileData, setProfileData] = useState(initialProfileData || { name: '', first_name: '', last_name: '', avatar_url: null });
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifHub, setShowNotifHub] = useState(false);
+  const [showQuickAccess, setShowQuickAccess] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
 
@@ -193,6 +195,11 @@ export default function TopBar({
           )}
         </div>
 
+          {/* Quick Access Toolbar */}
+          <div className="topbar-icon" onClick={() => setShowQuickAccess(v => !v)} title="Acesso Rápido">
+            <Zap size={20} className={showQuickAccess ? 'text-accent-cyan' : ''} />
+          </div>
+
           {/* Projects Shortcut */}
           <div className="topbar-icon" onClick={() => onViewChange('projects')} title="Projetos">
             <FolderKanban size={20} className={currentView === 'projects' ? 'text-emerald-400' : ''} />
@@ -269,6 +276,13 @@ export default function TopBar({
         companyId={currentCompany?.id}
         companyName={currentCompany?.name}
         onClose={() => { setShowNotifHub(false); setUnreadCount(0); }}
+      />
+    )}
+
+    {showQuickAccess && (
+      <QuickAccessToolbar
+        onViewChange={onViewChange}
+        onClose={() => setShowQuickAccess(false)}
       />
     )}
   </>

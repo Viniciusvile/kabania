@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Calendar, Users, MessageSquare, Sparkles, Send,
-  AlertTriangle, Clock, CheckCircle2, Edit2
+  AlertTriangle, Clock, CheckCircle2, Edit2, Zap
 } from 'lucide-react';
 import { getDeadlineStatus } from '../services/notificationService';
 import { notifyComment } from '../services/notificationService';
+import { estimateCard } from '../services/kanbanService';
 import './CardDetailModal.css';
 
 function getInitials(email) {
@@ -30,13 +31,30 @@ function formatCommentTime(isoString) {
   return d.toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+const COMPLEXITY_COLOR = { baixa: '#34d399', média: '#fbbf24', alta: '#f87171' };
+const COMPLEXITY_BG   = { baixa: 'rgba(52,211,153,0.08)', média: 'rgba(251,191,36,0.08)', alta: 'rgba(239,68,68,0.08)' };
+
 export default function CardDetailModal({ task, currentUser, onClose, onUpdate }) {
   const [commentText, setCommentText] = useState('');
   const commentsEndRef = useRef(null);
+  const [estimation, setEstimation] = useState(null); // { estimate, complexity, reasoning }
+  const [estimating, setEstimating] = useState(false);
+  const estimatedRef = useRef(false);
 
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [task?.comments?.length]);
+
+  useEffect(() => {
+    if (!task?.title || estimatedRef.current) return;
+    estimatedRef.current = true;
+    setEstimating(true);
+    // kanbanService handles localStorage caching (48h TTL) internally
+    estimateCard({ title: task.title, description: task.desc || '', taskId: task.id })
+      .then(result => setEstimation(result))
+      .catch(() => {})
+      .finally(() => setEstimating(false));
+  }, [task?.id]);
 
   if (!task) return null;
 
@@ -97,6 +115,34 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
               <p className="cdm-desc">{task.desc}</p>
             </section>
           )}
+
+          {/* AI Estimation */}
+          <section className="cdm-section">
+            <label><Zap size={13} /> Estimativa IA</label>
+            {estimating && (
+              <div className="cdm-ai-box cdm-estimate-loading">
+                <Sparkles size={12} className="cdm-spin" /> Estimando esforço...
+              </div>
+            )}
+            {!estimating && estimation && (
+              <div className="cdm-estimate-box" style={{ borderColor: COMPLEXITY_COLOR[estimation.complexity] || '#00e5ff', background: COMPLEXITY_BG[estimation.complexity] || 'rgba(0,229,255,0.06)' }}>
+                <div className="cdm-estimate-header">
+                  <span className="cdm-estimate-value">{estimation.estimate}</span>
+                  <span className="cdm-estimate-badge" style={{ color: COMPLEXITY_COLOR[estimation.complexity], background: COMPLEXITY_BG[estimation.complexity] }}>
+                    {estimation.complexity}
+                  </span>
+                </div>
+                {estimation.reasoning && (
+                  <p className="cdm-estimate-reasoning">{estimation.reasoning}</p>
+                )}
+              </div>
+            )}
+            {!estimating && !estimation && (
+              <div className="cdm-ai-box">
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Estimativa indisponível</span>
+              </div>
+            )}
+          </section>
 
           {/* Deadline + Assignees row */}
           <div className="cdm-meta-row">
