@@ -112,14 +112,16 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  // Fetch CRM Integration data on mount / company change
+  // Fetch CRM Integration data on mount / company change (Restricted to click@gmail.com only)
   useEffect(() => {
-    if (currentCompany) {
+    if (currentCompany && currentUser?.toLowerCase() === 'click@gmail.com') {
       fetchCrmSyncData().then(data => {
         if (data) setCrmData(data);
       });
+    } else {
+      setCrmData({ condominios: [], ocorrencias: [], funcionarios: [] });
     }
-  }, [currentCompany]);
+  }, [currentCompany, currentUser]);
 
   // Persist selected condominio filter
   useEffect(() => {
