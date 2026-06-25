@@ -1,8 +1,9 @@
 // src/services/crmIntegrationService.js
 // Service to integrate Click Condomínios CRM with Kabania.
 
-const API_URL = import.meta.env.VITE_CRM_API_URL;
-const API_KEY = import.meta.env.VITE_CRM_API_KEY;
+// Use env vars if available, otherwise fall back to production defaults
+const API_URL = (import.meta.env.VITE_CRM_API_URL || 'https://click-prestare-production.up.railway.app').trim();
+const API_KEY = (import.meta.env.VITE_CRM_API_KEY || 'click_kabania_secret_3a8c9b2d7e1f4a5b').trim();
 
 // Robust mock data fallback if API is not configured or offline
 const MOCK_CRM_DATA = {
@@ -86,8 +87,8 @@ const MOCK_CRM_DATA = {
 };
 
 export async function fetchCrmSyncData() {
-  if (!API_URL || !API_KEY || API_KEY === 'mock-api-key-click-condominios') {
-    console.log("[CRM Integration] Using mock data (VITE_CRM_API_URL or VITE_CRM_API_KEY is not fully configured).");
+  if (!API_URL || !API_KEY) {
+    console.log("[CRM Integration] API não configurada, usando dados de demonstração.");
     return MOCK_CRM_DATA;
   }
 
