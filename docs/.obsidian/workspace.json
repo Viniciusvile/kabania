@@ -34,9 +34,19 @@
               "icon": "lucide-file",
               "title": "DS - Sistema de Temas (Dark e Light)"
             }
+          },
+          {
+            "id": "78b854e40fdbbd1f",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Visualização em gráfico"
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -195,8 +205,9 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "c145d066e948b729",
+  "active": "78b854e40fdbbd1f",
   "lastOpenFiles": [
+    "obsidian/01-Design-System/DS - Sistema de Temas (Dark e Light).md",
     "obsidian/03-Componentes/COMP - TopBar.md",
     "obsidian/03-Componentes/COMP - Sidebar.md",
     "obsidian/03-Componentes/COMP - Portal do Cliente.md",
@@ -222,7 +233,6 @@
     "obsidian/02-Arquitetura/ARQ - Camada de Serviços.md",
     "obsidian/02-Arquitetura/ARQ - Banco de Dados e Schemas.md",
     "obsidian/02-Arquitetura/ARQ - Banco de Dados e Schemas.md.tmp.412.1776342311361",
-    "NEG - Sistema de Auditoria.md",
-    "obsidian/01-Design-System/DS - Sistema de Temas (Dark e Light).md"
+    "NEG - Sistema de Auditoria.md"
   ]
 }

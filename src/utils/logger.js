@@ -15,11 +15,7 @@ const config = YAML.load(CONFIG_PATH);
 const logDir = path.resolve('./logs');
 if (!fs.existsSync(logDir)) fs.mkdirSync(logDir);
 const logger = pino({
-  level: config.log_level || 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: { colorize: true, translateTime: true }
-  }
-}, pino.destination(path.join(logDir, `sync_${new Date().toISOString().split('T')[0]}.log`));
+  level: config.log_level || 'info'
+}, pino.destination(path.join(logDir, `sync_${new Date().toISOString().split('T')[0]}.log`)));
 
 export { config, logger };

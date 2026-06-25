@@ -1,0 +1,25 @@
+# Ignore node_modules and builds
+node_modules
+dist
+.git
+.github
+.agents
+_agents
+
+# Ignore TCC and other non-app files
+meuTcc
+*.pdf
+*.md
+
+# Ignore debug/inspect scripts
+inspect_*.js
+inspect*.js
+scratch*.js
+test_*.js
+tmp*
+check_*.js
+discover_*.js
+debug_*.js
+sync_*.js
+sync.config.yaml
+sync_log.txt

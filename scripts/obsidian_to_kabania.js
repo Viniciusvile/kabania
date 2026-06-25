@@ -1,11 +1,8 @@
 import fs from 'fs';
-import { logger } from '../src/utils/logger.js';
 import path from 'path';
 import { logger } from '../src/utils/logger.js';
 import { createClient } from '@supabase/supabase-js';
-import { logger } from '../src/utils/logger.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { logger } from '../src/utils/logger.js';
 
 // 1. Configurações e Caminhos
 const OBSIDIAN_VAULT_PATH = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste/';

@@ -1,13 +1,13 @@
 import React from 'react';
-import { MapPin, Mail, Phone, Users, Edit2, Trash2, Calendar } from 'lucide-react';
+import { MapPin, Mail, Phone, Users, Edit2, Trash2, Calendar, Link } from 'lucide-react';
 import './CustomerCard.css';
 
 export default function CustomerCard({ customer, onEdit, onDelete }) {
   const initials = customer.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  const isCrm = customer.isCrm || String(customer.id).startsWith('crm-');
 
   return (
-    <div className="customer-card animate-fade-in">
-
+    <div className={`customer-card animate-fade-in ${isCrm ? 'crm-sourced' : ''}`}>
 
       <div className="cc-header">
         <div className="cc-avatar">{initials}</div>
@@ -15,14 +15,20 @@ export default function CustomerCard({ customer, onEdit, onDelete }) {
           <div className="cc-badge-employees">
             {customer.employee_count} func.
           </div>
-          <div className="cc-actions">
-            <button className="cp-action-btn" onClick={onEdit} title="Editar">
-              <Edit2 size={14} />
-            </button>
-            <button className="cp-action-btn danger" onClick={onDelete} title="Excluir">
-              <Trash2 size={14} />
-            </button>
-          </div>
+          {isCrm ? (
+            <div className="cc-crm-badge" title="Sincronizado do CRM Click Condomínios">
+              <Link size={12} /> CRM
+            </div>
+          ) : (
+            <div className="cc-actions">
+              <button className="cp-action-btn" onClick={onEdit} title="Editar">
+                <Edit2 size={14} />
+              </button>
+              <button className="cp-action-btn danger" onClick={onDelete} title="Excluir">
+                <Trash2 size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,12 +1,35 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Search, Trash2, Square, RefreshCw, ZoomIn, ZoomOut,
   Monitor, Upload, X, MapPin, Building2, Pin, UserCheck,
-  ChevronDown, Pencil, ArrowRight, UserPlus, Move, Loader2, Mail
+  ChevronDown, Pencil, ArrowRight, UserPlus, Move, Loader2, Mail,
+  Flame, Navigation, ShieldAlert, Users, Layers, Coffee,
+  BriefcaseBusiness, Wifi, Home, CalendarOff, Video, Focus
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { safeQuery } from '../../utils/supabaseSafe';
 import './DigitalTwinModule.css';
+
+// ── DEPARTMENT COLOR PALETTE ──────────────────────────────────────────────────
+const DEPT_PALETTE = [
+  { label: 'TI',       color: '#22c55e', bg: 'rgba(34,197,94,0.18)',   border: 'rgba(34,197,94,0.55)'   },
+  { label: 'Vendas',   color: '#3b82f6', bg: 'rgba(59,130,246,0.18)',  border: 'rgba(59,130,246,0.55)'  },
+  { label: 'Design',   color: '#a855f7', bg: 'rgba(168,85,247,0.18)',  border: 'rgba(168,85,247,0.55)'  },
+  { label: 'RH',       color: '#f59e0b', bg: 'rgba(245,158,11,0.18)',  border: 'rgba(245,158,11,0.55)'  },
+  { label: 'Financeiro', color: '#ef4444', bg: 'rgba(239,68,68,0.18)', border: 'rgba(239,68,68,0.55)'   },
+  { label: 'Marketing', color: '#ec4899', bg: 'rgba(236,72,153,0.18)', border: 'rgba(236,72,153,0.55)'  },
+  { label: 'Suporte',  color: '#14b8a6', bg: 'rgba(20,184,166,0.18)',  border: 'rgba(20,184,166,0.55)'  },
+  { label: 'Outros',   color: '#94a3b8', bg: 'rgba(148,163,184,0.18)', border: 'rgba(148,163,184,0.55)' },
+];
+
+// ── PRESENCE STATUS CONFIG ────────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  office:  { label: 'Escritório',     color: '#22c55e', icon: 'office'    },
+  remote:  { label: 'Home Office',    color: '#94a3b8', icon: 'home'      },
+  vacation:{ label: 'Férias',         color: '#f59e0b', icon: 'vacation'  },
+  meeting: { label: 'Em Reunião',     color: '#3b82f6', icon: 'meeting'   },
+  focused: { label: 'Focado (DND)',   color: '#ef4444', icon: 'focus'     },
+};
 
 // ── DEFAULT SEED DATA ─────────────────────────────────────────────────────────
 const DEFAULT_ROOMS = [
@@ -43,7 +66,7 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
 
-  // ── TEAM MEMBERS: loaded from Supabase profiles (same as Membros da Equipe) ──
+  // ── TEAM MEMBERS ──────────────────────────────────────────────────────────
   const [teamMembers, setTeamMembers] = useState([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
@@ -54,27 +77,23 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
   const [isDraggingMap, setIsDraggingMap] = useState(false);
   const [mapDragStart, setMapDragStart] = useState({ x: 0, y: 0 });
 
-  // activeTool: 'none' | 'add_desk' | 'add_room' | 'remove' | 'assign' | 'toggle_room'
+  // activeTool: 'none' | 'add_desk' | 'add_room' | 'remove' | 'assign' | 'toggle_room' | 'emergency'
   const [activeTool, setActiveTool] = useState('none');
   const [draggedObject, setDraggedObject] = useState(null);
 
   // ── SALA: Draw-to-create state ────────────────────────────────────────────
   const [isDrawingRoom, setIsDrawingRoom] = useState(false);
-  // rect in viewport px {x1,y1,x2,y2}
   const [drawRect, setDrawRect] = useState(null);
 
   // ── DESK INFO MODAL ───────────────────────────────────────────────────────
   const [deskDetailsOpen, setDeskDetailsOpen] = useState(null);
 
   // ── MESA: Ghost cursor state ──────────────────────────────────────────────
-  // Position in viewport px for the ghost preview
   const [ghostPos, setGhostPos] = useState(null);
 
   // ── PESSOA: Rich assignment panel ─────────────────────────────────────────
-  // step: 'pick_person' → user selects from roster
-  //       'pick_desk'   → user clicks a desk on the map
   const [assignPanel, setAssignPanel] = useState(false);
-  const [assignStep, setAssignStep] = useState('pick_person'); // 'pick_person' | 'pick_desk'
+  const [assignStep, setAssignStep] = useState('pick_person');
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [personSearch, setPersonSearch] = useState('');
   const [newPersonForm, setNewPersonForm] = useState(false);
@@ -86,11 +105,47 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
   const [editingRoomName, setEditingRoomName] = useState('');
   const [selectedRoomId, setSelectedRoomId] = useState(null);
 
-  // Modal (only for confirmations now)
+  // Modal
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   // Upload panel
   const [showUploadPanel, setShowUploadPanel] = useState(false);
+
+  // ── 🆕 FILTRO POR DEPARTAMENTO ────────────────────────────────────────────
+  const [deptFilterActive, setDeptFilterActive] = useState(false);
+  const [activeDeptFilter, setActiveDeptFilter] = useState(null); // null = todos
+
+  // ── 🆕 HEATMAP DE UTILIZAÇÃO ─────────────────────────────────────────────
+  const [heatmapActive, setHeatmapActive] = useState(false);
+  // Simula dados históricos: { [deskId]: occupancyRate 0-1 }
+  const heatmapData = useMemo(() => {
+    const data = {};
+    desks.forEach(d => {
+      // Se já tem usuário, ocupa 100%; caso contrário gera valor aleatório persistente baseado no id
+      if (d.status === 'occupied') {
+        data[d.id] = 0.85 + Math.random() * 0.15;
+      } else {
+        const hash = d.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+        data[d.id] = (hash % 100) / 100;
+      }
+    });
+    return data;
+  }, [desks]);
+
+  // ── 🆕 WAYFINDING / SAÍDAS DE EMERGÊNCIA ─────────────────────────────────
+  const [emergencyMode, setEmergencyMode] = useState(false);
+  const [emergencyExits, setEmergencyExits] = useState([]); // [{id, x, y}]
+  const [wayfindingActive, setWayfindingActive] = useState(false);
+  const [wayfindingFrom, setWayfindingFrom] = useState(null); // desk id
+  const [wayfindingTo, setWayfindingTo] = useState(null);     // desk id
+  const [wayfindingSearch, setWayfindingSearch] = useState('');
+  const [showLayersPanel, setShowLayersPanel] = useState(false);
+
+  // ── 🆕 STATUS DE PRESENÇA ─────────────────────────────────────────────────
+  // { [memberId | email]: 'office' | 'remote' | 'vacation' | 'meeting' | 'focused' }
+  const [presenceMap, setPresenceMap] = useState({});
+  const [showStatusPanel, setShowStatusPanel] = useState(false);
+  const [myStatus, setMyStatus] = useState('office');
 
   const mapViewportRef = useRef(null);
   const mapCanvasRef = useRef(null);
@@ -428,6 +483,10 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
       setDesks(prev => [...prev, newDesk]);
       // do NOT call setActiveTool('none') → persistent mode
     }
+    // EMERGENCY: place exit marker
+    if (activeTool === 'emergency') {
+      handleEmergencyClick(e);
+    }
   };
 
   // ── OBJECT DRAG ────────────────────────────────────────────────────────────
@@ -655,6 +714,67 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
     height: Math.abs(drawRect.y2 - drawRect.y1),
   } : null;
 
+  // ── 🆕 HEATMAP: cor baseada em taxa 0-1 ──────────────────────────────────
+  const heatColor = (rate) => {
+    if (rate >= 0.75) return { bg: 'rgba(239,68,68,0.45)',  border: '#ef4444', label: 'Alta' };
+    if (rate >= 0.45) return { bg: 'rgba(245,158,11,0.4)', border: '#f59e0b', label: 'Média' };
+    return             { bg: 'rgba(34,197,94,0.35)',        border: '#22c55e', label: 'Baixa' };
+  };
+
+  // ── 🆕 DEPT: cor por departamento do usuário ──────────────────────────────
+  const getDeptColor = (desk) => {
+    if (!desk.user) return null;
+    const role = (desk.user.role || '').toLowerCase();
+    return DEPT_PALETTE.find(d => role.includes(d.label.toLowerCase())) || DEPT_PALETTE[DEPT_PALETTE.length - 1];
+  };
+
+  // ── 🆕 PRESENCE: pega status do usuário da mesa ───────────────────────────
+  const getDeskPresence = (desk) => {
+    if (!desk.user) return null;
+    const key = desk.user.email || desk.user.memberId || desk.user.name;
+    return presenceMap[key] || 'office';
+  };
+
+  // ── 🆕 WAYFINDING: estilo de linha SVG entre duas mesas ──────────────────
+  const wayfindingLine = useMemo(() => {
+    if (!wayfindingFrom || !wayfindingTo || !mapCanvasRef.current) return null;
+    const fromDesk = desks.find(d => d.id === wayfindingFrom);
+    const toDesk = desks.find(d => d.id === wayfindingTo);
+    if (!fromDesk || !toDesk) return null;
+    return { x1: fromDesk.x, y1: fromDesk.y, x2: toDesk.x, y2: toDesk.y };
+  }, [wayfindingFrom, wayfindingTo, desks]);
+
+  // ── 🆕 EMERGENCY: colocar saída clicando no canvas ───────────────────────
+  const handleEmergencyClick = (e) => {
+    if (activeTool !== 'emergency') return;
+    const { x, y } = viewportToCanvasPct(e.clientX, e.clientY);
+    setEmergencyExits(prev => [...prev, { id: `exit-${Date.now()}`, x, y }]);
+  };
+
+  // ── 🆕 STATUS: atualizar meu status e propagar ao mapa ───────────────────
+  const updateMyStatus = (status) => {
+    setMyStatus(status);
+    const myKey = currentUser;
+    if (myKey) setPresenceMap(prev => ({ ...prev, [myKey]: status }));
+    setShowStatusPanel(false);
+  };
+
+  // ── 🆕 PRESENCE: setar status de qualquer membro manualmente ─────────────
+  const setMemberStatus = (key, status) => {
+    setPresenceMap(prev => ({ ...prev, [key]: status }));
+  };
+
+  // ── 🆕 DEPT FILTER: filtra mesas por dept selecionado ────────────────────
+  const isDeskVisibleByDept = (desk) => {
+    if (!deptFilterActive || activeDeptFilter === null) return true;
+    if (!desk.user) return activeDeptFilter === 'Outros';
+    const role = (desk.user.role || '').toLowerCase();
+    if (activeDeptFilter === 'Outros') {
+      return !DEPT_PALETTE.slice(0, -1).some(d => role.includes(d.label.toLowerCase()));
+    }
+    return role.includes(activeDeptFilter.toLowerCase());
+  };
+
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div className="dt-root">
@@ -730,21 +850,65 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
             {desks.map(desk => {
               const isMatch = !!highlightedDeskId && desk.id === highlightedDeskId;
               const isTargetable = activeTool === 'assign' && assignStep === 'pick_desk';
+              const isWayfindingFrom = wayfindingFrom === desk.id;
+              const isWayfindingTo = wayfindingTo === desk.id;
+              const deptColor = deptFilterActive ? getDeptColor(desk) : null;
+              const heat = heatmapActive ? heatmapData[desk.id] : null;
+              const heatC = heat !== null && heat !== undefined ? heatColor(heat) : null;
+              const presence = getDeskPresence(desk);
+              const isRemote = presence === 'remote';
+              const isFocused = presence === 'focused';
+              const isVacation = presence === 'vacation';
+              const isMeeting = presence === 'meeting';
+              const visibleByDept = isDeskVisibleByDept(desk);
+
+              const deskStyle = {
+                top: `${desk.y}%`,
+                left: `${desk.x}%`,
+                opacity: visibleByDept ? 1 : 0.15,
+              };
+
+              let baseStyle = {};
+              if (heatC) baseStyle = { background: heatC.bg, borderColor: heatC.border };
+              else if (deptColor) baseStyle = { background: deptColor.bg, borderColor: deptColor.border };
+              if (isRemote || isVacation) baseStyle = { ...baseStyle, opacity: 0.45, filter: 'grayscale(0.8)' };
+              if (isFocused) baseStyle = { ...baseStyle, boxShadow: '0 0 0 3px #ef4444, 0 0 12px rgba(239,68,68,0.4)' };
+              if (isMeeting) baseStyle = { ...baseStyle, boxShadow: '0 0 0 3px #3b82f6, 0 0 12px rgba(59,130,246,0.4)' };
+
               return (
                 <div
                   key={desk.id}
-                  className={`dt-desk ${desk.status} ${isMatch ? 'highlighted' : ''} ${isTargetable ? 'targetable' : ''}`}
-                  style={{ top: `${desk.y}%`, left: `${desk.x}%` }}
+                  className={`dt-desk ${desk.status} ${isMatch ? 'highlighted' : ''} ${isTargetable ? 'targetable' : ''} ${isWayfindingFrom ? 'wf-from' : ''} ${isWayfindingTo ? 'wf-to' : ''}`}
+                  style={deskStyle}
                   onMouseDown={(e) => startDragObject(e, desk.id, 'desk')}
-                  onClick={(e) => handleDeskClick(e, desk)}
+                  onClick={(e) => {
+                    if (wayfindingActive) {
+                      e.stopPropagation();
+                      if (!wayfindingFrom) { setWayfindingFrom(desk.id); return; }
+                      if (desk.id !== wayfindingFrom) { setWayfindingTo(desk.id); return; }
+                    }
+                    handleDeskClick(e, desk);
+                  }}
                 >
-                  <div className="dt-desk-base">
+                  <div className="dt-desk-base" style={baseStyle}>
                     {desk.status !== 'occupied' && <Monitor size={17} strokeWidth={1.5} />}
+                    {heatC && heatmapActive && (
+                      <span className="dt-heat-label">{Math.round((heatmapData[desk.id] || 0) * 100)}%</span>
+                    )}
                   </div>
                   {desk.status === 'occupied' && desk.user && (
-                    <div className="dt-desk-badge">
+                    <div className="dt-desk-badge" style={deptColor && deptFilterActive ? { background: `linear-gradient(135deg, ${deptColor.color}, ${deptColor.color}aa)` } : {}}>
                       {desk.user.avatar}
-                      <span className={`dt-status-dot ${desk.user.isOnline ? 'online' : 'offline'}`} />
+                      <span className={`dt-status-dot ${desk.user.isOnline && presence === 'office' ? 'online' : 'offline'}`} />
+                    </div>
+                  )}
+                  {/* Presence indicator icon */}
+                  {presence && presence !== 'office' && desk.status === 'occupied' && (
+                    <div className={`dt-presence-badge dt-presence-${presence}`} title={STATUS_CONFIG[presence]?.label}>
+                      {presence === 'remote'   && '🏠'}
+                      {presence === 'vacation' && '🌴'}
+                      {presence === 'meeting'  && '📹'}
+                      {presence === 'focused'  && '🎯'}
                     </div>
                   )}
                   {isMatch && (
@@ -752,13 +916,49 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
                       <MapPin size={12} /> {desk.user?.name}
                     </div>
                   )}
+                  {deptColor && deptFilterActive && (
+                    <div className="dt-dept-dot" style={{ background: deptColor.color }} title={deptColor.label} />
+                  )}
                 </div>
               );
             })}
 
+            {/* WAYFINDING SVG LINE */}
+            {wayfindingLine && (
+              <svg className="dt-wayfinding-svg" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 100 }}>
+                <defs>
+                  <marker id="wf-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L8,3 z" fill="#6366f1" />
+                  </marker>
+                </defs>
+                <line
+                  x1={`${wayfindingLine.x1}%`} y1={`${wayfindingLine.y1}%`}
+                  x2={`${wayfindingLine.x2}%`} y2={`${wayfindingLine.y2}%`}
+                  stroke="#6366f1" strokeWidth="2.5" strokeDasharray="8 5"
+                  markerEnd="url(#wf-arrow)" opacity="0.85"
+                />
+                <circle cx={`${wayfindingLine.x1}%`} cy={`${wayfindingLine.y1}%`} r="6" fill="#22c55e" opacity="0.9" />
+                <circle cx={`${wayfindingLine.x2}%`} cy={`${wayfindingLine.y2}%`} r="6" fill="#6366f1" opacity="0.9" />
+              </svg>
+            )}
+
+            {/* EMERGENCY EXITS */}
+            {emergencyMode && emergencyExits.map(exit => (
+              <div
+                key={exit.id}
+                className="dt-emergency-exit"
+                style={{ top: `${exit.y}%`, left: `${exit.x}%` }}
+                onClick={(e) => { e.stopPropagation(); setEmergencyExits(prev => prev.filter(x => x.id !== exit.id)); }}
+                title="Saída de emergência (clique para remover)"
+              >
+                🚪
+              </div>
+            ))}
+
           </div>
         </div>
       </div>
+
 
       {/* ── FLOATING UI LAYER ── */}
       <div className="dt-ui-layer">
@@ -887,6 +1087,28 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
               <Upload size={15} />
             </button>
 
+            <div className="dt-tb-sep" />
+
+            {/* 🆕 Camadas / Visualização */}
+            <button
+              className={`dt-tb-btn ${showLayersPanel ? 'active' : ''}`}
+              onClick={() => setShowLayersPanel(v => !v)}
+              title="Camadas de visualização"
+            >
+              <Layers size={15} /> Camadas
+            </button>
+
+            {/* 🆕 Status de Presença */}
+            <button
+              className={`dt-tb-btn ${showStatusPanel ? 'active' : ''}`}
+              onClick={() => setShowStatusPanel(v => !v)}
+              title="Status de presença"
+            >
+              <Users size={15} /> Status
+            </button>
+
+            <div className="dt-tb-sep" />
+
             {/* Clear All */}
             <button
               className="dt-tb-btn dt-btn-danger"
@@ -897,6 +1119,197 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
             </button>
           </div>
         </div>
+
+        {/* 🆕 LAYERS PANEL */}
+        {showLayersPanel && (
+          <div className="dt-layers-panel">
+            <div className="dt-lp-header">
+              <Layers size={15} />
+              <span>Camadas de Visualização</span>
+              <button className="dt-ap-close" onClick={() => setShowLayersPanel(false)}><X size={14} /></button>
+            </div>
+
+            {/* --- Filtro por Departamento --- */}
+            <div className="dt-lp-section">
+              <div className="dt-lp-section-title">
+                <Users size={13} />
+                Heatmap de Equipes
+                <button
+                  className={`dt-lp-toggle ${deptFilterActive ? 'on' : ''}`}
+                  onClick={() => { setDeptFilterActive(v => !v); setActiveDeptFilter(null); }}
+                />
+              </div>
+              {deptFilterActive && (
+                <div className="dt-lp-dept-chips">
+                  <button
+                    className={`dt-lp-chip ${activeDeptFilter === null ? 'active' : ''}`}
+                    onClick={() => setActiveDeptFilter(null)}
+                    style={{ borderColor: '#6366f1', color: '#6366f1' }}
+                  >Todos</button>
+                  {DEPT_PALETTE.map(d => (
+                    <button
+                      key={d.label}
+                      className={`dt-lp-chip ${activeDeptFilter === d.label ? 'active' : ''}`}
+                      style={{ borderColor: d.color, color: d.color, background: activeDeptFilter === d.label ? d.bg : 'transparent' }}
+                      onClick={() => setActiveDeptFilter(activeDeptFilter === d.label ? null : d.label)}
+                    >
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, display: 'inline-block', marginRight: 4 }} />
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* --- Heatmap de Utilização --- */}
+            <div className="dt-lp-section">
+              <div className="dt-lp-section-title">
+                <Flame size={13} />
+                Heatmap de Utilização
+                <button
+                  className={`dt-lp-toggle ${heatmapActive ? 'on' : ''}`}
+                  onClick={() => setHeatmapActive(v => !v)}
+                />
+              </div>
+              {heatmapActive && (
+                <div className="dt-lp-heat-legend">
+                  <span className="dt-lp-heat-item" style={{ color: '#22c55e' }}>● Baixa (&lt;45%)</span>
+                  <span className="dt-lp-heat-item" style={{ color: '#f59e0b' }}>● Média (45-74%)</span>
+                  <span className="dt-lp-heat-item" style={{ color: '#ef4444' }}>● Alta (≥75%)</span>
+                </div>
+              )}
+            </div>
+
+            {/* --- Wayfinding --- */}
+            <div className="dt-lp-section">
+              <div className="dt-lp-section-title">
+                <Navigation size={13} />
+                Wayfinding (Rota entre mesas)
+                <button
+                  className={`dt-lp-toggle ${wayfindingActive ? 'on' : ''}`}
+                  onClick={() => {
+                    setWayfindingActive(v => !v);
+                    setWayfindingFrom(null); setWayfindingTo(null);
+                  }}
+                />
+              </div>
+              {wayfindingActive && (
+                <div className="dt-lp-wf-info">
+                  <p>Clique em <strong>2 mesas</strong> no mapa para traçar a rota.</p>
+                  <div className="dt-lp-wf-state">
+                    <span className="dt-lp-wf-dot" style={{ background: wayfindingFrom ? '#22c55e' : '#cbd5e1' }} />
+                    <span>{wayfindingFrom ? `Origem: ${desks.find(d => d.id === wayfindingFrom)?.user?.name || 'Mesa selecionada'}` : 'Clique na mesa de origem'}</span>
+                  </div>
+                  <div className="dt-lp-wf-state">
+                    <span className="dt-lp-wf-dot" style={{ background: wayfindingTo ? '#6366f1' : '#cbd5e1' }} />
+                    <span>{wayfindingTo ? `Destino: ${desks.find(d => d.id === wayfindingTo)?.user?.name || 'Mesa selecionada'}` : 'Clique na mesa de destino'}</span>
+                  </div>
+                  {(wayfindingFrom || wayfindingTo) && (
+                    <button className="dt-lp-clear-btn" onClick={() => { setWayfindingFrom(null); setWayfindingTo(null); }}>
+                      <X size={11} /> Limpar rota
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* --- Saídas de Emergência --- */}
+            <div className="dt-lp-section">
+              <div className="dt-lp-section-title">
+                <ShieldAlert size={13} />
+                Saídas de Emergência
+                <button
+                  className={`dt-lp-toggle ${emergencyMode ? 'on' : ''}`}
+                  onClick={() => { setEmergencyMode(v => !v); setActiveTool(t => t === 'emergency' ? 'none' : 'emergency'); }}
+                />
+              </div>
+              {emergencyMode && (
+                <div className="dt-lp-wf-info">
+                  <p>Clique no mapa para posicionar saídas 🚪. Clique em uma saída para remover.</p>
+                  <span className="dt-lp-heat-item">{emergencyExits.length} saída(s) marcada(s)</span>
+                  {emergencyExits.length > 0 && (
+                    <button className="dt-lp-clear-btn" onClick={() => setEmergencyExits([])}>
+                      <X size={11} /> Remover todas
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 🆕 STATUS DE PRESENÇA PANEL */}
+        {showStatusPanel && (
+          <div className="dt-status-panel-float">
+            <div className="dt-lp-header">
+              <Users size={15} />
+              <span>Status de Presença</span>
+              <button className="dt-ap-close" onClick={() => setShowStatusPanel(false)}><X size={14} /></button>
+            </div>
+
+            {/* Meu status */}
+            <div className="dt-sp-my-status">
+              <span className="dt-sp-label">Meu status:</span>
+              <div className="dt-sp-status-grid">
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                  <button
+                    key={key}
+                    className={`dt-sp-status-btn ${myStatus === key ? 'active' : ''}`}
+                    style={{ '--status-color': cfg.color }}
+                    onClick={() => updateMyStatus(key)}
+                    title={cfg.label}
+                  >
+                    {key === 'office'   && '🏢'}
+                    {key === 'remote'   && '🏠'}
+                    {key === 'vacation' && '🌴'}
+                    {key === 'meeting'  && '📹'}
+                    {key === 'focused'  && '🎯'}
+                    <span>{cfg.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Status da equipe */}
+            <div className="dt-sp-team">
+              <span className="dt-sp-label">Equipe:</span>
+              <div className="dt-sp-team-list">
+                {roster.map(person => {
+                  const key = person.email || person.id;
+                  const status = presenceMap[key] || 'office';
+                  const cfg = STATUS_CONFIG[status];
+                  return (
+                    <div key={person.id} className="dt-sp-team-row">
+                      <div className="dt-ap-avatar" style={{ width: 28, height: 28, fontSize: '0.6rem' }}>{person.avatar}</div>
+                      <div className="dt-sp-team-info">
+                        <span className="dt-sp-team-name">{person.name}</span>
+                        <span className="dt-sp-team-status" style={{ color: cfg.color }}>{cfg.label}</span>
+                      </div>
+                      <div className="dt-sp-status-mini">
+                        {Object.entries(STATUS_CONFIG).map(([k, c]) => (
+                          <button
+                            key={k}
+                            className={`dt-sp-mini-btn ${status === k ? 'active' : ''}`}
+                            style={{ '--sc': c.color }}
+                            onClick={() => setMemberStatus(key, k)}
+                            title={c.label}
+                          >
+                            {k === 'office' && '🏢'}
+                            {k === 'remote' && '🏠'}
+                            {k === 'vacation' && '🌴'}
+                            {k === 'meeting' && '📹'}
+                            {k === 'focused' && '🎯'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {roster.length === 0 && <span className="dt-ap-empty">Nenhum colaborador atribuído a mesas.</span>}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* UPLOAD PANEL */}
         {showUploadPanel && (

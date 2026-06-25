@@ -10,7 +10,7 @@ import { safeQuery, stagger } from '../utils/supabaseSafe';
 import { getWorkEnvironments, createWorkEnvironment, deleteWorkEnvironment, getActivities, createWorkActivity, deleteWorkActivity } from '../services/shiftService';
 import './CompanyPanel.css';
 
-export default function CompanyPanel({ currentUser, currentCompany, userRole }) {
+export default function CompanyPanel({ currentUser, currentCompany, userRole, crmData }) {
   const [copied, setCopied] = useState(false);
   
   // Helper for SWR (Stale-While-Revalidate)
@@ -28,6 +28,27 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
     const cached = localStorage.getItem(getCacheKey('collabs'));
     return cached ? JSON.parse(cached) : [];
   });
+
+  const allCustomers = React.useMemo(() => {
+    const localCusts = customers || [];
+    if (currentUser?.toLowerCase() !== 'click@gmail.com') {
+      return localCusts;
+    }
+    const crmCusts = (crmData?.condominios || []).map(condo => {
+      const employees = (crmData?.funcionarios || []).filter(f => String(f.condominio_id) === String(condo.id));
+      return {
+        id: `crm-condo-${condo.id}`,
+        name: condo.nome,
+        employee_count: employees.length,
+        address: condo.cidade ? `${condo.cidade}/${condo.uf || ''}` : (condo.address || 'CRM Sync'),
+        email: condo.email || '',
+        phone: condo.phone || '',
+        created_at: condo.created_at || new Date().toISOString(),
+        isCrm: true
+      };
+    });
+    return [...localCusts, ...crmCusts];
+  }, [customers, crmData, currentUser]);
   // Loading states
   const [activeTab, setActiveTab] = useState('members');
   
@@ -751,7 +772,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           <div className="cp-crm-header">
             <div className="cp-crm-title-area">
               <h2 className="cp-crm-title">Gestão de Clientes</h2>
-              <span className="cp-sector-tag">Total: {customers.length} clientes</span>
+              <span className="cp-sector-tag">Total: {allCustomers.length} clientes</span>
             </div>
               <button 
                 className="cp-btn-new-customer"
@@ -762,7 +783,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
             </div>
 
             <div className="cp-customers-grid">
-              {customers.map(customer => (
+              {allCustomers.map(customer => (
                 <CustomerCard 
                   key={customer.id} 
                   customer={customer} 
@@ -778,7 +799,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
                   }}
                 />
               ))}
-              {customers.length === 0 && !loadingCustomers && (
+              {allCustomers.length === 0 && !loadingCustomers && (
                 <div className="cp-empty-crm">
                   <p>Sua base de clientes está vazia.</p>
                   <button 
@@ -794,10 +815,11 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole }) 
           </div>
         ) : activeTab === 'analytics' ? (
           <div className="animate-slide-up" style={{ gridColumn: '1 / -1' }}>
-            <AnalyticsDashboard currentCompany={currentCompany} customers={customers} />
+            <AnalyticsDashboard currentCompany={currentCompany} customers={allCustomers} />
           </div>
         ) : null}
       </div>
+
       {showCustModal && (
         <CustomerFormModal 
           isOpen={showCustModal}

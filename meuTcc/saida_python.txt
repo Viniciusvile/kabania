@@ -1,0 +1,15 @@
+
+=== Simulação Monte Carlo: 30 réplicas de 100 cartões ===
+
+Métrica      Sistema A μ±DP           Sistema B μ±DP           Δ%         t-stat  
+------------------------------------------------------------------------------
+wait          47.48 ±  2.38              3.51 ±  0.10             92.6%   99.70
+touch        123.10 ±  5.30             90.98 ±  4.08             26.1%  109.76
+cycle        170.58 ±  7.44             94.48 ±  4.04             44.6%  114.68
+sla           28.27 ±  3.94              0.00 ±  0.00            100.0%   39.31
+fcr           53.43 ±  4.34             95.30 ±  2.35            -78.4%  -47.30
+
+Valor crítico de t para df=29, α=0,001 bilateral = 3,659
+Todos os t-stats acima de 3,659 implicam p < 0,001 (rejeicao forte de H0)
+
+Salvo em: C:\Users\vinic\Desktop\kabania\meuTcc\monte_carlo_stats.json

@@ -1,14 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../src/utils/logger.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * KABANIA MODULAR SYNC: ADVANCED EDITION
  * Sincroniza informações profundas do código para o ecossistema Obsidian.
  */
 
+const OBSIDIAN_BASE = 'C:/Users/vinic/Documents/Obsidian Vault/TEste/teste';
 logger.info('🚀 Iniciando sincronização Kabania → Obsidian (modo incremental)');
-logger.info('🚀 Iniciando sincronização Kabania → Obsidian (modo incremental)');
+
 const MAP = {
   INDEX: path.join(OBSIDIAN_BASE, 'Index_Kabania.md'),
   SECURITY: path.join(OBSIDIAN_BASE, 'Kabania_Seguranca_e_Arquitetura.md'),

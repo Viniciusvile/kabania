@@ -113,8 +113,12 @@ export default function Login({ onLogin, isLoading: externalLoading }) {
 
       if (authError) {
         console.error("Supabase Google Auth Error:", authError);
-        // Show actual message to help debugging (likely "Provider google not enabled")
-        setErrorMsg(`Falha na sincronização: ${authError.message}`);
+        // Tratamento amigável para erro de conexão/CORS/AdBlocker
+        if (authError.message?.includes('Failed to fetch')) {
+          setErrorMsg('Falha de conexão com a API de autenticação. Verifique sua conexão, desative bloqueadores de anúncios (AdBlock/Brave Shields) ou aguarde a propagação do proxy.');
+        } else {
+          setErrorMsg(`Falha na sincronização: ${authError.message}`);
+        }
         setIsLoading(false);
         return;
       }

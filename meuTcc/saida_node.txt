@@ -1,0 +1,26 @@
+
+==================================================================
+🚀 INICIANDO SIMULAÇÃO COMPUTACIONAL DE EVENTOS (TCC - KANBAN IA)
+📊 Amostra: 100 Cartões Operacionais | SLA Alvo: 240 min
+==================================================================
+
+📈 RESULTADOS COMPARATIVOS MÉDIOS (POR CARTÃO):
+
+┌─────────────────────────────┬──────────────┬─────────────────────┬─────────────────┐
+│ (index)                     │ Kanban Comum │ Mecanismo Kanban IA │ Melhoria        │
+├─────────────────────────────┼──────────────┼─────────────────────┼─────────────────┤
+│ Espera Oculta (Wait Time)   │ '46 min'     │ '4 min'             │ '-91%'          │
+│ Execução Real (Touch Time)  │ '124 min'    │ '91 min'            │ '-27%'          │
+│ Tempo de Ciclo (Cycle Time) │ '171 min'    │ '94 min'            │ '-45.0%'        │
+│ Taxa Quebra de SLA (>4h)    │ '30.0%'      │ '0.0%'              │ 'Queda Crítica' │
+│ Resolução 1º Contato (FCR)  │ '56.0%'      │ '93.0%'             │ '+37.0%'        │
+└─────────────────────────────┴──────────────┴─────────────────────┴─────────────────┘
+
+🎯 CONCLUSÕES EXTRAÍDAS DA SIMULAÇÃO METODOLÓGICA:
+✔️  Redução Global de Cycle Time: 45.0% mais rápido com o Mecanismo Kanban IA.
+✔️  Força de Trabalho Poupada  : 127.8 horas operacionais salvas em apenas 100 tarefas.
+✔️  Blindagem de SLA          : Rompimentos reduzidos de 30.0% para apenas 0.0%.
+
+💡 Dica para a Banca: Utilize os dados acima para embasar a comprovação matemática do TCC.
+==================================================================
+

@@ -799,7 +799,7 @@ function App() {
               ) : currentView === 'calendar' ? (
                 <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'company' ? (
-                <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} />
+                <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} crmData={crmData} />
               ) : currentView === 'shifts' ? (
                 <ShiftsModule 
                   companyId={currentCompany?.id} 
