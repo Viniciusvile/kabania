@@ -26,6 +26,7 @@ import DigitalTwinModule from './components/DigitalTwin/DigitalTwinModule';
 import ProjectsModule from './components/Projects/ProjectsModule';
 import CalendarIntegrationSettings from './components/CalendarIntegrationSettings';
 import AuthCallbackHandler from './components/AuthCallbackHandler';
+import EmailArea from './components/EmailArea';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
@@ -718,6 +719,8 @@ function App() {
                 <SLADashboard currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'service_center' ? (
                 <ServiceCenter currentCompany={currentCompany} currentUser={currentUser} />
+              ) : currentView === 'emails' ? (
+                <EmailArea currentCompany={currentCompany} currentUser={currentUser} />
               ) : currentView === 'inventory' ? (
                 <InventoryModule companyId={currentCompany?.id} currentUser={currentUser} userRole={userRole} />
               ) : currentView === 'digital_twin' ? (

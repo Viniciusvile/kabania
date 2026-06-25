@@ -81,6 +81,10 @@ export default function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onLo
               className={`submenu-item ${currentView === 'service_center' ? 'active' : ''}`}
               onClick={() => onViewChange('service_center')}
             >Central de Atendimento</div>
+            <div
+              className={`submenu-item ${currentView === 'emails' ? 'active' : ''}`}
+              onClick={() => onViewChange('emails')}
+            >Central de E-mails</div>
           </div>
         </div>
 

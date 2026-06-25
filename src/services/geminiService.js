@@ -688,3 +688,52 @@ Regras de complexidade:
     return null;
   }
 }
+
+// ──────────────────────────────────────────────────────────────────
+// EMAIL AI TAG SUGGESTER
+// ──────────────────────────────────────────────────────────────────
+export async function suggestEmailTags(subject, body, companyId) {
+  return withRetry(async () => {
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const authorizedTags = await getAuthorizedTags(companyId);
+
+      const prompt = `Você é um assistente de inteligência artificial especializado na classificação e triagem de e-mails corporativos.
+Analise o assunto e o corpo do e-mail abaixo e classifique-o cruzando informações com as tags da empresa.
+
+ASSUNTO: "${subject}"
+CORPO DO E-MAIL: "${body}"
+
+${authorizedTags}
+
+REGRAS DE RETORNO:
+1. Retorne APENAS um objeto JSON válido, sem decorações em markdown ou blocos de código.
+2. No campo "suggestedTags", retorne as tags correspondentes às "TAGS AUTORIZADAS DISPONÍVEIS" que combinam com o assunto/conteúdo do e-mail.
+3. No campo "additionalTags", sugira outras tags relevantes para categorização geral (ex: "Urgente", "Cobrança", "Dúvida", "Retorno").
+4. No campo "category", defina uma classificação (ex: "Suporte", "Financeiro", "Vendas", "Comercial", "Outros").
+5. No campo "summary", gere um resumo conciso do e-mail (máximo 12 palavras).
+6. No campo "toneAnalysis", identifique o tom do e-mail (ex: "Formal", "Urgente", "Cordial", "Frio").
+
+RESPOSTA JSON MODELO:
+{
+  "suggestedTags": ["TagAutorizada1"],
+  "additionalTags": ["Urgente", "Cobrança"],
+  "category": "Financeiro",
+  "summary": "Resumo de até 12 palavras aqui.",
+  "toneAnalysis": "Formal"
+}
+
+RESPOSTA JSON:`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("A IA não retornou um JSON válido.");
+      return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+      console.error("Erro ao sugerir tags para e-mail:", error);
+      throw error;
+    }
+  });
+}
+
