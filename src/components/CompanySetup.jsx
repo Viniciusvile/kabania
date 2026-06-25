@@ -87,13 +87,34 @@ export default function CompanySetup({ currentUser, onComplete, onLogout }) {
         await supabase.from('knowledge_base').insert(itemsToInsert);
       }
 
-      // 3. Update user profile
-      const { error: profError } = await supabase
+      // 3. Update user profile (or create if missing)
+      const { data: updatedProfiles, error: profError } = await supabase
         .from('profiles')
         .update({ company_id: companyId, role: 'admin' })
-        .eq('email', currentUser);
+        .eq('email', currentUser)
+        .select();
 
       if (!profError) {
+        if (!updatedProfiles || updatedProfiles.length === 0) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const session = sessionData?.session;
+          const newProfile = {
+            email: currentUser,
+            company_id: companyId,
+            role: 'admin',
+            name: currentUser.split('@')[0],
+            user_id: session?.user?.id || null
+          };
+          const { error: insError } = await supabase.from('profiles').insert([newProfile]);
+          if (insError) {
+            console.warn("Failed to insert profile with user_id, trying fallback...", insError);
+            delete newProfile.user_id;
+            const { error: fallbackError } = await supabase.from('profiles').insert([newProfile]);
+            if (fallbackError) {
+              console.error("Critical fallback insert error:", fallbackError);
+            }
+          }
+        }
         onComplete({ company: newCompany, role: 'admin' });
       } else {
         console.error('Perfil Update Error:', profError);
@@ -129,16 +150,37 @@ export default function CompanySetup({ currentUser, onComplete, onLogout }) {
         const company = companies[0];
         console.log("Company found:", company.name, "ID:", company.id);
         
-        const { error: profError } = await supabase
+        const { data: updatedProfiles, error: profError } = await supabase
           .from('profiles')
           .update({ 
             company_id: company.id, 
             role: 'member' 
           })
-          .eq('email', currentUser);
+          .eq('email', currentUser)
+          .select();
 
         if (!profError) {
-          console.log("Profile updated successfully. Redirecting...");
+          if (!updatedProfiles || updatedProfiles.length === 0) {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
+            const newProfile = {
+              email: currentUser,
+              company_id: company.id,
+              role: 'member',
+              name: currentUser.split('@')[0],
+              user_id: session?.user?.id || null
+            };
+            const { error: insError } = await supabase.from('profiles').insert([newProfile]);
+            if (insError) {
+              console.warn("Failed to insert profile with user_id during join, trying fallback...", insError);
+              delete newProfile.user_id;
+              const { error: fallbackError } = await supabase.from('profiles').insert([newProfile]);
+              if (fallbackError) {
+                console.error("Critical fallback insert error during join:", fallbackError);
+              }
+            }
+          }
+          console.log("Profile updated/created successfully. Redirecting...");
           onComplete({ company, role: 'member' });
         } else {
           console.error("Profile update error during join:", profError);

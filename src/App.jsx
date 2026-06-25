@@ -376,6 +376,37 @@ function App() {
 
       if (profError) {
         if (profError.code === 'PGRST116') {
+          const cachedCompany = localStorage.getItem('synapseCurrentCompany');
+          const cachedUser = localStorage.getItem('synapseCurrentUser');
+          if (cachedCompany && cachedUser && cachedUser.toLowerCase() === email.toLowerCase()) {
+            console.warn("[handleLogin] Perfil não encontrado no banco de dados, recuperando do cache local do navegador.");
+            const parsedCompany = JSON.parse(cachedCompany);
+            setCurrentCompany(parsedCompany);
+            setIsAuthenticated(true);
+            localStorage.setItem('synapseAuth', 'true');
+            
+            const { data: sessionData } = await supabase.auth.getSession();
+            const session = sessionData?.session;
+            const fallbackProfile = {
+              email: email,
+              company_id: parsedCompany.id,
+              role: parsedCompany.role || 'member',
+              name: email.split('@')[0],
+              user_id: session?.user?.id || null
+            };
+            supabase.from('profiles').insert([fallbackProfile]).then(({ error: insErr }) => {
+              if (insErr) {
+                delete fallbackProfile.user_id;
+                supabase.from('profiles').insert([fallbackProfile]).catch(err => {
+                  console.error("Failed silently to auto-create profile during recovery:", err);
+                });
+              } else {
+                console.log("[AutoRecovery] Perfil recriado com sucesso no Supabase.");
+              }
+            });
+            return;
+          }
+
           setCurrentCompany(null);
           setProfileData({ name: email.split('@')[0], avatar_url: null });
           localStorage.setItem('synapseCurrentUser', email);
