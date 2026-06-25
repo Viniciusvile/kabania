@@ -18,7 +18,8 @@ export default function TopBar({
   theme, onToggleTheme,
   projects = [], selectedProjectId, onProjectChange, onAddProject, onRemoveProject,
   onViewChange, currentView, workspaceTab, setWorkspaceTab,
-  profileData: initialProfileData
+  profileData: initialProfileData,
+  condominios = [], selectedCondominioId = null, onCondominioChange
 }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [profileData, setProfileData] = useState(initialProfileData || { name: '', first_name: '', last_name: '', avatar_url: null });
@@ -127,6 +128,48 @@ export default function TopBar({
           <div className="search-bar">
             <Search size={16} className="text-muted" />
             <input type="text" placeholder="Buscar tarefas..." value={searchQuery || ''} onChange={onSearchChange} />
+          </div>
+        )}
+
+        {/* Click Condomínios Selector */}
+        {condominios && condominios.length > 0 && (
+          <div className="project-selector" style={{ marginRight: '10px' }} onClick={() => toggleDropdown('condominio')}>
+            <span>{condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome || 'Todos Condomínios'}</span>
+            <ChevronDown size={14} className={`dropdown-arrow ${activeDropdown === 'condominio' ? 'open' : ''}`} />
+            {activeDropdown === 'condominio' && (
+              <div className="dropdown-menu project-menu" style={{ minWidth: '220px' }} onClick={e => e.stopPropagation()}>
+                <div 
+                  className={`dropdown-item ${!selectedCondominioId ? 'active' : ''}`}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onCondominioChange(null); 
+                    setActiveDropdown(null); 
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {!selectedCondominioId ? <Check size={16} className="text-accent" /> : <span className="w-4"></span>}
+                    <span>Todos Condomínios</span>
+                  </div>
+                </div>
+                <div className="dropdown-divider"></div>
+                {condominios.map(condo => (
+                  <div 
+                    key={condo.id} 
+                    className={`dropdown-item ${String(selectedCondominioId) === String(condo.id) ? 'active' : ''}`}
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onCondominioChange(condo.id); 
+                      setActiveDropdown(null); 
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {String(selectedCondominioId) === String(condo.id) ? <Check size={16} className="text-accent" /> : <span className="w-4"></span>}
+                      <span>{condo.nome}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

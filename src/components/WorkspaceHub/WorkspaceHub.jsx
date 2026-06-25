@@ -6,7 +6,7 @@ import './WorkspaceHub.css';
 
 export default function WorkspaceHub({
   workspaceTab, searchQuery, onSearchChange, projectName, projects, selectedProjectId,
-  currentUser, currentCompany, userRole
+  currentUser, currentCompany, userRole, crmOcorrencias = [], selectedCondominioId = null
 }) {
   return (
     <div className="workspace-hub-container animate-fade-in">
@@ -26,6 +26,8 @@ export default function WorkspaceHub({
               currentUser={currentUser}
               currentCompany={currentCompany}
               projectId={selectedProjectId}
+              crmOcorrencias={crmOcorrencias}
+              selectedCondominioId={selectedCondominioId}
             />
           </div>
         ) : (

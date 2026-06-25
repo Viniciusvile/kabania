@@ -16,11 +16,19 @@ import { generateAutoPilotSchedule } from '../../services/aiSchedulingService';
 import './ShiftsRedesign.css';
 import './ShiftsPremium.css';
 
-export default function ShiftsModule({ companyId, currentUser, userRole }) {
+export default function ShiftsModule({ 
+  companyId, 
+  currentUser, 
+  userRole, 
+  crmFuncionarios = [], 
+  crmOcorrencias = [], 
+  selectedCondominioId = null, 
+  selectedCondominioNome = null 
+}) {
   const { 
     stats, 
     shifts, 
-    employees, 
+    employees: dbEmployees, 
     environments, 
     activities, 
     pendingActivities, 
@@ -34,6 +42,37 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     removePendingLocally,
     addPendingLocally
   } = useShifts(companyId);
+
+  const employees = useMemo(() => {
+    const local = dbEmployees || [];
+    const crmMapped = (crmFuncionarios || []).map(f => {
+      const id = `crm-func-${f.id}`;
+      return {
+        id: id,
+        shift_profile_id: id,
+        profile_id: id,
+        name: f.nome,
+        role: `${f.funcao} (${f.escala})`,
+        is_external: f.tipo === 'Portaria' || f.tipo === 'Administrativo/Operacional',
+        skills: [f.tipo, f.escala, f.condominio_nome],
+        condominio_id: f.condominio_id,
+        condominio_nome: f.condominio_nome,
+        source: 'crm',
+        ativo: f.ativo
+      };
+    });
+    
+    const merged = [...local, ...crmMapped];
+    if (selectedCondominioId && selectedCondominioNome) {
+      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      return merged.filter(e => 
+        String(e.condominio_id) === String(selectedCondominioId) ||
+        (e.condominio_nome && e.condominio_nome.toLowerCase() === selectedNomeLower) ||
+        !e.id?.toString().startsWith('crm-')
+      );
+    }
+    return merged;
+  }, [dbEmployees, crmFuncionarios, selectedCondominioId, selectedCondominioNome]);
 
   const [filterStatus, setFilterStatus] = useState('todos');
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,23 +122,66 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     fetchKanbanTasks();
   }, [companyId]);
 
+  // Merge local Kanban tasks and CRM occurrences
+  const mergedKanbanTasks = useMemo(() => {
+    const crmTasks = (crmOcorrencias || []).map(o => ({
+      id: `crm-oc-${o.id}`,
+      title: o.categoria || 'Ocorrência',
+      desc: o.descricao,
+      column_id: o.status === 'Pendente' ? 'todo' : 'backlog',
+      tag: o.categoria,
+      customer_name: o.condominio_nome,
+      condominio_id: o.condominio_id,
+      source: 'crm',
+      is_external: true
+    }));
+
+    const combined = [...kanbanTasks, ...crmTasks];
+
+    if (selectedCondominioId && selectedCondominioNome) {
+      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      return combined.filter(t => 
+        String(t.condominio_id) === String(selectedCondominioId) ||
+        (t.customer_name && t.customer_name.toLowerCase() === selectedNomeLower)
+      );
+    }
+    return combined;
+  }, [kanbanTasks, crmOcorrencias, selectedCondominioId, selectedCondominioNome]);
+
   // Workspace mostra os cards do Kanban enriquecidos com status de agendamento
   const workspaceItems = useMemo(() => {
-    return kanbanTasks
+    return mergedKanbanTasks
       .map(task => {
         const isScheduled = shifts.some(s => s.notes?.includes(`[KANBAN_ID:${task.id}]`));
         return { ...task, isScheduled, source: 'kanban' }; // Garante source: 'kanban'
       })
       .filter(task => !task.isScheduled); 
-  }, [kanbanTasks, shifts]);
+  }, [mergedKanbanTasks, shifts]);
 
   // ── Separação de Atividades Pendentes (Solicitações vs Rotinas) ───────
   const { sidebarServiceRequests, sidebarRoutines } = useMemo(() => {
+    let srs = pendingActivities.filter(p => p.source === 'service_request');
+    let routines = pendingActivities.filter(p => p.source === 'activity');
+
+    if (selectedCondominioId && selectedCondominioNome) {
+      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      srs = srs.filter(p => 
+        String(p.condominio_id) === String(selectedCondominioId) ||
+        (p.customer_name && p.customer_name.toLowerCase() === selectedNomeLower) ||
+        (p.location && p.location.toLowerCase().includes(selectedNomeLower))
+      );
+      routines = routines.filter(p => 
+        String(p.condominio_id) === String(selectedCondominioId) ||
+        (p.customer_name && p.customer_name.toLowerCase() === selectedNomeLower) ||
+        (p.location && p.location.toLowerCase().includes(selectedNomeLower))
+      );
+    }
+
     return {
-      sidebarServiceRequests: pendingActivities.filter(p => p.source === 'service_request'),
-      sidebarRoutines: pendingActivities.filter(p => p.source === 'activity')
+      sidebarServiceRequests: srs,
+      sidebarRoutines: routines
     };
-  }, [pendingActivities]);
+  }, [pendingActivities, selectedCondominioId, selectedCondominioNome]);
 
   const unifiedWorkspaceItems = useMemo(() => {
     return [...workspaceItems, ...sidebarServiceRequests];
@@ -179,8 +261,77 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
     setWeekStart(d);
   };
 
+  // Enrich shifts with CRM employee assignments parsed from notes
+  const processedShifts = useMemo(() => {
+    return shifts.map(shift => {
+      const match = shift.notes?.match(/\[CRM_EMPLOYEE_ID:([^\]]*)\]/);
+      if (match) {
+        const crmEmpId = `crm-func-${match[1].trim()}`;
+        const crmEmp = (crmFuncionarios || []).find(f => `crm-func-${f.id}` === crmEmpId);
+        if (crmEmp) {
+          const alreadyAssigned = shift.assigned_employees?.some(e => e.id === crmEmpId);
+          if (!alreadyAssigned) {
+            const assigned = [
+              ...(shift.assigned_employees || []),
+              {
+                id: crmEmpId,
+                employee_id: crmEmpId,
+                name: crmEmp.nome,
+                role: `${crmEmp.funcao} (${crmEmp.escala})`,
+                is_external: true,
+                skills: [crmEmp.tipo, crmEmp.escala, crmEmp.condominio_nome],
+                avatar_url: null,
+                condominio_id: crmEmp.condominio_id,
+                condominio_nome: crmEmp.condominio_nome
+              }
+            ];
+            return { ...shift, assigned_employees: assigned };
+          }
+        }
+      }
+      return shift;
+    });
+  }, [shifts, crmFuncionarios]);
+
   const filteredShifts = useMemo(() => {
-    return shifts.filter(s => {
+    let result = processedShifts;
+
+    // Filter by Condominium
+    if (selectedCondominioId && selectedCondominioNome) {
+      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      result = result.filter(s => {
+        // 1. Check if any assigned employee matches the condominio_id or condominio_nome
+        const matchesEmployee = s.assigned_employees?.some(e => 
+          String(e.condominio_id) === String(selectedCondominioId) ||
+          (e.condominio_nome && e.condominio_nome.toLowerCase() === selectedNomeLower)
+        );
+        if (matchesEmployee) return true;
+
+        // 2. Check if the environment name matches the condominium name
+        const envName = s.work_environments?.name || '';
+        if (envName.toLowerCase().includes(selectedNomeLower)) return true;
+
+        // 3. Check if notes has a KANBAN_ID of a task that matches the condominium
+        const kanbanId = getKanbanId(s.notes);
+        if (kanbanId) {
+          const linkedTask = mergedKanbanTasks.find(t => t.id === kanbanId);
+          if (linkedTask) {
+            if (String(linkedTask.condominio_id) === String(selectedCondominioId) ||
+                (linkedTask.customer_name && linkedTask.customer_name.toLowerCase() === selectedNomeLower)) {
+              return true;
+            }
+          }
+        }
+
+        // 4. Check if the notes text itself contains the condominium name
+        if (s.notes && s.notes.toLowerCase().includes(selectedNomeLower)) return true;
+
+        return false;
+      });
+    }
+
+    // Filter by status and search query
+    return result.filter(s => {
       if (filterStatus === 'ativos') return s.status === 'in_progress' || s.status === 'open';
       if (filterStatus === 'concluidos') return s.status === 'concluded';
       return true;
@@ -188,9 +339,10 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
       return s.work_environments?.name?.toLowerCase().includes(q) || 
-             s.work_activities?.name?.toLowerCase().includes(q);
+             s.work_activities?.name?.toLowerCase().includes(q) ||
+             s.notes?.toLowerCase().includes(q);
     });
-  }, [shifts, filterStatus, searchQuery]);
+  }, [processedShifts, selectedCondominioId, selectedCondominioNome, filterStatus, searchQuery, mergedKanbanTasks]);
 
   const fieldWorkers = useMemo(() => employees.filter(e => e.is_external === true), [employees]);
   const staffMembers = useMemo(() => employees.filter(e => e.is_external !== true), [employees]);
@@ -221,6 +373,39 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       
       // Optimistic personnel addition
       const emp = employees.find(e => (e.shift_profile_id || e.id) === profileId);
+
+      if (profileId && profileId.toString().startsWith('crm-func-')) {
+        const shift = shifts.find(s => s.id === targetId);
+        if (shift) {
+          let cleanedNotes = (shift.notes || '').replace(/\[CRM_EMPLOYEE_ID:[^\]]*\]/g, '').trim();
+          const rawCrmId = profileId.replace('crm-func-', '');
+          const newNotes = cleanedNotes ? `${cleanedNotes} [CRM_EMPLOYEE_ID:${rawCrmId}]` : `[CRM_EMPLOYEE_ID:${rawCrmId}]`;
+
+          updateShiftLocally(targetId, {
+            notes: newNotes,
+            assigned_employees: [
+              ...(shift.assigned_employees || []).filter(e => !e.id?.toString().startsWith('crm-func-')),
+              {
+                id: profileId,
+                employee_id: profileId,
+                name: emp?.name || 'Colaborador CRM',
+                role: emp?.role || 'Zelador',
+                is_external: true,
+                skills: emp?.skills || [],
+                avatar_url: null,
+                condominio_id: emp?.condominio_id,
+                condominio_nome: emp?.condominio_nome
+              }
+            ]
+          });
+
+          await supabase.from('shift_assignments').delete().eq('shift_id', targetId);
+          await updateShift(targetId, { notes: newNotes }, currentUser);
+        }
+        setAssignmentModal({ isOpen: false, shiftId: null });
+        return;
+      }
+
       if (emp) {
         updateShiftLocally(targetId, {
           assigned_employees: [
@@ -330,12 +515,25 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
         status: editingShiftId ? undefined : 'draft' // Default status is draft (rascunho)
       };
 
+      const isCrmEmp = newShiftData.assigned_employee_id?.toString().startsWith('crm-func-');
+      const rawCrmId = isCrmEmp ? newShiftData.assigned_employee_id.replace('crm-func-', '') : null;
+
       let result;
       if (editingShiftId) {
+        let shiftNotes = shifts.find(s => s.id === editingShiftId)?.notes || '';
+        shiftNotes = shiftNotes.replace(/\[CRM_EMPLOYEE_ID:[^\]]*\]/g, '').trim();
+        if (isCrmEmp) {
+          shiftNotes = shiftNotes ? `${shiftNotes} [CRM_EMPLOYEE_ID:${rawCrmId}]` : `[CRM_EMPLOYEE_ID:${rawCrmId}]`;
+        }
+        payload.notes = shiftNotes;
+
         result = await updateShift(editingShiftId, payload, currentUser);
         
-        // Se houver alteração de colaborador no modal de personalização
-        await replaceEmployeeInShift(editingShiftId, newShiftData.assigned_employee_id, newShiftData.is_external);
+        if (isCrmEmp) {
+          await supabase.from('shift_assignments').delete().eq('shift_id', editingShiftId);
+        } else {
+          await replaceEmployeeInShift(editingShiftId, newShiftData.assigned_employee_id, newShiftData.is_external);
+        }
 
         if (updateShiftLocally && result) {
           const env = environments.find(e => e.id === result.environment_id);
@@ -359,11 +557,38 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
           updateShiftLocally(editingShiftId, enriched);
         }
       } else {
+        if (isCrmEmp) {
+          payload.notes = `[CRM_EMPLOYEE_ID:${rawCrmId}]`;
+        }
         result = await createShift(payload, currentUser);
         if (newShiftData.assigned_employee_id) {
-          await addEmployeeToShift(result.id, newShiftData.assigned_employee_id, newShiftData.is_external);
+          if (isCrmEmp) {
+            // CRM employee assignment is in notes metadata, no db assignment table write
+          } else {
+            await addEmployeeToShift(result.id, newShiftData.assigned_employee_id, newShiftData.is_external);
+          }
         }
-        if (addShiftLocally && result) addShiftLocally(result);
+        if (addShiftLocally && result) {
+          const env = environments.find(e => e.id === result.environment_id);
+          const act = activities.find(a => a.id === result.activity_id);
+          const emp = employees.find(e => (e.shift_profile_id || e.id) === newShiftData.assigned_employee_id);
+
+          const enriched = {
+            ...result,
+            work_environments: { name: env?.name || 'Local Não Definido' },
+            work_activities: {
+              name: act?.name || 'Atividade',
+              required_role: act?.required_role || result.required_role,
+              required_skills: act?.required_skills || result.required_skills || []
+            },
+            assigned_employees: emp ? [{ 
+              ...emp, 
+              employee_id: emp.shift_profile_id || emp.id,
+              name: emp.name 
+            }] : []
+          };
+          addShiftLocally(enriched);
+        }
       }
       
       setIsModalOpen(false);
@@ -518,7 +743,7 @@ export default function ShiftsModule({ companyId, currentUser, userRole }) {
       if (deleteError) throw deleteError;
 
       // 3. Sincronizar origem (Kanban)
-      if (kanbanId) {
+      if (kanbanId && !kanbanId.startsWith('crm-')) {
         const { error: taskError } = await supabase
           .from('tasks')
           .update({ column_id: 'todo' })

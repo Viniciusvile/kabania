@@ -27,6 +27,7 @@ import ProjectsModule from './components/Projects/ProjectsModule';
 import CalendarIntegrationSettings from './components/CalendarIntegrationSettings';
 import AuthCallbackHandler from './components/AuthCallbackHandler';
 import EmailArea from './components/EmailArea';
+import { fetchCrmSyncData } from './services/crmIntegrationService';
 import { logEvent } from './services/historyService';
 import { supabase } from './supabaseClient';
 import { safeQuery, stagger } from './utils/supabaseSafe';
@@ -103,6 +104,31 @@ function App() {
     return saved || 'workspace_hub';
   });
   const [isLoginProcessing, setIsLoginProcessing] = useState(false);
+
+  // Click Condomínios CRM Integration States
+  const [crmData, setCrmData] = useState({ condominios: [], ocorrencias: [], funcionarios: [] });
+  const [selectedCondominioId, setSelectedCondominioId] = useState(() => {
+    const saved = localStorage.getItem('synapseSelectedCondominioId');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // Fetch CRM Integration data on mount / company change
+  useEffect(() => {
+    if (currentCompany) {
+      fetchCrmSyncData().then(data => {
+        if (data) setCrmData(data);
+      });
+    }
+  }, [currentCompany]);
+
+  // Persist selected condominio filter
+  useEffect(() => {
+    if (selectedCondominioId !== null) {
+      localStorage.setItem('synapseSelectedCondominioId', JSON.stringify(selectedCondominioId));
+    } else {
+      localStorage.removeItem('synapseSelectedCondominioId');
+    }
+  }, [selectedCondominioId]);
 
   // FINAL FIX: Combined Auth state logic is now unified in the main useEffect below to prevent race conditions.
   const [workspaceTab, setWorkspaceTab] = useState('kanban');
@@ -671,6 +697,9 @@ function App() {
               }}
               onAddProject={handleAddProject}
               onRemoveProject={handleRemoveProject}
+              condominios={crmData.condominios}
+              selectedCondominioId={selectedCondominioId}
+              onCondominioChange={setSelectedCondominioId}
             />
             <div className="content-scroll" key={currentView}>
               {currentView === 'workspace_hub' ? (
@@ -684,6 +713,8 @@ function App() {
                   currentUser={currentUser}
                   currentCompany={currentCompany}
                   userRole={userRole}
+                  crmOcorrencias={crmData.ocorrencias}
+                  selectedCondominioId={selectedCondominioId}
                 />
               ) : currentView === 'knowledge' ? (
                 <KnowledgeBase 
@@ -703,6 +734,10 @@ function App() {
                   companyId={currentCompany?.id} 
                   currentUser={currentUser}
                   userRole={userRole}
+                  crmFuncionarios={crmData.funcionarios}
+                  crmOcorrencias={crmData.ocorrencias}
+                  selectedCondominioId={selectedCondominioId}
+                  selectedCondominioNome={crmData.condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome}
                 />
               ) : currentView === 'reports' ? (
                 <ReportsDashboard currentCompany={currentCompany} currentUser={currentUser} />

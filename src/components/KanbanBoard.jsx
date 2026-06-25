@@ -76,18 +76,22 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
           {deadlineStatus?.color === 'red' && <AlertTriangle size={13} className="text-red-500" />}
           {task.hasAlert && !deadlineStatus && <AlertTriangle size={14} className="text-red-500" />}
           {!task.hasAlert && !deadlineStatus && <Sparkles size={14} className="text-accent opacity-30" />}
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-            onPointerDown={e => e.stopPropagation()}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
-            title="Editar"
-          ><Edit2 size={13} /></button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            onPointerDown={e => e.stopPropagation()}
-            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-            title="Excluir"
-          ><Trash2 size={14} /></button>
+          {task.source !== 'crm' && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+                onPointerDown={e => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
+                title="Editar"
+              ><Edit2 size={13} /></button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+                onPointerDown={e => e.stopPropagation()}
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
+                title="Excluir"
+              ><Trash2 size={14} /></button>
+            </>
+          )}
         </div>
       </div>
 
@@ -217,11 +221,15 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 }
 
 // ---- Main Board ----
-export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null }) {
+export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null }) {
+  // Click Condomínios local columns overrides for occurrences
+  const [crmColumns, setCrmColumns] = useState({});
+
   // Instant Hydration from cache
   const [tasks, setTasks] = useState(() => {
     if (!projectId) return [];
-    const cached = localStorage.getItem(`kanban_tasks_${projectId}`);
+    const cacheKey = `kanban_tasks_${projectId}`;
+    const cached = localStorage.getItem(cacheKey);
     return cached ? JSON.parse(cached) : [];
   });
   const [loading, setLoading] = useState(!tasks.length && !!projectId);
@@ -259,13 +267,49 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     return () => { supabase.removeChannel(shiftsChannel); };
   }, [currentCompany?.id]);
 
-  // Enriquecer tarefas com isScheduled
+  // Enriquecer e mesclar com ocorrências do CRM + aplicar filtro de condomínio
   const processedTasks = useMemo(() => {
-    return tasks.map(t => ({
+    // 1. Mapear ocorrências do CRM para o formato de tarefas do Kanban
+    const mappedCrmOcorrencias = (crmOcorrencias || []).map(o => {
+      const crmId = `crm-oc-${o.id}`;
+      const defaultColumn = o.status === 'Pendente' ? 'todo' : 'backlog';
+      const colId = crmColumns[crmId] || defaultColumn;
+      return {
+        id: crmId,
+        title: o.categoria || 'Ocorrência',
+        desc: o.descricao,
+        columnId: colId,
+        tag: o.categoria,
+        tagColor: 'orange', // Marca cor laranja para identificar a origem
+        customer_name: o.condominio_nome,
+        isScheduled: false,
+        assignees: [],
+        comments: [],
+        source: 'crm',
+        condominio_id: o.condominio_id,
+        created_at: o.created_at
+      };
+    });
+
+    const all = [...tasks, ...mappedCrmOcorrencias];
+
+    // 2. Enriquecer com agendamento
+    const enriched = all.map(t => ({
       ...t,
       isScheduled: shifts.some(s => s.notes?.includes(`[KANBAN_ID:${t.id}]`))
     }));
-  }, [tasks, shifts]);
+
+    // 3. Filtrar por Condomínio se houver filtro ativo
+    if (selectedCondominioId) {
+      const selectedNome = crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
+      return enriched.filter(t => 
+        String(t.condominio_id) === String(selectedCondominioId) ||
+        (t.customer_name && selectedNome && t.customer_name.toLowerCase() === selectedNome.toLowerCase())
+      );
+    }
+
+    return enriched;
+  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
@@ -641,7 +685,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   );
 
   const handleDragStart = ({ active }) => {
-    const task = tasks.find(t => t.id === active.id);
+    const task = processedTasks.find(t => t.id === active.id);
     setDragStartColumn(task?.columnId || null);
     setActiveTask(task);
   };
@@ -650,18 +694,22 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     if (!over || active.id === over.id) return;
     const isActiveTask = active.data.current?.type === 'Task';
     const isOverTask = over.data.current?.type === 'Task';
+    
+    // CRM cards are only moved locally on dragEnd. We avoid sorting relative to CRM items to prevent Index Errors.
+    if (active.id.toString().startsWith('crm-')) return;
+    if (over.id.toString().startsWith('crm-')) return;
+
     if (isActiveTask && isOverTask) {
       setTasks(tasks => {
         const ai = tasks.findIndex(t => t.id === active.id);
         const oi = tasks.findIndex(t => t.id === over.id);
+        if (ai === -1 || oi === -1) return tasks;
         if (tasks[ai].columnId !== tasks[oi].columnId) {
           const t = [...tasks];
           const newColId = tasks[oi].columnId;
-          const oldColId = tasks[ai].columnId;
           t[ai] = { ...t[ai], columnId: newColId };
           
           if (newColId !== 'ai') {
-            // Stop loading state if moving out of AI
             t[ai].isAiLoading = false;
           }
           
@@ -675,13 +723,13 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       if (isOverCol) {
         setTasks(tasks => {
           const ai = tasks.findIndex(t => t.id === active.id);
+          if (ai === -1) return tasks;
           const oldColId = tasks[ai].columnId;
           if (oldColId !== over.id) {
             const t = [...tasks];
             t[ai] = { ...t[ai], columnId: over.id };
             
             if (over.id !== 'ai') {
-              // Stop loading state if moving out of AI
               t[ai].isAiLoading = false;
             }
             
@@ -700,20 +748,30 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       return;
     }
 
-    const currentTask = tasks.find(t => t.id === active.id);
+    const currentTask = processedTasks.find(t => t.id === active.id);
     const newColId = over.data.current?.type === 'Task'
-      ? tasks.find(t => t.id === over.id)?.columnId
+      ? processedTasks.find(t => t.id === over.id)?.columnId
       : over.id;
 
     if (currentTask && newColId) {
-      // 1. Sync local tasks state immediately
+      // 1. CRM Task Column Update
+      if (currentTask.id.toString().startsWith('crm-')) {
+        if (newColId !== dragStartColumn) {
+          setCrmColumns(prev => ({ ...prev, [currentTask.id]: newColId }));
+        }
+        setActiveTask(null);
+        setDragStartColumn(null);
+        return;
+      }
+
+      // 2. Sync local Supabase tasks state immediately
       const updatedTasks = tasks.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t);
       setTasks(updatedTasks);
       
-      // 2. Persist to Cache immediately
+      // 3. Persist to Cache immediately
       localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
       
-      // 3. Persist to DB if column changed
+      // 4. Persist to DB if column changed
       if (newColId !== dragStartColumn) {
         const payload = { column_id: newColId };
         if (newColId === 'ai') payload.ai_response = null;
@@ -723,18 +781,16 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         if (!error) {
           notifyTaskMoved({ ...currentTask, columnId: newColId }, COLUMN_LABELS[newColId] || newColId, currentUser);
           
-          // Triggers Command Center Notification for "Done"
           if (newColId === 'done') {
             createNotification(
               currentCompany?.id, 
-              null, // null = broadcast to whole company
+              null,
               'kanban_done',
               `🎉 A tarefa "${currentTask.title}" foi movida para Concluído por ${typeof currentUser === 'string' ? currentUser.split('@')[0] : 'Usuário'}!`
             );
           }
         } else {
           console.error('Error persisting drag and drop:', error);
-          // Optional: handle rollback if critical
         }
       }
     }
