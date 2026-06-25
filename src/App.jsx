@@ -397,8 +397,8 @@ function App() {
             supabase.from('profiles').insert([fallbackProfile]).then(({ error: insErr }) => {
               if (insErr) {
                 delete fallbackProfile.user_id;
-                supabase.from('profiles').insert([fallbackProfile]).catch(err => {
-                  console.error("Failed silently to auto-create profile during recovery:", err);
+                supabase.from('profiles').insert([fallbackProfile]).then(({ error: err2 }) => {
+                  if (err2) console.error("Failed silently to auto-create profile during recovery:", err2);
                 });
               } else {
                 console.log("[AutoRecovery] Perfil recriado com sucesso no Supabase.");
