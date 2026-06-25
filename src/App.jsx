@@ -479,6 +479,9 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Mark logout as explicit to allow session clearance
+    localStorage.setItem('synapseExplicitLogout', 'true');
+    
     // Clear local state immediately for instant feedback
     handleLogoutLocal();
     
@@ -513,13 +516,33 @@ function App() {
           if (session?.user?.email) {
             await handleLogin(session.user.email);
           } else {
-            console.log("No active session found.");
-            // Se o Supabase confirmou que não há sessão, limpamos o estado
-            setIsAuthenticated(false);
+            console.log("No active session found in Supabase.");
+            
+            // Check if we have optimistic login session in local storage
+            const wasAuth = localStorage.getItem('synapseAuth') === 'true';
+            const localUser = localStorage.getItem('synapseCurrentUser');
+            const hasSupaToken = localStorage.getItem('kabania_supabase_auth_token_v3');
+            
+            // Retain local session if offline or if token still exists in cache
+            if (wasAuth && localUser && (hasSupaToken || !navigator.onLine)) {
+              console.log("[initSession] Retaining local auth state for user:", localUser);
+              const cachedCompany = localStorage.getItem('synapseCurrentCompany');
+              const cachedRole = localStorage.getItem('synapseUserRole');
+              if (cachedCompany) setCurrentCompany(JSON.parse(cachedCompany));
+              if (cachedRole) setUserRole(cachedRole);
+              setIsAuthenticated(true);
+            } else {
+              setIsAuthenticated(false);
+            }
           }
         }
       } catch (err) {
         console.error("Error during session init:", err);
+        const wasAuth = localStorage.getItem('synapseAuth') === 'true';
+        const localUser = localStorage.getItem('synapseCurrentUser');
+        if (wasAuth && localUser) {
+          setIsAuthenticated(true);
+        }
       } finally {
         if (isMounted) {
           setIsSessionLoading(false);
@@ -542,7 +565,22 @@ function App() {
         }
         setIsSessionLoading(false);
       } else if (event === 'SIGNED_OUT') {
-        handleLogoutLocal();
+        const explicitLogout = localStorage.getItem('synapseExplicitLogout') === 'true';
+        if (explicitLogout) {
+          handleLogoutLocal();
+          localStorage.removeItem('synapseExplicitLogout');
+        } else {
+          // Implicit SIGNED_OUT from Supabase client (e.g. refresh failure due to network drop)
+          const wasAuth = localStorage.getItem('synapseAuth') === 'true';
+          const localUser = localStorage.getItem('synapseCurrentUser');
+          const hasSupaToken = localStorage.getItem('kabania_supabase_auth_token_v3');
+          
+          if (wasAuth && localUser && (hasSupaToken || !navigator.onLine)) {
+            console.log("[AuthChange] Retaining local auth state after implicit SIGNED_OUT");
+          } else {
+            handleLogoutLocal();
+          }
+        }
         setIsSessionLoading(false);
       } else if (event === 'INITIAL_SESSION') {
         if (session?.user?.email) {
