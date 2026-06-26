@@ -779,20 +779,6 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
               {currentUser?.toLowerCase() === 'click@gmail.com' && onRefreshCrm && (
                 <button 
                   className="cp-btn-sync-crm"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(34, 211, 238, 0.1)',
-                    border: '1px solid rgba(34, 211, 238, 0.2)',
-                    color: '#22d3ee',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
                   onClick={async () => {
                     setIsSyncing(true);
                     await onRefreshCrm();

@@ -169,6 +169,38 @@
 }
 
 /* CRM Section */
+.cp-crm-section {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.cp-btn-sync-crm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  color: #00e5ff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cp-btn-sync-crm:hover:not(:disabled) {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.1);
+}
+
+.cp-btn-sync-crm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .cp-crm-header {
   display: flex;
   align-items: center;
