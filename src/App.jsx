@@ -123,6 +123,21 @@ function App() {
     }
   }, [currentCompany, currentUser]);
 
+  const refreshCrmData = async () => {
+    if (currentCompany && currentUser?.toLowerCase() === 'click@gmail.com') {
+      try {
+        const data = await fetchCrmSyncData();
+        if (data) {
+          setCrmData(data);
+          return true;
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar CRM:", err);
+      }
+    }
+    return false;
+  };
+
   // Persist selected condominio filter
   useEffect(() => {
     if (selectedCondominioId !== null) {
@@ -799,7 +814,13 @@ function App() {
               ) : currentView === 'calendar' ? (
                 <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'company' ? (
-                <CompanyPanel currentUser={currentUser} currentCompany={currentCompany} userRole={userRole} crmData={crmData} />
+                <CompanyPanel 
+                  currentUser={currentUser} 
+                  currentCompany={currentCompany} 
+                  userRole={userRole} 
+                  crmData={crmData} 
+                  onRefreshCrm={refreshCrmData} 
+                />
               ) : currentView === 'shifts' ? (
                 <ShiftsModule 
                   companyId={currentCompany?.id} 

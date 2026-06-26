@@ -10,7 +10,7 @@ import { safeQuery, stagger } from '../utils/supabaseSafe';
 import { getWorkEnvironments, createWorkEnvironment, deleteWorkEnvironment, getActivities, createWorkActivity, deleteWorkActivity } from '../services/shiftService';
 import './CompanyPanel.css';
 
-export default function CompanyPanel({ currentUser, currentCompany, userRole, crmData }) {
+export default function CompanyPanel({ currentUser, currentCompany, userRole, crmData, onRefreshCrm }) {
   const [copied, setCopied] = useState(false);
   
   // Helper for SWR (Stale-While-Revalidate)
@@ -61,6 +61,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
   const [isLoadingCollabs, setIsLoadingCollabs] = useState(false);
   const [isLoadingResources, setIsLoadingResources] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [showCustModal, setShowCustModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   
@@ -774,6 +775,36 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
               <h2 className="cp-crm-title">Gestão de Clientes</h2>
               <span className="cp-sector-tag">Total: {allCustomers.length} clientes</span>
             </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {currentUser?.toLowerCase() === 'click@gmail.com' && onRefreshCrm && (
+                <button 
+                  className="cp-btn-sync-crm"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'rgba(34, 211, 238, 0.1)',
+                    border: '1px solid rgba(34, 211, 238, 0.2)',
+                    color: '#22d3ee',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={async () => {
+                    setIsSyncing(true);
+                    await onRefreshCrm();
+                    setIsSyncing(false);
+                  }}
+                  disabled={isSyncing}
+                  title="Sincronizar dados com o CRM"
+                >
+                  <RefreshCcw size={16} className={isSyncing ? "animate-spin" : ""} />
+                  {isSyncing ? "Sincronizando..." : "Sincronizar CRM"}
+                </button>
+              )}
               <button 
                 className="cp-btn-new-customer"
                 onClick={() => { setEditingCustomer(null); setShowCustModal(true); }}
@@ -781,6 +812,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
                 <Plus size={18} /> Novo Cliente
               </button>
             </div>
+          </div>
 
             <div className="cp-customers-grid">
               {allCustomers.map(customer => (
