@@ -133,7 +133,8 @@ export default function ShiftsModule({
       customer_name: o.condominio_nome,
       condominio_id: o.condominio_id,
       source: 'crm',
-      is_external: true
+      is_external: true,
+      severidade: o.severidade
     }));
 
     const combined = [...kanbanTasks, ...crmTasks];

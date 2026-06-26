@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Clock, Plus, CheckCircle, MapPin, Activity, Timer, Layers, Search, GripVertical, LayoutGrid, AlertTriangle, Calendar } from 'lucide-react';
+import { Clock, Plus, CheckCircle, MapPin, Activity, Timer, Layers, Search, GripVertical, LayoutGrid, AlertTriangle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ShiftSidebar({ 
   pendingActivities, 
@@ -14,6 +14,8 @@ export default function ShiftSidebar({
   const [draggingId, setDraggingId] = useState(null);
   const [dragCounter, setDragCounter] = useState(0);
   const isDraggingOver = dragCounter > 0;
+  const [groupingMode, setGroupingMode] = useState('none');
+  const [collapsedGroups, setCollapsedGroups] = useState({});
 
   const truncateUUID = (uuid) => {
     if (!uuid || uuid.length < 12) return uuid;
@@ -37,10 +39,14 @@ export default function ShiftSidebar({
     if (!searchTerm) return pendingActivities;
     const s = searchTerm.toLowerCase();
     return pendingActivities.filter(a =>
-      (a.location || '').toLowerCase().includes(s) ||
+      (a.title || '').toLowerCase().includes(s) ||
+      (a.desc || '').toLowerCase().includes(s) ||
       (a.description || '').toLowerCase().includes(s) ||
+      (a.customer_name || '').toLowerCase().includes(s) ||
+      (a.location || '').toLowerCase().includes(s) ||
       (a.service_type || '').toLowerCase().includes(s) ||
-      (a.type || '').toLowerCase().includes(s)
+      (a.type || '').toLowerCase().includes(s) ||
+      (a.categoria || '').toLowerCase().includes(s)
     );
   }, [pendingActivities, searchTerm]);
 
@@ -53,6 +59,29 @@ export default function ShiftSidebar({
       (a.type || '').toLowerCase().includes(s)
     );
   }, [routineActivities, searchTerm]);
+
+  const toggleGroup = (groupName) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
+  const groupedPending = useMemo(() => {
+    if (groupingMode === 'none') return null;
+    const groups = {};
+    filteredPending.forEach(act => {
+      let key = 'Outros';
+      if (groupingMode === 'condominio') {
+        key = act.customer_name || act.condominio_nome || 'Sem Condomínio';
+      } else if (groupingMode === 'categoria') {
+        key = act.categoria || act.tag || 'Sem Categoria';
+      }
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(act);
+    });
+    return groups;
+  }, [filteredPending, groupingMode]);
 
   // ── Shared drag handlers ──────────────────────────────────────────────
   const handleDragStart = (e, item, isRoutine = false) => {
@@ -67,6 +96,25 @@ export default function ShiftSidebar({
   };
 
   const handleDragEnd = () => setDraggingId(null);
+
+  const groupBtnStyle = (active) => ({
+    padding: '6px 8px',
+    borderRadius: '8px',
+    fontSize: '9px',
+    fontWeight: 800,
+    cursor: 'pointer',
+    border: active ? '1px solid rgba(0,229,255,0.25)' : '1px solid rgba(255,255,255,0.05)',
+    background: active 
+      ? 'linear-gradient(135deg, rgba(0,194,255,0.08) 0%, rgba(0,114,255,0.12) 100%)' 
+      : 'rgba(255,255,255,0.02)',
+    color: active ? '#00e5ff' : 'var(--text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    transition: 'all 0.2s',
+    flex: 1,
+    textAlign: 'center',
+    boxShadow: active ? '0 0 10px rgba(0,229,255,0.08)' : 'none',
+  });
 
   // ── Styles ────────────────────────────────────────────────────────────
   const sidebarStyle = {
@@ -178,6 +226,209 @@ export default function ShiftSidebar({
     }
   };
 
+  const renderPendingCard = (act, index) => {
+    const isCrm = act.id?.toString().startsWith('crm-oc-');
+    const isKanban = act.source === 'kanban' || isCrm;
+
+    // Resolve title: prioritize categoria/title, fallback to type or service_type
+    const rawTitle = act.title || act.categoria || act.type || act.service_type || 'Atividade';
+    const cleanTitle = typeof rawTitle === 'string' 
+      ? rawTitle.replace(/^(TITULO|TITLE|DESCRICAO|DESCRIPTION):\s*/i, '') 
+      : 'Atividade';
+
+    // Resolve description: desc, description, or descricao
+    const rawDesc = act.desc || act.description || act.descricao || '';
+    const cleanDesc = typeof rawDesc === 'string'
+      ? rawDesc.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')
+      : '';
+
+    // Resolve condo/location name
+    const condo = act.customer_name || act.condominio_nome || act.location || 'Sem Condomínio';
+
+    // Resolve severity
+    const severity = act.severidade || (act.type?.toLowerCase().includes('urgente') || act.status === 'priority' || act.status === 'urgent' ? 'alta' : 'media');
+    
+    const severityColors = {
+      alta: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#f87171', bar: '#ef4444' },
+      media: { bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.2)', text: '#fb923c', bar: '#f97316' },
+      baixa: { bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.2)', text: '#4ade80', bar: '#22c55e' }
+    };
+    
+    const sev = severityColors[severity?.toLowerCase()] || severityColors.media;
+
+    // SLA calculations
+    let slaContent = null, slaColor = 'green';
+    if (act.sla_deadline) {
+      const diffMin = Math.floor((new Date(act.sla_deadline) - new Date()) / 60000);
+      if (act.sla_breached || diffMin < 0) { slaContent = 'SLA Estourado!'; slaColor = 'red'; }
+      else if (diffMin < 60) { slaContent = `Resta ${diffMin}min`; slaColor = 'orange'; }
+      else { slaContent = `Expira em ${Math.floor(diffMin / 60)}h`; slaColor = 'green'; }
+    }
+
+    return (
+      <div
+        key={act.id}
+        draggable
+        onDragStart={(e) => handleDragStart(e, act, false)}
+        onDragEnd={handleDragEnd}
+        style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: `1px solid ${draggingId === act.id ? 'rgba(0,229,255,0.4)' : 'rgba(255,255,255,0.06)'}`,
+          borderRadius: '12px',
+          padding: '8px 10px',
+          position: 'relative',
+          cursor: 'grab',
+          opacity: draggingId === act.id ? 0.5 : 1,
+          transition: 'all 0.25s ease',
+          userSelect: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          backdropFilter: 'blur(10px)',
+          animationDelay: `${index * 0.04}s`
+        }}
+        title="Arraste para o calendário ou clique em Agendar"
+      >
+        {/* Left accent line based on severity */}
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '3px',
+          background: sev.bar,
+          borderRadius: '12px 0 0 12px'
+        }} />
+
+        {/* Header: Condomínio e Gravidade */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', maxWidth: '75%' }}>
+            <MapPin size={9} style={{ color: 'var(--accent-cyan, #00e5ff)', flexShrink: 0 }} />
+            <span style={{ 
+              fontSize: '9px', 
+              fontWeight: 800, 
+              color: 'var(--text-muted, #94a3b8)', 
+              whiteSpace: 'nowrap', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis' 
+            }}>
+              {condo}
+            </span>
+          </div>
+          <span style={{
+            fontSize: '8px',
+            fontWeight: 900,
+            textTransform: 'uppercase',
+            padding: '1px 5px',
+            borderRadius: '4px',
+            background: sev.bg,
+            border: `1px solid ${sev.border}`,
+            color: sev.text,
+            letterSpacing: '0.04em'
+          }}>
+            {severity?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 800,
+          color: '#fff',
+          lineHeight: '1.25',
+          paddingLeft: '2px'
+        }}>
+          {cleanTitle}
+        </div>
+
+        {/* Description */}
+        {cleanDesc && (
+          <div style={{
+            fontSize: '9px',
+            color: 'rgba(255,255,255,0.45)',
+            lineHeight: '1.35',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            paddingLeft: '2px'
+          }}>
+            {cleanDesc}
+          </div>
+        )}
+
+        {/* Sync loading state indicator */}
+        {act.isOptimistic && (
+          <div style={{ 
+            fontSize: '8px', 
+            color: 'var(--accent-cyan, #00e5ff)', 
+            fontWeight: 800, 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '3px',
+            opacity: 0.8,
+            paddingLeft: '2px'
+          }}>
+            <Timer size={8} className="animate-spin" /> RESTAURANDO DO BANCO...
+          </div>
+        )}
+
+        {/* Footer: Date, Source label, and Quick button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderTop: '1px solid rgba(255,255,255,0.04)',
+          paddingTop: '5px',
+          marginTop: '2px'
+        }}>
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <span style={{
+              fontSize: '8px',
+              color: 'rgba(255,255,255,0.3)',
+              fontWeight: 700
+            }}>
+              {isCrm ? '🔌 CRM' : isKanban ? '📋 KANBAN' : '📥 SOLICITAÇÃO'}
+            </span>
+            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)' }}>•</span>
+            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+              {getTimeAgo(act.created_at || act.created)}
+            </span>
+            {slaContent && (
+              <>
+                <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)' }}>•</span>
+                <span style={badgeStyle(slaColor)}>
+                  {slaContent}
+                </span>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => onQuickSchedule(act)}
+            style={{
+              background: 'rgba(0, 229, 255, 0.06)',
+              border: '1px solid rgba(0, 229, 255, 0.15)',
+              color: '#00e5ff',
+              padding: '2px 6px',
+              borderRadius: '5px',
+              fontSize: '9px',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              transition: 'all 0.2s',
+            }}
+            className="quick-schedule-btn"
+          >
+            <Plus size={9} /> Agendar
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <aside 
       style={{ ...sidebarStyle, position: 'relative' }}
@@ -273,6 +524,21 @@ export default function ShiftSidebar({
         </div>
       </div>
 
+      {/* ── Agrupamento (Somente para Workspace) ── */}
+      {activeTab === 'pending' && (
+        <div style={{ padding: '2px 12px 8px', display: 'flex', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <button style={groupBtnStyle(groupingMode === 'none')} onClick={() => setGroupingMode('none')}>
+            Sem Agrupamento
+          </button>
+          <button style={groupBtnStyle(groupingMode === 'condominio')} onClick={() => setGroupingMode('condominio')}>
+            Condomínio
+          </button>
+          <button style={groupBtnStyle(groupingMode === 'categoria')} onClick={() => setGroupingMode('categoria')}>
+            Categoria
+          </button>
+        </div>
+      )}
+
       {/* Auto-Pilot removido do Workspace - era exclusivo de solicitações */}
 
       {/* ── Drag Hint ── */}
@@ -288,202 +554,57 @@ export default function ShiftSidebar({
         className="custom-scrollbar"
       >
         {/* WORKSPACE: Service Requests + Kanban Tasks */}
-        {activeTab === 'pending' && filteredPending.map((act, index) => {
-          const isKanban = act.source === 'kanban';
+        {activeTab === 'pending' && groupingMode === 'none' && filteredPending.map((act, index) => renderPendingCard(act, index))}
 
-          // ── Kanban card ──────────────────────────────────────────
-          if (isKanban) {
-            const colLabels = { backlog: 'BACKLOG', todo: 'TO DO', progress: 'IN PROGRESS' };
-            const colColors = { backlog: 'rgba(148,163,184,0.12)', todo: 'rgba(0,229,255,0.08)', progress: 'rgba(34,197,94,0.08)' };
-            const colBorders = { backlog: 'rgba(148,163,184,0.2)', todo: 'rgba(0,229,255,0.2)', progress: 'rgba(34,197,94,0.2)' };
-            const colTextColors = { backlog: '#94a3b8', todo: 'var(--accent-cyan)', progress: '#4ade80' };
-            const col = act.column_id || 'todo';
-            const hasDeadline = act.deadline;
-            const isOverdue = hasDeadline && new Date(act.deadline) < new Date();
-
-            return (
-              <div
-                key={act.id}
+        {activeTab === 'pending' && groupingMode !== 'none' && Object.entries(groupedPending || {}).map(([groupName, items]) => {
+          const isCollapsed = !!collapsedGroups[groupName];
+          return (
+            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div 
+                onClick={() => toggleGroup(groupName)}
                 style={{
-                  background: colColors[col] || 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${colBorders[col] || 'rgba(255,255,255,0.08)'}`,
-                  borderRadius: '14px', padding: '0.875rem', position: 'relative',
-                  overflow: 'hidden', cursor: 'grab',
-                  opacity: draggingId === act.id ? 0.5 : 1,
-                  transition: 'all 0.25s',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '6px 10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
                   userSelect: 'none',
+                  transition: 'background 0.2s'
                 }}
-                draggable
-                onDragStart={(e) => handleDragStart(e, act, false)}
-                onDragEnd={handleDragEnd}
               >
-                {/* Side accent line */}
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: colTextColors[col] || '#94a3b8', borderRadius: '16px 0 0 16px' }} />
-
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '85%' }}>
                   <span style={{ 
                     fontSize: '10px', 
-                    fontWeight: 900, 
-                    letterSpacing: '0.05em', 
-                    textTransform: 'uppercase', 
-                    color: colTextColors[col], 
-                    background: colColors[col], 
-                    border: `1px solid ${colBorders[col]}`, 
-                    padding: '3px 10px', 
-                    borderRadius: '8px',
-                    boxShadow: `0 2px 8px ${colBorders[col]}`
+                    fontWeight: 800, 
+                    color: 'var(--accent-cyan, #00e5ff)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
-                    {colLabels[col] || col.toUpperCase()}
+                    {groupName}
                   </span>
-                  {isOverdue && (
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#f87171', fontWeight: 800 }}>
-                      <AlertTriangle size={12} /> ATRASADO
-                    </span>
-                  )}
+                  <span style={{
+                    fontSize: '8px',
+                    fontWeight: 900,
+                    background: 'rgba(0, 229, 255, 0.08)',
+                    color: '#00e5ff',
+                    padding: '1px 5px',
+                    borderRadius: '4px',
+                  }}>
+                    {items.length}
+                  </span>
                 </div>
-
-                {/* Title - Clean up redundant prefixes if they exist */}
-                <div style={{ fontSize: '12px', fontWeight: 800, marginBottom: '4px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--text-main, #fff)' }}>
-                  {act.title.replace(/^(TITULO|TITLE):\s*/i, '')}
-                </div>
-
-                {/* Description */}
-                {act.desc && (
-                  <p style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {act.desc.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')}
-                  </p>
-                )}
-
-                {/* Footer */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {act.customer_name && (
-                      <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '6px', background: 'rgba(168,85,247,0.15)', color: '#d8b4fe', border: '1px solid rgba(168,85,247,0.3)' }}>
-                        👤 {act.customer_name}
-                      </span>
-                    )}
-                    {hasDeadline && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: isOverdue ? '#f87171' : 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
-                        <Calendar size={10} /> {new Date(act.deadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                      </span>
-                    )}
-                    {act.isScheduled && (
-                      <span style={{ 
-                        fontSize: '10px', 
-                        fontWeight: 900, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px',
-                        padding: '3px 10px', 
-                        borderRadius: '8px', 
-                        background: 'rgba(34,197,94,0.15)', 
-                        color: '#4ade80', 
-                        border: '1px solid rgba(34,197,94,0.3)',
-                        boxShadow: '0 2px 10px rgba(34,197,94,0.1)'
-                      }}>
-                        <CheckCircle size={10} /> AGENDADO
-                      </span>
-                    )}
-                  </div>
-                  <button 
-                    style={{
-                      ...scheduleBtn(false),
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '10px',
-                    }} 
-                    onClick={() => onQuickSchedule(act)}
-                  >
-                    <Plus size={14} /> Agendar
-                  </button>
-                </div>
+                {isCollapsed ? <ChevronDown size={12} style={{ opacity: 0.5 }} /> : <ChevronUp size={12} style={{ opacity: 0.5 }} />}
               </div>
-            );
-          }
-          const isUrgent = act.type?.toLowerCase().includes('urgente') || act.status === 'priority' || act.status === 'urgent';
-          const isDragging = draggingId === act.id;
-
-          let slaContent = null, slaColor = 'green';
-          if (act.sla_deadline) {
-            const diffMin = Math.floor((new Date(act.sla_deadline) - new Date()) / 60000);
-            if (act.sla_breached || diffMin < 0) { slaContent = 'SLA Estourado!'; slaColor = 'red'; }
-            else if (diffMin < 60) { slaContent = `Resta ${diffMin}min`; slaColor = 'orange'; }
-            else { slaContent = `Expira em ${Math.floor(diffMin / 60)}h`; slaColor = 'green'; }
-          }
-
-          return (
-            <div
-              key={act.id}
-              style={{ ...cardBase(isDragging, false, isUrgent), animationDelay: `${index * 0.04}s` }}
-              draggable
-              onDragStart={(e) => handleDragStart(e, act, false)}
-              onDragEnd={handleDragEnd}
-              title="Arraste para o calendário ou clique em Agendar"
-            >
-              {/* Urgent line */}
-              {isUrgent && <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: '#ef4444', borderRadius: '16px 0 0 16px' }} />}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={badgeStyle('cyan')}>{act.id ? truncateUUID(act.id) : '#SR-NEW'}</span>
-                <span style={{ fontSize: '10px', opacity: 0.5, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Clock size={10} /> {getTimeAgo(act.created_at || act.created)}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, marginBottom: '2px', letterSpacing: '-0.01em' }}>
-                <MapPin size={12} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                {(act.location || 'Local não definido').replace(/^(TITULO|TITLE):\s*/i, '')}
-              </div>
-
-              <p style={{ 
-                fontSize: '10px', 
-                opacity: 0.6, 
-                lineHeight: 1.4, 
-                margin: '0 0 8px', 
-                minHeight: 'auto',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
-              }}>
-                <span style={{ fontWeight: 600 }}>{(act.type || act.service_type || 'Serviço').replace(/^(TITULO|TITLE):\s*/i, '')}</span>
-                {act.description && ` — ${act.description.replace(/^(DESCRICAO|DESCRIPTION):\s*/i, '')}`}
-              </p>
-
-              {/* ✨ Optimistic Sync Indicator */}
-              {act.isOptimistic && (
-                <div style={{ 
-                  fontSize: '9px', 
-                  color: 'var(--accent-cyan)', 
-                  fontWeight: 800, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  marginBottom: '8px',
-                  opacity: 0.8,
-                  animation: 'pulse 1.5s infinite'
-                }}>
-                  <Timer size={10} className="animate-spin" style={{ animationDuration: '3s' }} /> RESTAURANDO DO BANCO...
+              
+              {!isCollapsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '2px' }}>
+                  {items.map((act, index) => renderPendingCard(act, index))}
                 </div>
               )}
-
-              {/* Footer */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <span style={badgeStyle(isUrgent ? 'red' : 'cyan')}>
-                    {isUrgent ? '🔴 Urgente' : '🔵 Normal'}
-                  </span>
-                  {slaContent && (
-                    <span style={badgeStyle(slaColor)}>
-                      <Timer size={9} /> {slaContent}
-                    </span>
-                  )}
-                </div>
-                <button style={scheduleBtn(false)} onClick={() => onQuickSchedule(act)}>
-                  <Plus size={12} /> Agendar
-                </button>
-              </div>
             </div>
           );
         })}
