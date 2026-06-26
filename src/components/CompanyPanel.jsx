@@ -375,9 +375,8 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
         </button>
       </div>
 
-      <div className="cp-grid">
-        {activeTab === 'members' ? (
-          <>
+      {activeTab === 'members' ? (
+        <div className="cp-grid">
             {/* Info Card */}
           <div className="cp-card-premium">
             <h3 className="cp-card-title"><Building2 size={18} /> Informações da Empresa</h3>
@@ -767,7 +766,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
               )}
             </div>
           </div>
-        </>
+        </div>
       ) : activeTab === 'customers' ? (
         <div className="cp-crm-section animate-slide-up">
           <div className="cp-crm-header">
@@ -832,11 +831,10 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
             </div>
           </div>
         ) : activeTab === 'analytics' ? (
-          <div className="animate-slide-up" style={{ gridColumn: '1 / -1' }}>
+          <div className="animate-slide-up">
             <AnalyticsDashboard currentCompany={currentCompany} customers={allCustomers} />
           </div>
         ) : null}
-      </div>
 
       {showCustModal && (
         <CustomerFormModal 
