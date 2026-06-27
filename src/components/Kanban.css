@@ -159,15 +159,20 @@
 
 /* AI Highlighted Column */
 .column-highlighted {
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.15), inset 0 0 15px rgba(0, 229, 255, 0.1);
-  border: 2px solid var(--accent-cyan);
+  box-shadow:
+    0 0 0 1.5px rgba(99, 102, 241, 0.6),
+    0 0 28px rgba(99, 102, 241, 0.25),
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.07);
   position: relative;
   transform: translateY(-4px);
   z-index: 10;
 }
 
 .column-highlighted .column-header {
-  border-bottom-color: rgba(0, 229, 255, 0.2);
+  border-bottom-color: rgba(99, 102, 241, 0.2);
 }
 
 /* AI Suggestion Detailed Card */

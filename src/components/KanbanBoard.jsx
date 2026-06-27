@@ -134,11 +134,17 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
               {task.tag}
             </span>
           )}
+          {task.isReaberto && (
+            <span className="badge font-bold animate-pulse" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+              REABERTO
+            </span>
+          )}
           {task.isScheduled && (
             <span className="badge" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '3px' }}>
               <CheckCircle size={10} /> Agendado
             </span>
           )}
+
           {commentCount > 0 && (
             <span className="card-comment-badge" onPointerDown={e => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}>
               <MessageSquare size={11} /> {commentCount}
@@ -330,9 +336,14 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     const mappedCrmOcorrencias = (crmOcorrencias || []).map(o => {
       const crmId = `crm-oc-${o.id}`;
       const override = crmOverrides[crmId];
+      
+      const isReaberto = o.descricao?.includes('[Reabertura - Novas Informações]') || o.descricao?.includes('[Chamado Reaberto]');
       const defaultColumn = o.status === 'Pendente' ? 'backlog' : 'done';
       
-      const colId = override?.columnId || override?.column_id || crmColumns[crmId] || defaultColumn;
+      let colId = override?.columnId || override?.column_id || crmColumns[crmId] || defaultColumn;
+      if (isReaberto && colId === 'done') {
+        colId = 'backlog';
+      }
       
       return {
         id: crmId,
@@ -350,10 +361,12 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         condominio_id: o.condominio_id,
         created_at: o.created_at,
         projectId: projectId,
-        aiResponse: override?.aiResponse || override?.ai_response || crmAiResponses[crmId] || null,
-        isAiLoading: override?.isAiLoading || !!crmAiLoading[crmId]
+        aiResponse: isReaberto ? null : (override?.aiResponse || override?.ai_response || crmAiResponses[crmId] || null),
+        isAiLoading: override?.isAiLoading || !!crmAiLoading[crmId],
+        isReaberto: isReaberto
       };
     });
+
 
     const all = [...regularTasks, ...mappedCrmOcorrencias];
 

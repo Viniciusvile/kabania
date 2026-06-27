@@ -471,20 +471,21 @@ select.premium-input-field option {
 
 /* 🔘 RADIANT BUTTONS */
 .glow-btn-primary {
-  background: var(--accent-cyan) !important;
-  color: var(--bg-app) !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55)) !important;
+  color: rgba(255,255,255,0.95) !important;
   padding: 12px 24px !important;
   border-radius: 12px !important;
   font-weight: 700 !important;
-  border: none !important;
+  border: 1px solid rgba(99,102,241,0.4) !important;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-  box-shadow: 0 8px 20px -5px var(--accent-cyan-dim) !important;
+  box-shadow: 0 8px 20px -5px rgba(99,102,241,0.4) !important;
+  backdrop-filter: blur(8px) !important;
 }
 
 .glow-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 25px -5px var(--accent-cyan-dim) !important;
+  box-shadow: 0 12px 25px -5px rgba(99,102,241,0.55) !important;
   filter: brightness(1.1);
 }
 
@@ -2148,13 +2149,13 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 [data-theme='light'] .glow-btn-primary {
-  background: var(--accent-cyan) !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(139,92,246,0.7)) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 15px var(--accent-cyan-dim) !important;
+  box-shadow: 0 4px 15px rgba(99,102,241,0.35) !important;
 }
 
 [data-theme='light'] .glow-btn-primary:hover {
-  box-shadow: 0 8px 25px var(--accent-cyan-dim) !important;
+  box-shadow: 0 8px 25px rgba(99,102,241,0.5) !important;
 }
 
 [data-theme='light'] .glow-btn-ghost {

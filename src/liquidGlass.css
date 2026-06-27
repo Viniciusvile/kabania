@@ -17,37 +17,39 @@
 .lg-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
-  mix-blend-mode: screen;
+  filter: blur(60px);
   will-change: transform;
   animation: lg-drift linear infinite;
 }
 
+/* Indigo — canto superior esquerdo, atrás do sidebar/BACKLOG */
 .lg-blob-1 {
-  width: 700px; height: 700px;
-  background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
-  top: -180px; left: -120px;
+  width: 720px; height: 720px;
+  background: radial-gradient(circle, rgba(99,102,241,0.42) 0%, rgba(99,102,241,0.14) 45%, transparent 70%);
+  top: -80px; left: -60px;
   animation-duration: 28s;
 }
+/* Cyan — canto inferior direito */
 .lg-blob-2 {
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(0,229,255,0.12) 0%, transparent 70%);
-  bottom: -150px; right: -80px;
+  width: 580px; height: 580px;
+  background: radial-gradient(circle, rgba(0,229,255,0.32) 0%, rgba(0,229,255,0.08) 50%, transparent 70%);
+  bottom: -100px; right: -60px;
   animation-duration: 34s;
   animation-direction: reverse;
 }
+/* Violeta — centro, atrás das colunas kanban */
 .lg-blob-3 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(139,92,246,0.14) 0%, transparent 70%);
-  top: 40%; left: 50%;
-  transform: translate(-50%, -50%);
+  width: 640px; height: 640px;
+  background: radial-gradient(circle, rgba(124,58,237,0.34) 0%, rgba(124,58,237,0.10) 40%, transparent 70%);
+  top: 5%; left: 38%;
   animation-duration: 22s;
 }
+/* Ciano escuro — superior direito, atrás da coluna DONE */
 .lg-blob-4 {
-  width: 350px; height: 350px;
-  background: radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 70%);
-  top: 15%; right: 25%;
-  animation-duration: 40s;
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(6,182,212,0.28) 0%, rgba(6,182,212,0.06) 55%, transparent 70%);
+  top: -60px; right: 5%;
+  animation-duration: 38s;
 }
 
 .lg-noise {
@@ -114,10 +116,19 @@
 
 /* ------ Base Reset ----------------------------------------- */
 
-/* Override existing dark theme to use the liquid glass background */
+/* Strip solid background so canvas blobs show through */
+html {
+  background: #09090b;
+}
+
 [data-theme="dark"],
 body {
-  background: var(--lg-bg-app) !important;
+  background: transparent !important;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 /* ------ Glass Card ----------------------------------------- */
@@ -402,4 +413,1020 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255,255,255,0.2);
+}
+
+
+/* ============================================================
+   MÓDULO GERENCIAR ESCALAS — Liquid Glass Overrides
+   ============================================================ */
+
+/* Filter pills / tab bar (Todos / Ativos / Concluídos) */
+.filter-pills-pixel {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 999px !important;
+  padding: 4px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+.filter-pills-pixel button.active,
+.filter-pills-pixel .active {
+  background: rgba(255,255,255,0.1) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+  border-radius: 999px !important;
+}
+
+/* Period date selector */
+.period-selector-pixel {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+/* Inline stat badges (TOTAL / ABERTAS / EM CURSO / CONCLUÍDAS) */
+.inline-stats-premium {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* Day column header border */
+.day-header-pixel,
+.premium-kanban-header {
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+  background: rgba(255,255,255,0.02) !important;
+}
+.day-name {
+  color: rgba(255,255,255,0.5) !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+}
+.premium-day-num {
+  color: rgba(255,255,255,0.9) !important;
+  font-weight: 700 !important;
+}
+
+/* Empty day slot */
+.empty-day-pixel {
+  color: rgba(255,255,255,0.18) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* Controls bar (Folha de Ponto / Trocas / Agendar) */
+.controls-bar-pixel .glow-btn-ghost,
+.controls-bar-pixel button:not(.glow-btn-primary) {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border-radius: 10px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.controls-bar-pixel .glow-btn-ghost:hover,
+.controls-bar-pixel button:not(.glow-btn-primary):hover {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+.quick-schedule-btn,
+.btn-quick-schedule-premium,
+.controls-bar-pixel .glow-btn-primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.55), rgba(139,92,246,0.45)) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 18px rgba(99,102,241,0.28), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.quick-schedule-btn:hover,
+.btn-quick-schedule-premium:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.72), rgba(139,92,246,0.6)) !important;
+  box-shadow: 0 0 26px rgba(99,102,241,0.42) !important;
+  transform: translateY(-1px);
+}
+
+/* Shift card principal (kabania-v2) */
+.kabania-v2-card {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+.kabania-v2-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22) 50%, transparent);
+  pointer-events: none;
+}
+.kabania-v2-card:hover {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(99,102,241,0.3) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+}
+
+/* Premium shift card */
+.premium-shift-card {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+/* Pending activities sidebar */
+.pending-activities-sidebar {
+  background: rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+/* Pending cards */
+.pending-premium-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+[data-theme='dark'] .pending-premium-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.pending-premium-card:hover,
+[data-theme='dark'] .pending-premium-card:hover {
+  background: rgba(255,255,255,0.075) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 14px rgba(99,102,241,0.1) !important;
+}
+
+/* Premium Kanban column (shifts grid) */
+.premium-kanban-column {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* Grid container */
+.grid-drag-container {
+  background: rgba(255,255,255,0.015) !important;
+}
+
+/* Pill time badge */
+.kabania-v2-time-pill {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+/* Action squares */
+.kabania-v2-action-sq {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.09) !important;
+}
+.kabania-v2-action-sq:hover {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+/* Premium buttons */
+.glow-btn-primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.55), rgba(139,92,246,0.45)) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  box-shadow: 0 0 18px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.glow-btn-primary:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.75), rgba(139,92,246,0.6)) !important;
+  box-shadow: 0 0 28px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+}
+
+.glow-btn-ghost {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.glow-btn-ghost:hover {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Premium form container */
+.premium-form-container,
+[data-theme='dark'] .premium-form-container {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* Premium modal */
+.premium-modal-pixel {
+  background: rgba(10,10,16,0.92) !important;
+  backdrop-filter: blur(32px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+.premium-modal-header {
+  background: rgba(255,255,255,0.025) !important;
+  border-bottom: 1px solid rgba(99,102,241,0.25) !important;
+}
+.premium-modal-header h3 {
+  background: linear-gradient(to right, rgba(255,255,255,0.95), rgba(165,180,252,0.9)) !important;
+}
+
+/* HoursReport modal */
+.hr-modal {
+  background: rgba(10,10,16,0.92);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: 0 25px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.09);
+}
+.hr-summary-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.hr-pill.active {
+  background: rgba(99,102,241,0.18) !important;
+  border-color: rgba(99,102,241,0.45) !important;
+  color: #a5b4fc !important;
+}
+.hr-pill:hover {
+  border-color: rgba(99,102,241,0.35) !important;
+  color: rgba(255,255,255,0.85) !important;
+}
+.hr-table th {
+  background: rgba(10,10,16,0.85) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Quick schedule button */
+.btn-quick-schedule-premium {
+  background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(139,92,246,0.4)) !important;
+  border: 1px solid rgba(99,102,241,0.4) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 0 14px rgba(99,102,241,0.25) !important;
+}
+.btn-quick-schedule-premium:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55)) !important;
+  box-shadow: 0 0 22px rgba(99,102,241,0.4) !important;
+}
+
+/* Sync toast */
+.sync-toast-premium {
+  background: rgba(12,12,18,0.9) !important;
+  border: 1px solid rgba(99,102,241,0.4) !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(99,102,241,0.15) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* Ponto modal */
+.modal-body-scrollable {
+  background: rgba(8,8,14,0.95) !important;
+}
+.ponto-nebula-header {
+  background: linear-gradient(135deg, rgba(8,8,14,0.98) 0%, rgba(20,12,40,0.96) 100%) !important;
+}
+.ponto-footer-dock {
+  background: rgba(255,255,255,0.02) !important;
+  border-top-color: rgba(255,255,255,0.06) !important;
+}
+.btn-ponto-action {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Active accordion heading */
+.accordion-header-premium.active h4 {
+  color: #a5b4fc !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GÊMEO DIGITAL
+═══════════════════════════════════════════════════════ */
+.dt-root {
+  background: transparent !important;
+}
+.dt-toolbar-glass {
+  background: rgba(8, 12, 28, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(99,102,241,0.15) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+}
+.dt-search-bar {
+  background: rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+}
+.dt-stat-chip {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.dt-viewport-controls {
+  background: rgba(8, 12, 28, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(99,102,241,0.2) !important;
+}
+.dt-room-picker-dropdown {
+  background: rgba(8, 12, 28, 0.88) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.dt-room-header {
+  background: rgba(8, 12, 28, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.dt-room-label-overlay {
+  background: rgba(8, 12, 28, 0.75) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.dt-room.free {
+  border: 1px dashed rgba(99,102,241,0.25) !important;
+}
+.dt-room.occupied {
+  border: 1px dashed rgba(239,68,68,0.35) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CALENDÁRIO DE ATIVIDADES
+═══════════════════════════════════════════════════════ */
+.cal-month {
+  background: rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+.cal-month-header {
+  background: rgba(255,255,255,0.035) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+.cal-month-header th {
+  color: rgba(255,255,255,0.5) !important;
+  background: transparent !important;
+}
+.cal-cell {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+.cal-cell:hover {
+  background: rgba(99,102,241,0.08) !important;
+}
+.cal-cell-empty {
+  background: rgba(255,255,255,0.01) !important;
+}
+.cal-cell-today {
+  background: rgba(99,102,241,0.1) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+}
+.cal-today-num,
+.cal-day-today-num {
+  background: rgba(99,102,241,0.85) !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+}
+.cal-icon-btn {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+  color: rgba(255,255,255,0.8) !important;
+}
+.cal-icon-btn:hover {
+  background: rgba(255,255,255,0.1) !important;
+}
+.cal-view-tab {
+  background: rgba(255,255,255,0.04) !important;
+  color: rgba(255,255,255,0.6) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+}
+.cal-view-tab.active,
+.cal-view-tab[class*="active"] {
+  background: rgba(99,102,241,0.3) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border-color: rgba(99,102,241,0.5) !important;
+}
+.cal-nav-btn,
+.cal-today-btn {
+  background: rgba(255,255,255,0.06) !important;
+  color: rgba(255,255,255,0.75) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 8px !important;
+}
+.cal-nav-btn:hover,
+.cal-today-btn:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+.cal-week-header {
+  background: rgba(255,255,255,0.025) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+.cal-week-slot {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.05) !important;
+}
+.cal-week-slot:hover {
+  background: rgba(99,102,241,0.07) !important;
+}
+.cal-day-header {
+  background: rgba(255,255,255,0.025) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CENTRAL DE E-MAILS
+═══════════════════════════════════════════════════════ */
+.email-card {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+.btn-email-primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.75), rgba(139,92,246,0.6)) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.35) !important;
+}
+.btn-email-primary:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.9), rgba(139,92,246,0.75)) !important;
+  box-shadow: 0 6px 24px rgba(99,102,241,0.5) !important;
+}
+.form-input,
+.form-textarea {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+.form-input:focus,
+.form-textarea:focus {
+  border-color: rgba(99,102,241,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAINEL DE SLA
+═══════════════════════════════════════════════════════ */
+.sla-badge {
+  background: rgba(99,102,241,0.18) !important;
+  border: 1px solid rgba(99,102,241,0.35) !important;
+  color: #a5b4fc !important;
+}
+.sla-btn-export {
+  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55)) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3) !important;
+}
+.sla-btn-export:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(139,92,246,0.7)) !important;
+  box-shadow: 0 6px 22px rgba(99,102,241,0.45) !important;
+}
+.sla-tab.active,
+.sla-tab-active {
+  border-bottom-color: rgba(99,102,241,0.8) !important;
+  color: #a5b4fc !important;
+}
+.sla-header-card {
+  background: rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   INSIGHTS DE IA / HISTÓRICO / EXPORTAR
+═══════════════════════════════════════════════════════ */
+.insight-card,
+.history-card,
+.export-card {
+  background: rgba(255,255,255,0.035) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.insight-btn-primary,
+.export-btn-primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55)) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border: 1px solid rgba(99,102,241,0.4) !important;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3) !important;
+}
+
+/* AssignmentCard hover */
+.assignment-emp-card:hover {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+}
+
+/* Checkin segmented control */
+.checkin-segmented-control {
+  background: rgba(0,0,0,0.4) !important;
+  border-color: rgba(255,255,255,0.09) !important;
+}
+.checkin-tab-btn.active {
+  background: rgba(255,255,255,0.1) !important;
+}
+.checkin-tab-btn.active.gps {
+  background: rgba(99,102,241,0.15) !important;
+  color: #a5b4fc !important;
+}
+
+
+/* ============================================================
+   MÓDULO ESTOQUE INTELIGENTE — Liquid Glass Overrides
+   ============================================================ */
+
+/* Inventory main panels */
+.inv-panel,
+.inventory-section,
+.inv-form-section {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+/* Inventory cards */
+.inventory-card,
+.inv-item-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.inventory-card:hover,
+.inv-item-card:hover {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(99,102,241,0.3) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 14px rgba(99,102,241,0.1), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+  transform: translateY(-2px);
+}
+
+/* Inventory tabs */
+.inventory-tabs,
+.inv-tabs {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.tab-btn.active,
+.inv-tab.active {
+  background: rgba(99,102,241,0.18) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+  color: #a5b4fc !important;
+  box-shadow: 0 0 14px rgba(99,102,241,0.2), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+
+/* Inventory filter chips */
+.filter-btn.active {
+  background: rgba(99,102,241,0.18) !important;
+  border-color: rgba(99,102,241,0.4) !important;
+  color: #a5b4fc !important;
+}
+.filter-btn:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+}
+
+/* Inventory premium inputs */
+.premium-input-field,
+input.premium-input-field,
+select.premium-input-field,
+textarea.premium-input-field {
+  background: rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3) !important;
+  border-radius: 10px !important;
+}
+.premium-input-field:focus {
+  border-color: rgba(99,102,241,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), inset 0 1px 3px rgba(0,0,0,0.3) !important;
+  outline: none !important;
+}
+.premium-input-field::placeholder {
+  color: rgba(255,255,255,0.22) !important;
+}
+.premium-input-field option {
+  background: #13131a !important;
+}
+
+/* Inventory submit buttons */
+.inv-submit-btn,
+.btn-primary-inv {
+  background: linear-gradient(135deg, rgba(99,102,241,0.55), rgba(139,92,246,0.45)) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 0 18px rgba(99,102,241,0.3), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.inv-submit-btn:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.72), rgba(139,92,246,0.6)) !important;
+  box-shadow: 0 0 28px rgba(99,102,241,0.45) !important;
+  transform: translateY(-1px);
+}
+
+/* Secondary inventory buttons */
+.btn-secondary {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Transactions table wrapper */
+.transactions-table-wrapper,
+.inv-table-wrap {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Inv form section focus */
+.inv-form-section:focus-within {
+  border-color: rgba(99,102,241,0.4) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1), 0 4px 20px rgba(0,0,0,0.3) !important;
+}
+
+/* Stat/KPI cards */
+.inv-stat-card,
+.kpi-card {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+
+
+/* ============================================================
+   SIDEBAR — Liquid Glass Overrides
+   ============================================================ */
+
+.sidebar-nav-item.active,
+.nav-item.active {
+  background: rgba(99,102,241,0.15) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+.sidebar-nav-item:hover,
+.nav-item:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+.sidebar-badge,
+.nav-badge {
+  background: rgba(99,102,241,0.4) !important;
+  border: 1px solid rgba(99,102,241,0.55) !important;
+}
+
+/* ============================================================
+   TOPBAR — Liquid Glass Overrides
+   ============================================================ */
+
+.topbar-btn,
+.topbar-icon-btn {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.topbar-btn:hover,
+.topbar-icon-btn:hover {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+.user-avatar,
+.topbar-avatar {
+  border: 2px solid rgba(99,102,241,0.5) !important;
+  box-shadow: 0 0 14px rgba(99,102,241,0.25) !important;
+}
+
+/* ============================================================
+   ACTIVITY LIST / CENTRAL DE ATENDIMENTO — Liquid Glass
+   ============================================================ */
+
+.activity-search-bar {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 999px !important;
+  color: rgba(255,255,255,0.9) !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2) !important;
+}
+.activity-search-bar input,
+.activity-search-bar input::placeholder {
+  background: transparent !important;
+  color: inherit !important;
+}
+.activity-search-bar input::placeholder {
+  color: rgba(255,255,255,0.25) !important;
+}
+
+.action-btn-icon {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.55) !important;
+}
+.action-btn-icon:hover {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+.btn-new-request {
+  background: linear-gradient(135deg, rgba(99,102,241,0.55), rgba(139,92,246,0.45)) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 18px rgba(99,102,241,0.28), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.btn-new-request:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.72), rgba(139,92,246,0.6)) !important;
+  box-shadow: 0 0 28px rgba(99,102,241,0.42) !important;
+  transform: translateY(-1px);
+}
+
+/* Pagination */
+.pagination-controls {
+  background: rgba(255,255,255,0.03) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+.page-select {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.85) !important;
+  border-radius: 8px !important;
+}
+.nav-arrows button {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.5) !important;
+  border-radius: 8px !important;
+}
+.nav-arrows button:hover {
+  background: rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+
+/* ============================================================
+   BASE DE CONHECIMENTO — Liquid Glass
+   ============================================================ */
+
+.kb-card {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.kb-card:hover {
+  background: rgba(255,255,255,0.07) !important;
+  border-color: rgba(99,102,241,0.3) !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(99,102,241,0.08), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+  transform: translateY(-2px);
+}
+
+.kb-sidebar-side {
+  background: rgba(255,255,255,0.03) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+.kb-search {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25), inset 0 1px 3px rgba(0,0,0,0.2) !important;
+}
+.kb-search input {
+  background: transparent !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+.kb-search input::placeholder {
+  color: rgba(255,255,255,0.25) !important;
+}
+
+.kb-icon-wrapper {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.kb-section-count {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 999px !important;
+  color: rgba(255,255,255,0.65) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.kb-tag {
+  background: rgba(99,102,241,0.12) !important;
+  border: 1px solid rgba(99,102,241,0.25) !important;
+  border-radius: 999px !important;
+  color: #a5b4fc !important;
+  font-size: 11px !important;
+}
+
+.kb-btn-add,
+.kb-btn-template {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.6) !important;
+  border-radius: 10px !important;
+  backdrop-filter: blur(8px) !important;
+}
+.kb-btn-add:hover,
+.kb-btn-template:hover {
+  background: rgba(99,102,241,0.15) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+  color: #a5b4fc !important;
+}
+
+.kb-section-header {
+  border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+.kb-toggle-btn {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 8px !important;
+  color: rgba(255,255,255,0.5) !important;
+}
+.kb-toggle-btn:hover {
+  background: rgba(255,255,255,0.09) !important;
+  color: rgba(255,255,255,0.85) !important;
+}
+.kb-toggle-btn.active {
+  background: rgba(99,102,241,0.15) !important;
+  border-color: rgba(99,102,241,0.35) !important;
+  color: #a5b4fc !important;
+}
+
+.kb-delete-btn {
+  background: rgba(239,68,68,0.1) !important;
+  border: 1px solid rgba(239,68,68,0.25) !important;
+  color: rgba(239,68,68,0.8) !important;
+  border-radius: 8px !important;
+}
+.kb-delete-btn:hover {
+  background: rgba(239,68,68,0.2) !important;
+  border-color: rgba(239,68,68,0.4) !important;
+  color: rgb(248,113,113) !important;
+}
+
+
+/* ============================================================
+   RELATÓRIOS / DASHBOARD (rd-*) — Liquid Glass
+   ============================================================ */
+
+.rd-card,
+.rd-kpi {
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+.rd-card:hover {
+  background: rgba(255,255,255,0.065) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+}
+
+/* Recharts tooltip */
+.recharts-default-tooltip,
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: rgba(10,10,18,0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Avatar badges */
+.rd-a-avatar, .rd-r-avatar {
+  border: 2px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+/* glow-btn-primary cyan → indigo glass */
+.glow-btn-primary {
+  background: linear-gradient(135deg, rgba(99,102,241,0.55), rgba(139,92,246,0.45)) !important;
+  border: 1px solid rgba(99,102,241,0.45) !important;
+  color: rgba(255,255,255,0.95) !important;
+  box-shadow: 0 0 18px rgba(99,102,241,0.28), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+}
+.glow-btn-primary:hover {
+  background: linear-gradient(135deg, rgba(99,102,241,0.72), rgba(139,92,246,0.6)) !important;
+  box-shadow: 0 0 28px rgba(99,102,241,0.42) !important;
+  transform: translateY(-1px);
+}
+
+
+/* ============================================================
+   SIDEBAR ACTIVE — Liquid Glass
+   ============================================================ */
+
+.sidebar-nav-item.active span,
+.nav-item.active,
+[class*="sidebar"] .active {
+  color: rgba(255,255,255,0.9) !important;
+}
+
+/* Sidebar active highlight */
+.sidebar li .active,
+[class*="nav-link"].active,
+[class*="sidebar-item"].active {
+  background: rgba(99,102,241,0.14) !important;
+  border-radius: 10px !important;
+}
+
+
+/* ============================================================
+   MODAL OVERLAYS GENÉRICO — Liquid Glass Overrides
+   ============================================================ */
+
+.modal-overlay,
+.overlay-bg {
+  background: rgba(0,0,0,0.55) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Generic modal panels */
+.modal-panel,
+.modal-box,
+.drawer-panel {
+  background: rgba(10,10,18,0.92) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
 }
