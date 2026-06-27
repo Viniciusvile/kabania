@@ -23,6 +23,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import CardDetailModal from './CardDetailModal';
+import { resolveCrmOccurrence } from '../services/crmIntegrationService';
 import './Kanban.css';
 
 const COLUMNS = [
@@ -895,6 +896,27 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
             localStorage.setItem(`crm_columns_${projectId}`, JSON.stringify(nextColumns));
             return nextColumns;
           });
+
+          // Se tiver override no banco, atualiza a coluna lá também
+          const hasOverride = tasks.some(t => t.id === currentTask.id);
+          if (hasOverride) {
+            const updatedTasks = tasks.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t);
+            setTasks(updatedTasks);
+            localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
+            
+            const payload = { column_id: newColId };
+            if (newColId === 'ai') payload.ai_response = null;
+            supabase.from('tasks').update(payload).eq('id', currentTask.id).then(({ error }) => {
+              if (error) console.error('Error updating CRM override column in DB:', error);
+            });
+          }
+
+          // Se foi movido para Done, envia a resolução para a API do CRM
+          if (newColId === 'done') {
+            const responseMsg = currentTask.aiResponse || 'Ocorrência resolvida via painel de projetos.';
+            console.log(`[CRM Resolve] Resolvendo ocorrência ${currentTask.id} no CRM com a mensagem: "${responseMsg}"`);
+            resolveCrmOccurrence(currentTask.id, responseMsg);
+          }
         }
         setActiveTask(null);
         setDragStartColumn(null);

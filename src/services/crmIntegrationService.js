@@ -113,3 +113,47 @@ export async function fetchCrmSyncData() {
     return MOCK_CRM_DATA;
   }
 }
+
+export async function resolveCrmOccurrence(id, responseText) {
+  if (!API_URL || !API_KEY) {
+    console.log("[CRM Integration] API não configurada. Simulando resolução local.");
+    return true;
+  }
+
+  let numericId = id;
+  if (typeof id === 'string') {
+    const match = id.match(/crm-oc-(\d+)/);
+    if (match) {
+      numericId = parseInt(match[1], 10);
+    }
+  }
+
+  // Se for maior ou igual a 100000, subtrai o offset do ID virtual
+  let dbId = numericId;
+  if (numericId >= 100000) {
+    dbId = numericId - 100000;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/integrations/kabania/ocorrencias/${dbId}/resolve`, {
+      method: 'PUT',
+      headers: {
+        'x-api-key': API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ resposta: responseText })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("[CRM Integration] Ocorrência resolvida no CRM com sucesso:", data);
+    return true;
+  } catch (error) {
+    console.error("[CRM Integration] Erro ao resolver ocorrência no CRM:", error);
+    return false;
+  }
+}
