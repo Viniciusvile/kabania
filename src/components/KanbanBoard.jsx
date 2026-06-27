@@ -272,7 +272,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     // 1. Mapear ocorrências do CRM para o formato de tarefas do Kanban
     const mappedCrmOcorrencias = (crmOcorrencias || []).map(o => {
       const crmId = `crm-oc-${o.id}`;
-      const defaultColumn = o.status === 'Pendente' ? 'todo' : 'backlog';
+      const defaultColumn = o.status === 'Pendente' ? 'backlog' : 'done';
       const colId = crmColumns[crmId] || defaultColumn;
       return {
         id: crmId,

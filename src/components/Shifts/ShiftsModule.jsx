@@ -128,7 +128,7 @@ export default function ShiftsModule({
       id: `crm-oc-${o.id}`,
       title: o.categoria || 'Ocorrência',
       desc: o.descricao,
-      column_id: o.status === 'Pendente' ? 'todo' : 'backlog',
+      column_id: o.status === 'Pendente' ? 'backlog' : 'done',
       tag: o.categoria,
       customer_name: o.condominio_nome,
       condominio_id: o.condominio_id,
