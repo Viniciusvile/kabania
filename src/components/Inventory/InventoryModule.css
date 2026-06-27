@@ -667,7 +667,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 1.25rem;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
@@ -785,4 +785,56 @@
 @keyframes slide-in-bottom {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVENESS (PREMIUM) ── */
+@media (max-width: 1024px) {
+  .inventory-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-actions-inline {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 1rem !important;
+  }
+
+  .inventory-tabs {
+    width: 100%;
+    display: flex;
+    margin: 0 !important;
+  }
+
+  .tab-btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .premium-table {
+    min-width: 750px;
+  }
+}
+
+@media (max-width: 768px) {
+  .inventory-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .header-subtitle {
+    font-size: 0.85rem;
+  }
 }
