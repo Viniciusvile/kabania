@@ -75,21 +75,19 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
           {deadlineStatus?.color === 'red' && <AlertTriangle size={13} className="text-red-500" />}
           {task.hasAlert && !deadlineStatus && <AlertTriangle size={14} className="text-red-500" />}
           {!task.hasAlert && !deadlineStatus && <Sparkles size={14} className="text-accent opacity-30" />}
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(task); }}
+            onPointerDown={e => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
+            title="Editar"
+          ><Edit2 size={13} /></button>
           {task.source !== 'crm' && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-                onPointerDown={e => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
-                title="Editar"
-              ><Edit2 size={13} /></button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-                onPointerDown={e => e.stopPropagation()}
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-                title="Excluir"
-              ><Trash2 size={14} /></button>
-            </>
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
+              onPointerDown={e => e.stopPropagation()}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
+              title="Excluir"
+            ><Trash2 size={14} /></button>
           )}
         </div>
       </div>
@@ -314,32 +312,48 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   // Enriquecer e mesclar com ocorrências do CRM + aplicar filtro de condomínio
   const processedTasks = useMemo(() => {
-    // 1. Mapear ocorrências do CRM para o formato de tarefas do Kanban
+    // Separate local tasks into regular tasks and CRM overrides
+    const crmOverrides = {};
+    const regularTasks = [];
+    
+    tasks.forEach(t => {
+      if (t.id && t.id.toString().startsWith('crm-oc-')) {
+        crmOverrides[t.id] = t;
+      } else {
+        regularTasks.push(t);
+      }
+    });
+
+    // 1. Mapear ocorrências do CRM para o formato de tarefas do Kanban, mesclando com os overrides do banco
     const mappedCrmOcorrencias = (crmOcorrencias || []).map(o => {
       const crmId = `crm-oc-${o.id}`;
+      const override = crmOverrides[crmId];
       const defaultColumn = o.status === 'Pendente' ? 'backlog' : 'done';
-      const colId = crmColumns[crmId] || defaultColumn;
+      
+      const colId = override?.columnId || override?.column_id || crmColumns[crmId] || defaultColumn;
+      
       return {
         id: crmId,
-        title: o.categoria || 'Ocorrência',
-        desc: o.descricao,
+        title: override?.title || o.categoria || 'Ocorrência',
+        desc: override?.desc || override?.description || o.descricao,
         columnId: colId,
-        tag: o.categoria,
-        tagColor: 'orange', // Marca cor laranja para identificar a origem
-        customer_name: o.condominio_nome,
-        isScheduled: false,
-        assignees: [],
-        comments: [],
+        tag: override?.tag || o.categoria,
+        tagColor: override?.tagColor || 'orange',
+        customer_name: override?.customer_name || o.condominio_nome,
+        isScheduled: override?.isScheduled || false,
+        assignees: override?.assignees || [],
+        comments: override?.comments || [],
+        deadline: override?.deadline || null,
         source: 'crm',
         condominio_id: o.condominio_id,
         created_at: o.created_at,
         projectId: projectId,
-        aiResponse: crmAiResponses[crmId] || null,
-        isAiLoading: !!crmAiLoading[crmId]
+        aiResponse: override?.aiResponse || override?.ai_response || crmAiResponses[crmId] || null,
+        isAiLoading: override?.isAiLoading || !!crmAiLoading[crmId]
       };
     });
 
-    const all = [...tasks, ...mappedCrmOcorrencias];
+    const all = [...regularTasks, ...mappedCrmOcorrencias];
 
     // 2. Enriquecer com agendamento
     const enriched = all.map(t => ({
@@ -357,7 +371,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
 
     return enriched;
-  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns, projectId]);
+  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns, crmAiResponses, crmAiLoading, projectId]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
@@ -680,6 +694,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     e.preventDefault();
     if (!formTitle.trim()) return;
     const prevTask = editingTask;
+    const isCrmOverride = prevTask.id.toString().startsWith('crm-oc-');
+
     const payload = {
       title: formTitle.trim(),
       description: formDesc.trim(),
@@ -689,10 +705,26 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       customer_name: formCustomer
     };
 
-    const { error } = await supabase
-      .from('tasks')
-      .update(payload)
-      .eq('id', prevTask.id);
+    let error;
+    if (isCrmOverride) {
+      const upsertPayload = {
+        id: prevTask.id,
+        column_id: prevTask.columnId || 'backlog',
+        project_id: projectId,
+        company_id: currentCompany?.id,
+        title: formTitle.trim(),
+        description: formDesc.trim(),
+        deadline: formDeadline || null,
+        assignees: formAssignees,
+        ai_response: null,
+        customer_name: formCustomer
+      };
+      const res = await supabase.from('tasks').upsert(upsertPayload);
+      error = res.error;
+    } else {
+      const res = await supabase.from('tasks').update(payload).eq('id', prevTask.id);
+      error = res.error;
+    }
 
     if (!error) {
       const updatedTask = {
@@ -704,7 +736,16 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         aiResponse: null,
         isAiLoading: false
       };
-      setTasks(prev => prev.map(t => t.id === prevTask.id ? updatedTask : t));
+      
+      setTasks(prev => {
+        const exists = prev.some(t => t.id === prevTask.id);
+        const next = exists
+          ? prev.map(t => t.id === prevTask.id ? updatedTask : t)
+          : [...prev, { ...updatedTask, column_id: prevTask.columnId, project_id: projectId, company_id: currentCompany?.id }];
+        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
+        return next;
+      });
+      
       const newAssignees = formAssignees.filter(e => !(prevTask.assignees || []).includes(e));
       if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
       setEditingTask(null);
@@ -714,6 +755,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   };
 
   const handleUpdateFromDetail = async (updatedTask) => {
+    const isCrmOverride = updatedTask.id.toString().startsWith('crm-oc-');
     const payload = {
       title: updatedTask.title,
       description: updatedTask.desc,
@@ -724,13 +766,37 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       ai_response: updatedTask.aiResponse
     };
 
-    const { error } = await supabase
-      .from('tasks')
-      .update(payload)
-      .eq('id', updatedTask.id);
+    let error;
+    if (isCrmOverride) {
+      const upsertPayload = {
+        id: updatedTask.id,
+        column_id: updatedTask.columnId || 'backlog',
+        project_id: projectId,
+        company_id: currentCompany?.id,
+        title: updatedTask.title,
+        description: updatedTask.desc,
+        deadline: updatedTask.deadline,
+        assignees: updatedTask.assignees,
+        comments: updatedTask.comments,
+        ai_response: updatedTask.aiResponse,
+        customer_name: updatedTask.customer_name
+      };
+      const res = await supabase.from('tasks').upsert(upsertPayload);
+      error = res.error;
+    } else {
+      const res = await supabase.from('tasks').update(payload).eq('id', updatedTask.id);
+      error = res.error;
+    }
 
     if (!error) {
-      setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+      setTasks(prev => {
+        const exists = prev.some(t => t.id === updatedTask.id);
+        const next = exists
+          ? prev.map(t => t.id === updatedTask.id ? updatedTask : t)
+          : [...prev, { ...updatedTask, column_id: updatedTask.columnId, project_id: projectId, company_id: currentCompany?.id }];
+        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
+        return next;
+      });
     } else {
       console.error('Error updating from detail:', error);
     }

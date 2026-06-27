@@ -19,11 +19,19 @@
 .kanban-column {
   flex: 1;
   min-width: 260px;
-  background-color: var(--bg-panel);
+  background: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 4px 24px rgba(0, 0, 0, 0.22);
   max-height: 100%;
 }
 
@@ -36,7 +44,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--text-main);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .column-content {
@@ -50,8 +58,12 @@
 
 /* Base Card */
 .task-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
+  background: linear-gradient(160deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
   border-radius: 8px;
   padding: 1rem;
   transition: all 0.2s;
@@ -59,8 +71,13 @@
 }
 
 .task-card:hover {
-  background-color: var(--bg-card-hover);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(160deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 4px 16px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 
 .card-header {
