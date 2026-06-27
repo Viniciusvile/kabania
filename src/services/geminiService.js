@@ -163,42 +163,58 @@ Resposta curta:`;
 
       // FALLBACK LOCAL INTELIGENTE POR CORRESPONDÊNCIA DE STRINGS E TAGS
       const textToMatch = (taskDescription || '').toLowerCase();
+      
+      const isWholeWordMatch = (text, tag) => {
+        const cleanText = text.toLowerCase().replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçñ]/g, ' ');
+        const cleanTag = tag.toLowerCase().trim();
+        const words = cleanText.split(/\s+/);
+        
+        if (cleanTag.includes(' ')) {
+          return cleanText.includes(cleanTag);
+        }
+        
+        return words.includes(cleanTag);
+      };
+
       let bestMatch = null;
+      let highestScore = 0;
 
-      // 1. Tentar encontrar correspondência direta por tags
       for (const item of authorizedItems) {
+        let score = 0;
+        
+        // 1. Tag matching with whole word check
         const tags = item.tags || [];
-        const matchedTag = tags.find(t => t && textToMatch.includes(t.toLowerCase()));
-        if (matchedTag) {
-          bestMatch = item;
-          break;
-        }
-      }
-
-      // 2. Tentar encontrar correspondência por termos no título
-      if (!bestMatch) {
-        bestMatch = authorizedItems.find(item => 
-          textToMatch.includes(item.title.toLowerCase()) || 
-          item.title.toLowerCase().includes(textToMatch)
-        );
-      }
-
-      // 3. Tentar encontrar correspondência por palavras soltas significativas (excluindo conectivos comuns)
-      if (!bestMatch) {
-        const words = textToMatch.split(/\s+/).filter(w => w.length > 3 && !['como', 'para', 'onde', 'este', 'esta', 'tudo', 'mais'].includes(w));
-        for (const word of words) {
-          const match = authorizedItems.find(item => 
-            item.title.toLowerCase().includes(word) || 
-            (item.tags || []).some(t => t && t.toLowerCase().includes(word))
-          );
-          if (match) {
-            bestMatch = match;
-            break;
+        tags.forEach(tag => {
+          if (tag && isWholeWordMatch(textToMatch, tag)) {
+            score += 2;
           }
+        });
+
+        // 2. Title word matching (excluding stop words)
+        const titleClean = item.title.toLowerCase().replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçñ]/g, ' ');
+        const titleWords = titleClean.split(/\s+/).filter(w => w.length > 3 && !['como', 'para', 'onde', 'este', 'esta', 'tudo', 'mais'].includes(w));
+        
+        titleWords.forEach(word => {
+          if (isWholeWordMatch(textToMatch, word)) {
+            score += 1.5;
+          }
+        });
+
+        // 3. Exact subtitle/phrase matching
+        if (textToMatch.includes(item.title.toLowerCase()) || item.title.toLowerCase().includes(textToMatch)) {
+          score += 3;
+        }
+
+        if (score > highestScore) {
+          highestScore = score;
+          bestMatch = item;
         }
       }
 
-      if (bestMatch) {
+      // Threshold of 3.5 requires at least a tag and a title word, or a phrase match, etc.
+      // to avoid loose single-word matches mapping unrelated items.
+      const THRESHOLD = 3.5;
+      if (bestMatch && highestScore >= THRESHOLD) {
         return bestMatch.description;
       }
 
