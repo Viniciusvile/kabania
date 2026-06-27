@@ -114,13 +114,27 @@ function App() {
 
   // Fetch CRM Integration data on mount / company change (Restricted to click@gmail.com only)
   useEffect(() => {
+    let intervalId = null;
     if (currentCompany && currentUser?.toLowerCase() === 'click@gmail.com') {
       fetchCrmSyncData().then(data => {
         if (data) setCrmData(data);
       });
+
+      // Polling a cada 10 segundos para manter as ocorrências do CRM atualizadas no Kanban
+      intervalId = setInterval(() => {
+        fetchCrmSyncData().then(data => {
+          if (data) setCrmData(data);
+        });
+      }, 10000);
     } else {
       setCrmData({ condominios: [], ocorrencias: [], funcionarios: [] });
     }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
   }, [currentCompany, currentUser]);
 
   const refreshCrmData = async () => {

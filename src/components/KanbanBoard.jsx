@@ -67,7 +67,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
       {...attributes}
       {...listeners}
       className={`task-card group ${deadlineStatus?.color === 'red' ? 'card-overdue' : ''}`}
-      onDoubleClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}
+      onClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}
     >
       {/* Card Header */}
       <div className="card-header">
