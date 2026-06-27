@@ -71,7 +71,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
       {/* Card Header */}
       <div className="card-header">
         <span className="card-title">{task.title}</span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {deadlineStatus?.color === 'red' && <AlertTriangle size={13} className="text-red-500" />}
           {task.hasAlert && !deadlineStatus && <AlertTriangle size={14} className="text-red-500" />}
           {!task.hasAlert && !deadlineStatus && <Sparkles size={14} className="text-accent opacity-30" />}
@@ -79,6 +79,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
             onPointerDown={e => e.stopPropagation()}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
+            style={{ marginLeft: '4px' }}
             title="Editar"
           ><Edit2 size={13} /></button>
           {task.source !== 'crm' && (
