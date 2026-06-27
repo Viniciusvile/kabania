@@ -424,3 +424,61 @@
   line-height: 1.5;
   margin: 0;
 }
+
+/* ---- Response Editing Styles ---- */
+.cdm-ai-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cdm-ai-textarea {
+  width: 100%;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 0.75rem;
+  font-size: 0.825rem;
+  line-height: 1.5;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.cdm-ai-textarea:focus {
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
+.cdm-ai-edit-actions .btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.cdm-ai-edit-actions .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+}
+
+.cdm-ai-edit-actions .btn-confirm {
+  background: #00e5ff;
+  border: none;
+  color: #001820;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s;
+}
+
+.cdm-ai-edit-actions .btn-confirm:hover {
+  background: #00cde8;
+}

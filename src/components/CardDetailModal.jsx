@@ -42,6 +42,21 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
   const [estimation, setEstimation] = useState(null); // { estimate, complexity, reasoning }
   const [estimating, setEstimating] = useState(false);
   const estimatedRef = useRef(false);
+  const [isEditingResponse, setIsEditingResponse] = useState(false);
+  const [editedResponse, setEditedResponse] = useState(task?.aiResponse || '');
+
+  useEffect(() => {
+    setEditedResponse(task?.aiResponse || '');
+  }, [task?.aiResponse]);
+
+  const handleSaveResponse = () => {
+    const updatedTask = {
+      ...task,
+      aiResponse: editedResponse.trim() || null
+    };
+    onUpdate(updatedTask);
+    setIsEditingResponse(false);
+  };
 
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -187,18 +202,61 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
             )}
           </div>
 
-          {/* AI Suggestion */}
-          {task.aiResponse && (
-            <section className="cdm-section">
-              <label><Sparkles size={13} /> Sugestão da IA</label>
-              <div className="cdm-ai-box">
-                {task.isAiLoading
-                  ? <span className="cdm-ai-loading"><Sparkles size={12} /> Analisando...</span>
-                  : <p>{task.aiResponse}</p>
-                }
+          {/* AI Suggestion & Manual Response */}
+          <section className="cdm-section">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+              <label style={{ margin: 0 }}><Sparkles size={13} /> Sugestão da IA / Resposta do Card</label>
+              {!isEditingResponse && (
+                <button 
+                  onClick={() => setIsEditingResponse(true)} 
+                  style={{ background: 'none', border: 'none', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                >
+                  <Edit2 size={12} /> Editar
+                </button>
+              )}
+            </div>
+
+            {isEditingResponse ? (
+              <div className="cdm-ai-edit-box">
+                <textarea
+                  className="cdm-ai-textarea"
+                  value={editedResponse}
+                  onChange={e => setEditedResponse(e.target.value)}
+                  placeholder="Escreva a resposta do card..."
+                  rows={4}
+                />
+                <div className="cdm-ai-edit-actions" style={{ display: 'flex', gap: '8px', marginTop: '8px', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => {
+                      setIsEditingResponse(false);
+                      setEditedResponse(task.aiResponse || '');
+                    }} 
+                    className="btn-cancel"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleSaveResponse} 
+                    className="btn-confirm"
+                  >
+                    Salvar
+                  </button>
+                </div>
               </div>
-            </section>
-          )}
+            ) : (
+              <div className="cdm-ai-box">
+                {task.isAiLoading ? (
+                  <span className="cdm-ai-loading"><Sparkles size={12} /> Analisando...</span>
+                ) : task.aiResponse ? (
+                  <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{task.aiResponse}</p>
+                ) : (
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    Nenhuma sugestão ou resposta cadastrada. Clique em "Editar" para adicionar.
+                  </span>
+                )}
+              </div>
+            )}
+          </section>
 
           {/* Comments */}
           <section className="cdm-section cdm-comments-section">
