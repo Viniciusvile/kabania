@@ -27,14 +27,13 @@ import './Kanban.css';
 
 const COLUMNS = [
   { id: 'backlog',  title: 'BACKLOG' },
-  { id: 'todo',     title: 'BACKLOG' },
   { id: 'progress', title: 'IN PROGRESS' },
   { id: 'ai',       title: 'AI ANALYSIS', isHighlighted: true },
   { id: 'done',     title: 'DONE' }
 ];
 
 const COLUMN_LABELS = {
-  backlog: 'Backlog', todo: 'Backlog', progress: 'Em Progresso', ai: 'AI Analysis', done: 'Concluído'
+  backlog: 'Backlog', progress: 'Em Progresso', ai: 'AI Analysis', done: 'Concluído'
 };
 
 // ---- Avatar helpers ----
