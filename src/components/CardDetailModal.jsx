@@ -6,7 +6,9 @@ import {
 import { getDeadlineStatus } from '../services/notificationService';
 import { notifyComment } from '../services/notificationService';
 import { estimateCard } from '../services/kanbanService';
+import { sendCrmOccurrenceMessage } from '../services/crmIntegrationService';
 import './CardDetailModal.css';
+
 
 function getInitials(email) {
   if (!email) return '??';
@@ -62,10 +64,11 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
 
   const handleAddComment = () => {
     if (!commentText.trim()) return;
+    const cleanText = commentText.trim();
     const newComment = {
       id: `c-${Date.now()}`,
       author: currentUser,
-      text: commentText.trim(),
+      text: cleanText,
       createdAt: new Date().toISOString()
     };
     const updatedTask = {
@@ -74,8 +77,17 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
     };
     onUpdate(updatedTask);
     notifyComment(task, currentUser);
+
+    // Se for uma ocorrência do CRM, propaga o comentário como mensagem de chat no CRM
+    if (task.id && task.id.toString().startsWith('crm-oc-')) {
+      sendCrmOccurrenceMessage(task.id, cleanText).catch(err => {
+        console.error("[CRM Message Sync] Falha ao enviar comentário como mensagem de chat no CRM:", err);
+      });
+    }
+
     setCommentText('');
   };
+
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

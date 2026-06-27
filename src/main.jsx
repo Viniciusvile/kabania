@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import './index.css'
+import './liquidGlass.css'
 import App from './App.jsx'
 
 // 🛡️ SUPPRESS SUPABASE LOCK & OAUTH UNMOUNT WARNINGS

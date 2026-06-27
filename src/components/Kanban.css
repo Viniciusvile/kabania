@@ -1,7 +1,7 @@
-/* --- Kanban Board styles --- */
+/* --- Kanban Board — Liquid Glass --- */
 .kanban-wrapper {
   margin-top: 0.5rem;
-  padding-top: 8px; /* Room for highlighted column jump */
+  padding-top: 8px;
   flex: 1;
   min-height: 0;
   overflow-x: auto;
@@ -10,57 +10,104 @@
 
 .kanban-board {
   display: flex;
-  gap: 1rem;
+  gap: 14px;
   height: 100%;
   padding-bottom: 1rem;
-  min-width: min-content; /* Allow shrinking */
+  min-width: min-content;
 }
 
+/* Glass column */
 .kanban-column {
   flex: 1;
   min-width: 260px;
-  background-color: var(--bg-panel);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   max-height: 100%;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kanban-column::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.22) 30%,
+    rgba(255, 255, 255, 0.38) 50%,
+    rgba(255, 255, 255, 0.22) 70%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 .column-header {
-  padding: 1rem 1.25rem;
+  padding: 14px 16px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  color: var(--text-main);
-  border-bottom: 1px solid var(--border-color);
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  text-transform: uppercase;
 }
 
 .column-content {
-  padding: 1rem;
+  padding: 10px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 8px;
   flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.column-content::-webkit-scrollbar { width: 4px; }
+.column-content::-webkit-scrollbar-track { background: transparent; }
+.column-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* Glass task card */
+.task-card {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: grab;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
-/* Base Card */
-.task-card {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1rem;
-  transition: all 0.2s;
-  cursor: grab;
+.task-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+  pointer-events: none;
 }
 
 .task-card:hover {
-  background-color: var(--bg-card-hover);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.075);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+  transform: translateY(-1px);
 }
 
 .card-header {
@@ -349,18 +396,39 @@
    ============================================ */
 
 .km-modal {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
+  background: rgba(12, 12, 16, 0.88);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
   width: 500px;
   max-width: 95vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-  animation: km-appear 0.25s ease;
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.65),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: km-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  transition: var(--transition-theme);
+  position: relative;
+}
+
+.km-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,0.3) 30%,
+    rgba(255,255,255,0.5) 50%,
+    rgba(255,255,255,0.3) 70%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 @keyframes km-appear {
@@ -372,9 +440,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: linear-gradient(135deg, rgba(0,229,255,0.05) 0%, transparent 60%);
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, transparent 60%);
 }
 
 .km-modal-header h3 {
@@ -383,25 +451,29 @@
   gap: 0.5rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: rgba(255,255,255,0.9);
   margin: 0;
 }
 
 .km-modal-close {
-  background: none;
-  border: none;
-  color: #64748b;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.4);
   cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 6px;
+  padding: 5px;
+  border-radius: 8px;
   display: flex;
-  transition: color 0.2s;
+  transition: all 0.18s ease;
 }
 
-.km-modal-close:hover { color: var(--text-main); }
+.km-modal-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.15);
+}
 
 .km-modal-body {
-  padding: 1.25rem 1.5rem;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -428,20 +500,32 @@
 .km-field input,
 .km-field textarea,
 .km-field select {
-  background: var(--bg-app);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-main);
-  padding: 0.65rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 9px 12px;
   font-size: 0.85rem;
   outline: none;
   font-family: inherit;
-  transition: all 0.2s;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.25);
+}
+
+.km-field input::placeholder,
+.km-field textarea::placeholder {
+  color: rgba(255,255,255,0.2);
+}
+
+.km-field select option {
+  background: #1a1a2e;
+  color: rgba(255,255,255,0.9);
 }
 
 .km-field input:focus,
 .km-field textarea:focus {
-  border-color: rgba(0, 229, 255, 0.4);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), inset 0 1px 3px rgba(0,0,0,0.25);
 }
 
 .km-field textarea { resize: vertical; }
@@ -519,33 +603,40 @@
 }
 
 .km-btn-cancel {
-  background: var(--bg-card-hover);
-  border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  padding: 0.6rem 1.25rem;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 8px 18px;
+  border-radius: 999px;
   font-size: 0.825rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
-.km-btn-cancel:hover { background: var(--bg-card); color: var(--text-main); }
+.km-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.85);
+}
 
 .km-btn-submit {
-  background: #00e5ff;
-  color: #001820;
-  border: none;
-  padding: 0.6rem 1.5rem;
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(139,92,246,0.4));
+  color: rgba(255,255,255,0.95);
+  border: 1px solid rgba(99,102,241,0.45);
+  padding: 8px 22px;
+  border-radius: 999px;
   font-size: 0.825rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s ease;
+  box-shadow: 0 0 16px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 .km-btn-submit:hover {
-  background: var(--accent-cyan);
-  filter: brightness(1.1);
+  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55));
+  border-color: rgba(99,102,241,0.65);
+  box-shadow: 0 0 24px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
   transform: translateY(-1px);
 }
 
