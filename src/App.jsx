@@ -760,7 +760,7 @@ function App() {
           <div className="main-content">
             <TopBar
               onToggleSidebar={() => {
-                if (window.innerWidth <= 768) {
+                if (window.innerWidth <= 1024) {
                   setIsMobileMenuOpen(!isMobileMenuOpen);
                 } else {
                   setIsSidebarCollapsed(!isSidebarCollapsed);
