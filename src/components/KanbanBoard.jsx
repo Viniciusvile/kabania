@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext, arrayMove, sortableKeyboardCoordinates,
-  verticalListSortingStrategy, useSortable
+  verticalListSortingStrategy, rectSortingStrategy, useSortable
 } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -169,8 +169,15 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
 // ---- Kanban Column ----
 function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenDetail }) {
   const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column', column: col } });
+  const isBacklog = col.id === 'backlog';
   return (
-    <div className={`kanban-column ${col.isHighlighted ? 'column-highlighted' : ''}`}>
+    <div 
+      className={`kanban-column ${col.isHighlighted ? 'column-highlighted' : ''}`}
+      style={{
+        flex: isBacklog ? '2 1 520px' : '1 1 260px',
+        minWidth: isBacklog ? '480px' : '240px'
+      }}
+    >
       <div className={`column-header ${col.isHighlighted ? 'text-accent' : ''}`}>
         <span>{col.title}</span>
         {!col.isHighlighted && (
@@ -179,8 +186,21 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
           </button>
         )}
       </div>
-      <div ref={setNodeRef} className="column-content relative" style={{ minHeight: '100px' }}>
-        <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+      <div 
+        ref={setNodeRef} 
+        className="column-content relative" 
+        style={{ 
+          minHeight: '100px',
+          display: isBacklog ? 'grid' : 'flex',
+          gridTemplateColumns: isBacklog ? '1fr 1fr' : 'none',
+          gap: '0.75rem',
+          alignContent: 'start'
+        }}
+      >
+        <SortableContext 
+          items={tasks.map(t => t.id)} 
+          strategy={isBacklog ? rectSortingStrategy : verticalListSortingStrategy}
+        >
           {tasks.map(task => (
             <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} />
           ))}
