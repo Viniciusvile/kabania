@@ -429,21 +429,20 @@ export async function processKnowledgeFile(extractedText, existingKnowledge = []
 }
 
 export async function processKnowledgeRow(rowData, existingKnowledge = []) {
+  const normalizedData = {
+    title: (rowData.Tema || rowData.title || rowData.Assunto || rowData.Titulo || rowData.Subject || '').trim(),
+    content: (rowData.Conteudo || rowData.description || rowData.Descricao || rowData.Text || rowData.Conteúdo || '').trim(),
+    section: (rowData.Categoria || rowData.section || rowData.Seção || rowData.Category || '').trim(),
+    tags: (rowData.Tags || rowData.tags || rowData.Etiquetas || '')
+  };
+
+  if (!normalizedData.title && !normalizedData.content) {
+    console.warn("Linha do CSV ignorada: Título e Conteúdo vazios.");
+    return null;
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-    
-    // Normalize row data for better AI interpretation
-    const normalizedData = {
-      title: rowData.Tema || rowData.title || rowData.Assunto || rowData.Titulo || rowData.Subject || '',
-      content: rowData.Conteudo || rowData.description || rowData.Descricao || rowData.Text || rowData.Conteúdo || '',
-      section: rowData.Categoria || rowData.section || rowData.Seção || rowData.Category || '',
-      tags: rowData.Tags || rowData.tags || rowData.Etiquetas || ''
-    };
-
-    if (!normalizedData.title && !normalizedData.content) {
-      console.warn("Linha do CSV ignorada: Título e Conteúdo vazios.");
-      return null;
-    }
     
     // Prepare comparison context
     const context = existingKnowledge.slice(0, 50).map(k => ({
@@ -482,26 +481,50 @@ export async function processKnowledgeRow(rowData, existingKnowledge = []) {
     const text = result.response.text();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     
-    if (!jsonMatch) {
-      console.error("IA não retornou JSON para a linha:", text);
-      return null;
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (parsed.action === 'merge' && !parsed.existingId) {
+        const match = existingKnowledge.find(k => k.title.toLowerCase() === normalizedData.title.toLowerCase());
+        if (match) parsed.existingId = match.id;
+        else parsed.action = 'create';
+      }
+      return parsed;
     }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    
-    // Final safety check: if it's merge, we need the ID. 
-    // If ID is missing, try to find by title match in local context
-    if (parsed.action === 'merge' && !parsed.existingId) {
-      const match = context.find(k => k.title.toLowerCase() === normalizedData.title.toLowerCase());
-      if (match) parsed.existingId = match.id;
-      else parsed.action = 'create';
-    }
-
-    return parsed;
   } catch (error) {
-    console.error("Erro ao processar linha:", error);
-    return null;
+    console.warn("Erro ao usar IA para processar linha, usando fallback local:", error);
   }
+
+  // FALLBACK LOCAL AUTOMÁTICO SE A API DO GEMINI FALHAR (EX: CHAVE LEAKED/REVOGADA)
+  const match = existingKnowledge.find(k => k.title.toLowerCase() === normalizedData.title.toLowerCase());
+  
+  let section = 'general';
+  const secLower = normalizedData.section.toLowerCase();
+  if (secLower.includes('empresa') || secLower.includes('company') || secLower.includes('corporativo') || secLower.includes('dados')) {
+    section = 'company_data';
+  } else if (secLower.includes('trouble') || secLower.includes('resol') || secLower.includes('suporte') || secLower.includes('ajuda') || secLower.includes('problemas')) {
+    section = 'troubleshooting';
+  }
+
+  let tags = [];
+  if (typeof normalizedData.tags === 'string' && normalizedData.tags.trim()) {
+    tags = normalizedData.tags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+  } else if (Array.isArray(normalizedData.tags)) {
+    tags = normalizedData.tags;
+  }
+  if (tags.length === 0) {
+    tags = ['Importado'];
+  }
+
+  return {
+    action: match ? 'merge' : 'create',
+    existingId: match ? match.id : undefined,
+    suggested: {
+      title: normalizedData.title,
+      description: normalizedData.content,
+      section: section,
+      tags: tags
+    }
+  };
 }
 
 

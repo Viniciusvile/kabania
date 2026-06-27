@@ -53,7 +53,7 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
     setFeedback({ isOpen: true, title, message, type, onConfirm });
   };
 
-  // Fetch from Supabase with Caching
+  // Fetch from Supabase with Caching & Realtime Sync
   useEffect(() => {
     const fetchKnowledge = async () => {
       if (!currentCompany?.id) {
@@ -84,6 +84,23 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
     };
 
     fetchKnowledge();
+
+    if (!currentCompany?.id) return;
+    const channel = supabase
+      .channel(`public:knowledge_base:company_id=eq.${currentCompany.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'knowledge_base',
+        filter: `company_id=eq.${currentCompany.id}`
+      }, () => {
+        fetchKnowledge();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentCompany]);
 
   const toggleItem = async (id) => {
