@@ -96,10 +96,36 @@ async function withRetry(fn, maxRetries = 3) {
 
 export async function processTaskWithAI(taskDescription, companyId, isConcise = false, hub = null) {
   return withRetry(async () => {
+    // 1. Buscar base de conhecimento autorizada antecipadamente para servir de fallback se necessário
+    let authorizedItems = [];
+    try {
+      if (companyId) {
+        let query = supabase
+          .from('knowledge_base')
+          .select('title, description, tags, section')
+          .eq('company_id', companyId)
+          .eq('enabled', true);
+        
+        if (hub) {
+          query = query.eq('section', hub);
+        }
+        
+        const { data, error } = await query;
+        if (!error && data) {
+          authorizedItems = data;
+        }
+      }
+    } catch (dbErr) {
+      console.error("Erro ao carregar base de conhecimento para fallback:", dbErr);
+    }
+
     try {
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-      const authorizedTags = await getAuthorizedTags(companyId, hub);
       
+      const formattedTags = authorizedItems.length > 0
+        ? `TAGS AUTORIZADAS DISPONÍVEIS:\n${authorizedItems.map(item => `Tema: ${item.title}, Tags: ${(item.tags || []).join(', ')}`).join('\n')}`
+        : 'NENHUMA TAG AUTORIZADA';
+
       const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
 
 IMPORTANTE: Existe um sistema de TAGS que controla quais assuntos podem ser respondidos.
@@ -118,7 +144,7 @@ REGRAS DE FUNCIONAMENTO
 5. Nunca ignore o sistema de TAGS.
 6. Vá direto ao ponto, evite introduções longas.
 
-${authorizedTags}
+${formattedTags}
 
 Mensagem do Usuário:
 "${taskDescription}"
@@ -129,13 +155,54 @@ Resposta curta:`;
       const response = await result.response;
       return response.text();
     } catch (error) {
-      console.error("Erro na API do Gemini:", error);
+      console.warn("Erro na API do Gemini, usando fallback local na base de conhecimento:", error);
       
-      if (error.message && error.message.includes("429")) {
-        return "⚠️ Limite de requisições (Quota) atingido. Por favor, aguarde um momento e tente novamente.";
+      if (authorizedItems.length === 0) {
+        return "Este assunto não está autorizado.";
       }
-      
-      throw error; // Rethrow to let withRetry handle it if it's not a 429 after retries or other error
+
+      // FALLBACK LOCAL INTELIGENTE POR CORRESPONDÊNCIA DE STRINGS E TAGS
+      const textToMatch = (taskDescription || '').toLowerCase();
+      let bestMatch = null;
+
+      // 1. Tentar encontrar correspondência direta por tags
+      for (const item of authorizedItems) {
+        const tags = item.tags || [];
+        const matchedTag = tags.find(t => t && textToMatch.includes(t.toLowerCase()));
+        if (matchedTag) {
+          bestMatch = item;
+          break;
+        }
+      }
+
+      // 2. Tentar encontrar correspondência por termos no título
+      if (!bestMatch) {
+        bestMatch = authorizedItems.find(item => 
+          textToMatch.includes(item.title.toLowerCase()) || 
+          item.title.toLowerCase().includes(textToMatch)
+        );
+      }
+
+      // 3. Tentar encontrar correspondência por palavras soltas significativas (excluindo conectivos comuns)
+      if (!bestMatch) {
+        const words = textToMatch.split(/\s+/).filter(w => w.length > 3 && !['como', 'para', 'onde', 'este', 'esta', 'tudo', 'mais'].includes(w));
+        for (const word of words) {
+          const match = authorizedItems.find(item => 
+            item.title.toLowerCase().includes(word) || 
+            (item.tags || []).some(t => t && t.toLowerCase().includes(word))
+          );
+          if (match) {
+            bestMatch = match;
+            break;
+          }
+        }
+      }
+
+      if (bestMatch) {
+        return bestMatch.description;
+      }
+
+      return "Este assunto não está autorizado.";
     }
   });
 }

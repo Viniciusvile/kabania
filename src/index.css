@@ -27,7 +27,26 @@
 
 
   --font-sans: 'Inter', sans-serif;
+  --font-display: 'Inter', sans-serif;
   --transition-theme: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+
+  /* Alias variables */
+  --bg-surface: #1F222A;
+  --bg-surface-elevated: #252831;
+  --bg-dark: #13151A;
+  --accent: #00E5FF;
+
+  /* Primary button */
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+
+  /* Glass Design System */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-hover: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-blur: blur(24px) saturate(180%) brightness(1.05);
 }
 
 [data-theme='light'] {
@@ -36,19 +55,34 @@
   --bg-panel: #FFFFFF;
   --bg-card: #FFFFFF;
   --bg-card-hover: #F8FAFC;
-  
+
   --border-color: #CBD5E1; /* Slate 300 - More defined borders */
   --border-light: rgba(0, 0, 0, 0.08);
-  
+
   --accent-cyan: #0052CC; /* Adjusting for light background */
   --accent-cyan-dim: rgba(0, 82, 204, 0.1);
-  
+
   --text-main: #0F172A;   /* Slate 900 - Better readability */
   --text-muted: #475569;  /* Slate 600 */
   --text-dark: #94A3B8;   /* Slate 400 */
 
   /* Colors remain similar but can be adjusted if needed */
   --accent-gradient: linear-gradient(135deg, #0088ff 0%, #0052cc 100%);
+
+  --bg-surface: #F1F5F9;
+  --bg-surface-elevated: #FFFFFF;
+  --bg-dark: #E2E8F0;
+  --accent: #0052CC;
+
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-glow: rgba(99, 102, 241, 0.3);
+
+  --glass-bg: rgba(255, 255, 255, 0.60);
+  --glass-bg-hover: rgba(255, 255, 255, 0.80);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-blur: blur(24px) saturate(180%) brightness(1.02);
 }
 
 [data-theme='green'] {
@@ -57,23 +91,38 @@
   --bg-panel: #121212;
   --bg-card: #1A1A1A;
   --bg-card-hover: #222222;
-  
+
   --border-color: #262626;
   --border-light: rgba(255, 255, 255, 0.05);
-  
+
   --accent-cyan: #04D94F;    /* Malachite - Vibrant Green */
   --accent-cyan-dim: rgba(4, 217, 79, 0.15);
-  
+
   --text-main: #F2F2F2;      /* Bleached Silk */
   --text-muted: #888888;
   --text-dark: #444444;
 
   --accent-gradient: linear-gradient(135deg, #04D94F 0%, #078C36 100%);
-  
+
   --color-green: #04D94F;
   --color-purple: #8B5CF6;
   --color-orange: #F59E0B;
   --color-red: #EF4444;
+
+  --bg-surface: #121212;
+  --bg-surface-elevated: #1A1A1A;
+  --bg-dark: #080808;
+  --accent: #04D94F;
+
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+
+  --glass-bg: rgba(4, 217, 79, 0.04);
+  --glass-bg-hover: rgba(4, 217, 79, 0.08);
+  --glass-border: rgba(4, 217, 79, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.07);
+  --glass-blur: blur(24px) saturate(180%) brightness(1.05);
 }
 
 * {

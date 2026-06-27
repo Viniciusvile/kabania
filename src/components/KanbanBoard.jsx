@@ -248,13 +248,25 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     return cached ? JSON.parse(cached) : {};
   });
 
-  // Sync crmColumns when project changes
+  // Local AI responses cache for CRM occurrences
+  const [crmAiResponses, setCrmAiResponses] = useState(() => {
+    if (!projectId) return {};
+    const saved = localStorage.getItem(`crm_ai_responses_${projectId}`);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const [crmAiLoading, setCrmAiLoading] = useState({});
+
+  // Sync crmColumns and crmAiResponses when project changes
   useEffect(() => {
     if (projectId) {
       const cached = localStorage.getItem(`crm_columns_${projectId}`);
       setCrmColumns(cached ? JSON.parse(cached) : {});
+      const savedAi = localStorage.getItem(`crm_ai_responses_${projectId}`);
+      setCrmAiResponses(savedAi ? JSON.parse(savedAi) : {});
     } else {
       setCrmColumns({});
+      setCrmAiResponses({});
     }
   }, [projectId]);
 
@@ -321,7 +333,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         source: 'crm',
         condominio_id: o.condominio_id,
         created_at: o.created_at,
-        projectId: projectId
+        projectId: projectId,
+        aiResponse: crmAiResponses[crmId] || null,
+        isAiLoading: !!crmAiLoading[crmId]
       };
     });
 
@@ -522,7 +536,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     let isMounted = true;
 
     const runAI = async () => {
-      const unanalyzed = tasks.filter(t => 
+      const unanalyzed = processedTasks.filter(t => 
         t.columnId === 'ai' && 
         !t.aiResponse && 
         !t.isAiLoading && 
@@ -532,42 +546,60 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       if (unanalyzed.length === 0) return;
 
       // Process only the first one found to let the next Effect catch the rest
-      // This prevents multiple overlapping loops and respects the sequential nature
       const task = unanalyzed[0];
 
       if (!isMounted) return;
 
       // Mark as loading to prevent other Effects from picking it up
-      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
+      if (task.source === 'crm') {
+        setCrmAiLoading(prev => ({ ...prev, [task.id]: true }));
+      } else {
+        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: true } : t));
+      }
 
       try {
         const response = await processTaskWithAI(task.desc || task.title, currentCompany?.id, true);
         
-        // Removed !isMounted return so that the background processing completes
-        // and updates the task even if the effect was cleaned up due to the tasks array updating.
-        
-        // Update locally
-        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
-        
-        // Persist to database
-        const { error } = await supabase
-          .from('tasks')
-          .update({ ai_response: response })
-          .eq('id', task.id);
+        if (task.source === 'crm') {
+          setCrmAiLoading(prev => ({ ...prev, [task.id]: false }));
+          setCrmAiResponses(prev => {
+            const next = { ...prev, [task.id]: response };
+            localStorage.setItem(`crm_ai_responses_${projectId}`, JSON.stringify(next));
+            return next;
+          });
+        } else {
+          // Update locally
+          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: response } : t));
           
-        if (error) console.error('Error persisting AI response:', error);
+          // Persist to database
+          const { error } = await supabase
+            .from('tasks')
+            .update({ ai_response: response })
+            .eq('id', task.id);
+            
+          if (error) console.error('Error persisting AI response:', error);
+        }
 
-        // Subtle delay before next card is picked up by the next Effect trigger
+        // Subtle delay before next card is picked up
         await new Promise(resolve => setTimeout(resolve, 1200));
       } catch (err) {
-        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: 'Erro ao processar.' } : t));
+        if (task.source === 'crm') {
+          setCrmAiLoading(prev => ({ ...prev, [task.id]: false }));
+          setCrmAiResponses(prev => {
+            const next = { ...prev, [task.id]: 'Erro ao processar.' };
+            localStorage.setItem(`crm_ai_responses_${projectId}`, JSON.stringify(next));
+            return next;
+          });
+        } else {
+          setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isAiLoading: false, aiResponse: 'Erro ao processar.' } : t));
+        }
       }
     };
 
     runAI();
 
     return () => { isMounted = false; };
-  }, [tasks, activeTask, currentCompany?.id]);
+  }, [processedTasks, activeTask, currentCompany?.id, projectId]);
 
 
   // Keep detail panel in sync with task updates
