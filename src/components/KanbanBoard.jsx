@@ -381,6 +381,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [formDeadline, setFormDeadline] = useState('');
   const [formAssignees, setFormAssignees] = useState([]);
   const [formCustomer, setFormCustomer] = useState('');
+  const [formAiResponse, setFormAiResponse] = useState('');
   const [customers, setCustomers] = useState([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
 
@@ -628,7 +629,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   const openAddModal = (colId) => {
     setNewTaskCol(colId);
-    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]); setFormCustomer('');
+    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]); setFormCustomer(''); setFormAiResponse('');
     setIsAddingTask(true);
   };
 
@@ -639,6 +640,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     setFormDeadline(task.deadline || '');
     setFormAssignees(task.assignees || []);
     setFormCustomer(task.customer_name || '');
+    setFormAiResponse(task.aiResponse || '');
   };
 
   const handleAddTask = async (e) => {
@@ -718,7 +720,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         description: formDesc.trim(),
         deadline: formDeadline || null,
         assignees: formAssignees,
-        ai_response: null,
+        ai_response: formAiResponse.trim() || null,
         customer_name: formCustomer
       };
       const res = await supabase.from('tasks').upsert(upsertPayload);
@@ -735,7 +737,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         desc: formDesc.trim(),
         deadline: formDeadline || null,
         assignees: formAssignees,
-        aiResponse: null,
+        aiResponse: isCrmOverride ? (formAiResponse.trim() || null) : null,
         isAiLoading: false
       };
       
@@ -743,7 +745,15 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         const exists = prev.some(t => t.id === prevTask.id);
         const next = exists
           ? prev.map(t => t.id === prevTask.id ? updatedTask : t)
-          : [...prev, { ...updatedTask, column_id: prevTask.columnId, project_id: projectId, company_id: currentCompany?.id }];
+          : [...prev, {
+              ...updatedTask,
+              column_id: prevTask.columnId,
+              project_id: projectId,
+              company_id: currentCompany?.id,
+              columnId: prevTask.columnId,
+              projectId: projectId,
+              companyId: currentCompany?.id
+            }];
         localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
         return next;
       });
@@ -1007,6 +1017,21 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
               <label>Descrição</label>
               <textarea placeholder="Descreva a tarefa..." value={formDesc} onChange={e => setFormDesc(e.target.value)} rows={3} />
             </div>
+
+            {editingTask?.id?.toString().startsWith('crm-') && (
+              <div className="km-field">
+                <label>
+                  <Sparkles size={13} className="text-accent" />
+                  Resposta para o Cliente (CRM)
+                </label>
+                <textarea
+                  placeholder="Edite a sugestão de resposta gerada pela IA ou digite a resolução..."
+                  value={formAiResponse}
+                  onChange={e => setFormAiResponse(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            )}
             <div className="km-two-col">
               <div className="km-field">
                 <label><Calendar size={13} /> Prazo / Deadline</label>

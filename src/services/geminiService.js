@@ -123,26 +123,20 @@ export async function processTaskWithAI(taskDescription, companyId, isConcise = 
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       
       const formattedTags = authorizedItems.length > 0
-        ? `TAGS AUTORIZADAS DISPONÍVEIS:\n${authorizedItems.map(item => `Tema: ${item.title}, Tags: ${(item.tags || []).join(', ')}`).join('\n')}`
+        ? `BASE DE CONHECIMENTO AUTORIZADA (Temas, Tags e Instruções):\n${authorizedItems.map(item => `Tema: ${item.title}\nTags: ${(item.tags || []).join(', ')}\nInstruções/Resolução: ${item.description}`).join('\n\n')}`
         : 'NENHUMA TAG AUTORIZADA';
 
-      const prompt = `Você é uma IA que responde perguntas usando dados vindos de uma API externa de conhecimento.
+      const prompt = `Você é uma IA de triagem e resposta de chamados de suporte técnico.
+Sua tarefa é responder à "Mensagem do Usuário" utilizando estritamente a "BASE DE CONHECIMENTO AUTORIZADA" fornecida abaixo.
 
-IMPORTANTE: Existe um sistema de TAGS que controla quais assuntos podem ser respondidos.
-
-REGRAS DE FUNCIONAMENTO
-1. A Base de Conhecimento contém apenas TAGS de autorização de tema.
-2. Cada TAG representa um assunto que está autorizado para resposta.
-3. Quando o usuário fizer uma pergunta, você deve:
-   - PASSO 1: Identificar o tema principal da pergunta.
-   - PASSO 2: Verificar se existe uma TAG correspondente ou logicamente relacionada a esse tema na lista de "TAGS AUTORIZADAS DISPONÍVEIS".
-   - PASSO 3:
-     * SE EXISTIR TAG AUTORIZADA: Responda de forma CURTA e DIRETA.
-       REQUISITO DE FORMATO: Forneça uma resposta de no máximo 3 sentenças curtas ou uma lista de tópicos. Seja objetivo.
-     * SE NÃO EXISTIR TAG AUTORIZADA: Responda APENAS: "Este assunto não está autorizado."
-4. As TAGS não contêm informação, apenas controle de acesso.
-5. Nunca ignore o sistema de TAGS.
-6. Vá direto ao ponto, evite introduções longas.
+IMPORTANTE:
+1. Analise a Mensagem do Usuário e identifique se ela se refere a um dos Temas ou Tags autorizados na BASE DE CONHECIMENTO AUTORIZADA.
+2. Se o assunto da mensagem estiver relacionado a um tema autorizado:
+   - Responda à dúvida do usuário baseando-se estritamente nas "Instruções/Resolução" correspondentes àquele tema.
+   - Sua resposta deve ser CURTA, DIRETA e OBJETIVA (máximo de 3 sentenças curtas ou uma lista curta de tópicos). Não invente nem adicione detalhes externos.
+3. Se o assunto da mensagem NÃO estiver relacionado a nenhuma Tag ou Tema autorizado:
+   - Responda APENAS e EXATAMENTE: "Este assunto não está autorizado."
+4. Não inclua saudações, introduções longas ou conclusões. Vá direto à resolução.
 
 ${formattedTags}
 
