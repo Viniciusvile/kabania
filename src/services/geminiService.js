@@ -205,9 +205,9 @@ Resposta curta:`;
         }
       }
 
-      // Threshold of 3.5 requires at least a tag and a title word, or a phrase match, etc.
-      // to avoid loose single-word matches mapping unrelated items.
-      const THRESHOLD = 3.5;
+      // Threshold of 4.0 requires more than a single word match to prevent false positives
+      // (e.g. avoiding matching a security camera ticket to a facial terminal article just because of the word "offline").
+      const THRESHOLD = 4.0;
       if (bestMatch && highestScore >= THRESHOLD) {
         return bestMatch.description;
       }
