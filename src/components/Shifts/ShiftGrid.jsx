@@ -26,6 +26,7 @@ export default function ShiftGrid({
     date: null, 
     time: '08:00' 
   });
+  const [duration, setDuration] = useState(4);
 
   const [inspectedShift, setInspectedShift] = useState(null);
 
@@ -75,9 +76,21 @@ export default function ShiftGrid({
 
   const handleConfirmDrop = () => {
     if (timeModal.activity && timeModal.date && timeModal.time) {
-      onDropActivity(timeModal.activity, timeModal.date, timeModal.time);
+      onDropActivity(timeModal.activity, timeModal.date, timeModal.time, null, duration);
     }
     setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
+  };
+
+  const getEndTimeStr = (startTimeStr, durationHours) => {
+    if (!startTimeStr) return '';
+    try {
+      const [h, m] = startTimeStr.split(':').map(Number);
+      const endHour = (h + Number(durationHours)) % 24;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(endHour)}:${pad(m)}`;
+    } catch (e) {
+      return '';
+    }
   };
 
   return (
@@ -159,6 +172,7 @@ export default function ShiftGrid({
                         } else {
                           // Agendamento de NOVA atividade
                           setTimeModal({ isOpen: true, activity: data, date: day.date, time: '08:00' });
+                          setDuration(4);
                         }
                       } catch (err) {
                         console.error('[ShiftGrid] Error parsing drag data:', err);
@@ -310,120 +324,220 @@ export default function ShiftGrid({
           className="modal-overlay-pixel"
           style={{
             zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            background: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
           }}
           onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
         >
-          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem 2rem' }}
+          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '2rem 1.75rem', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Icon + Title */}
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <div style={{
-                width: '64px', height: '64px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(168, 85, 247, 0.1))',
-                border: '1px solid var(--border-color)',
+                width: '56px', height: '56px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(168, 85, 247, 0.15))',
+                border: '1px solid rgba(0, 229, 255, 0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 1.25rem',
-                boxShadow: '0 8px 32px rgba(0, 229, 255, 0.15)'
+                margin: '0 auto 0.75rem',
+                boxShadow: '0 8px 32px rgba(0, 229, 255, 0.1)'
               }}>
-                <Clock size={28} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <Clock size={24} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 850, marginBottom: '0.25rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
                 Agendar Escala
               </h3>
-              <p style={{ fontSize: '13px', opacity: 0.8, color: 'var(--text-muted)' }}>
-                Defina o horário de início da escala
+              <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-muted)' }}>
+                Defina o horário e período de execução
               </p>
             </div>
 
             {/* Activity Info */}
             <div style={{
-              background: 'var(--bg-panel)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '16px',
-              marginBottom: '1.5rem',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '14px',
+              padding: '12px 14px',
+              marginBottom: '1.25rem',
               display: 'flex',
               alignItems: 'center',
               gap: '12px'
             }}>
               <div style={{ 
-                 background: 'rgba(0, 229, 255, 0.1)', 
-                 padding: '10px', 
-                 borderRadius: '12px',
+                 background: 'rgba(0, 229, 255, 0.08)', 
+                 padding: '8px', 
+                 borderRadius: '10px',
                  display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-                 <Zap size={16} style={{ color: 'var(--accent-cyan)' }} />
+                 <Zap size={14} style={{ color: 'var(--accent-cyan)' }} />
               </div>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
+              <div style={{ overflow: 'hidden', flex: 1 }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
                   {(timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name || 'Local Não Definido').replace(/^(TITULO|TITLE):\s*/i, '')}
                 </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Calendar size={12} /> {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Calendar size={11} /> {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </div>
               </div>
             </div>
 
-            {/* Time Input */}
-            <div style={{ marginBottom: '2rem' }}>
+            {/* Time Shortcuts */}
+            <div style={{ marginBottom: '1.25rem' }}>
               <label style={{
-                display: 'block', fontSize: '11px', fontWeight: 800,
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-                color: 'var(--accent-cyan)', opacity: 0.9, marginBottom: '10px'
+                display: 'block', fontSize: '10px', fontWeight: 800,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: 'rgba(255,255,255,0.4)', marginBottom: '8px'
               }}>
-                Horário de Início
+                Sugestões de Início
               </label>
-              <input
-                type="time"
-                className="premium-input-field"
-                value={timeModal.time}
-                onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
-                autoFocus
-                style={{
-                  fontSize: '2rem',
-                  fontWeight: 900,
-                  textAlign: 'center',
-                  fontFamily: 'inherit',
-                  padding: '16px',
-                  background: 'var(--bg-card)',
-                  borderColor: 'var(--border-color)',
-                  color: 'var(--text-main)',
-                  borderRadius: '16px',
-                  boxShadow: 'var(--shadow-sm)',
-                  outline: 'none'
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleConfirmDrop();
-                  if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
-                }}
-              />
-              <p style={{ 
-                fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', 
-                marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' 
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+                {[
+                  { label: '08:00', icon: '🌅', name: 'Manhã' },
+                  { label: '14:00', icon: '☀️', name: 'Tarde' },
+                  { label: '18:00', icon: '🌇', name: 'Noite' },
+                  { label: '22:00', icon: '🌙', name: 'Noturno' }
+                ].map(item => (
+                  <button
+                    key={item.label}
+                    onClick={() => setTimeModal(prev => ({ ...prev, time: item.label }))}
+                    style={{
+                      padding: '8px 4px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: timeModal.time === item.label ? 'rgba(0, 229, 255, 0.1)' : 'rgba(255,255,255,0.02)',
+                      color: timeModal.time === item.label ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-muted, #94a3b8)',
+                      borderColor: timeModal.time === item.label ? 'rgba(0, 229, 255, 0.3)' : 'rgba(255,255,255,0.06)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <span style={{ fontSize: '14px' }}>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Centered Time Input */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{
+                display: 'block', fontSize: '10px', fontWeight: 800,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: 'rgba(255,255,255,0.4)', marginBottom: '8px',
+                textAlign: 'center'
               }}>
-                <Timer size={12}/> Duração padrão: 4 horas
-              </p>
+                Ajuste Fino de Horário
+              </label>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <input
+                  type="time"
+                  value={timeModal.time}
+                  onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
+                  autoFocus
+                  style={{
+                    fontSize: '1.75rem',
+                    fontWeight: 900,
+                    textAlign: 'center',
+                    padding: '8px 20px',
+                    background: 'rgba(0, 0, 0, 0.2)',
+                    border: '2px solid rgba(0, 229, 255, 0.25)',
+                    color: '#fff',
+                    borderRadius: '12px',
+                    outline: 'none',
+                    boxShadow: '0 0 15px rgba(0, 229, 255, 0.05)',
+                    width: '150px',
+                    letterSpacing: '0.02em',
+                    fontFamily: 'inherit'
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleConfirmDrop();
+                    if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Duration Selector */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block', fontSize: '10px', fontWeight: 800,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: 'rgba(255,255,255,0.4)', marginBottom: '8px'
+              }}>
+                Duração do Período
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[1, 2, 4, 8, 12].map(hours => (
+                  <button
+                    key={hours}
+                    onClick={() => setDuration(hours)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: duration === hours ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
+                      color: duration === hours ? '#c084fc' : 'var(--text-muted, #94a3b8)',
+                      borderColor: duration === hours ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255,255,255,0.06)',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {hours}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* calculated summary display */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.05), rgba(168, 85, 247, 0.05))',
+              border: '1px solid rgba(0, 229, 255, 0.12)',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
+            }}>
+              <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)' }}>
+                Período Agendado
+              </span>
+              <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Timer size={14} style={{ color: 'var(--accent-cyan)' }} /> {timeModal.time} às {getEndTimeStr(timeModal.time, duration)}
+              </span>
+              <span style={{ fontSize: '9px', fontWeight: 700, color: '#c084fc' }}>
+                Total de {duration} {duration === 1 ? 'hora' : 'horas'}
+              </span>
             </div>
 
             {/* Actions */}
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
               <button
                 className="glow-btn-ghost py-3.5"
-                style={{ flex: 1, borderRadius: '14px', fontSize: '13px', fontWeight: 700 }}
+                style={{ flex: 1, borderRadius: '12px', fontSize: '13px', fontWeight: 700 }}
                 onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
               >
                 Cancelar
               </button>
               <button
                 className="glow-btn-primary py-3.5"
-                style={{ flex: 1, borderRadius: '14px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                style={{ flex: 1, borderRadius: '12px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 onClick={handleConfirmDrop}
               >
-                <Zap size={14} /> Agendar
+                <Zap size={14} /> Confirmar
               </button>
             </div>
           </div>

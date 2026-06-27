@@ -639,7 +639,7 @@ export default function ShiftsModule({
     }
   };
 
-  const handleDropActivity = async (activity, date, time, environmentId = null) => {
+  const handleDropActivity = async (activity, date, time, environmentId = null, durationHours = 4) => {
     try {
       setIsSyncing(true);
       const startTime = new Date(date);
@@ -650,7 +650,7 @@ export default function ShiftsModule({
         startTime.setHours(8, 0, 0, 0); 
       }
       
-      const endTime = new Date(startTime.getTime() + (4 * 60 * 60000));
+      const endTime = new Date(startTime.getTime() + (durationHours * 60 * 60000));
       
       // Prioridade de Ambiente: 
       // 1. Alvo do Drop (environmentId)
