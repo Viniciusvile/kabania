@@ -23,6 +23,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import CardDetailModal from './CardDetailModal';
+import CardResponseModal from './CardResponseModal';
 import { resolveCrmOccurrence } from '../services/crmIntegrationService';
 import './Kanban.css';
 
@@ -51,7 +52,7 @@ function formatDeadlineShort(isoDate) {
 }
 
 // ---- Sortable Task Card ----
-function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
+function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id, data: { type: 'Task', task }
   });
@@ -67,7 +68,8 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
       {...attributes}
       {...listeners}
       className={`task-card group ${deadlineStatus?.color === 'red' ? 'card-overdue' : ''}`}
-      onClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}
+      onClick={(e) => { e.stopPropagation(); onOpenResponse(task); }}
+      onDoubleClick={(e) => { e.stopPropagation(); onOpenDetail(task); }}
     >
       {/* Card Header */}
       <div className="card-header">
@@ -172,7 +174,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail }) {
 }
 
 // ---- Kanban Column ----
-function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenDetail }) {
+function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenDetail, onOpenResponse }) {
   const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column', column: col } });
   const isBacklog = col.id === 'backlog';
   return (
@@ -207,7 +209,7 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
           strategy={isBacklog ? rectSortingStrategy : verticalListSortingStrategy}
         >
           {tasks.map(task => (
-            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} />
+            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} onOpenResponse={onOpenResponse} />
           ))}
         </SortableContext>
       </div>
@@ -290,6 +292,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [newTaskCol, setNewTaskCol] = useState(null);
   const [editingTask, setEditingTask] = useState(null);
   const [detailTask, setDetailTask] = useState(null);
+  const [responseTask, setResponseTask] = useState(null);
   const [dragStartColumn, setDragStartColumn] = useState(null);
   const [shifts, setShifts] = useState([]);
 
@@ -779,6 +782,69 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
   };
 
+  const handleResolveFromModal = async (task, responseText) => {
+    const isCrmOverride = task.id.toString().startsWith('crm-oc-');
+    const updatedTask = {
+      ...task,
+      aiResponse: responseText,
+      columnId: 'done'
+    };
+
+    let error;
+    if (isCrmOverride) {
+      // 1. Resolve CRM occurrence on Railway API
+      try {
+        await resolveCrmOccurrence(task.id, responseText);
+      } catch (err) {
+        console.error("Error resolving CRM occurrence from modal:", err);
+      }
+
+      // 2. Upsert custom override in Supabase tasks table
+      const { error: upsertError } = await supabase.from('tasks').upsert({
+        id: task.id,
+        column_id: 'done',
+        project_id: projectId,
+        company_id: currentCompany?.id,
+        ai_response: responseText
+      });
+      error = upsertError;
+
+      // 3. Update local CRM columns cache to match Done column
+      setCrmColumns(prev => {
+        const next = { ...prev, [task.id]: 'done' };
+        localStorage.setItem(`crm_columns_${projectId}`, JSON.stringify(next));
+        return next;
+      });
+
+      // 4. Update local CRM AI responses cache
+      setCrmAiResponses(prev => {
+        const next = { ...prev, [task.id]: responseText };
+        localStorage.setItem(`crm_ai_responses_${projectId}`, JSON.stringify(next));
+        return next;
+      });
+    } else {
+      const payload = {
+        ai_response: responseText,
+        column_id: 'done'
+      };
+      const { error: updateError } = await supabase.from('tasks').update(payload).eq('id', task.id);
+      error = updateError;
+    }
+
+    if (!error) {
+      setTasks(prev => {
+        const exists = prev.some(t => t.id === task.id);
+        const next = exists
+          ? prev.map(t => t.id === task.id ? updatedTask : t)
+          : [...prev, { ...updatedTask, column_id: 'done', project_id: projectId, company_id: currentCompany?.id }];
+        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
+        return next;
+      });
+    } else {
+      console.error('Error resolving task from modal:', error);
+    }
+  };
+
   const handleUpdateFromDetail = async (updatedTask) => {
     const isCrmOverride = updatedTask.id.toString().startsWith('crm-oc-');
     const payload = {
@@ -1087,6 +1153,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
                 onDeleteTask={handleDeleteTask}
                 onEditTask={openEditModal}
                 onOpenDetail={(task) => setDetailTask(task)}
+                onOpenResponse={(task) => setResponseTask(task)}
               />
             );
           })}
@@ -1098,6 +1165,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
               onDelete={() => {}} 
               onEdit={() => {}} 
               onOpenDetail={() => {}} 
+              onOpenResponse={() => {}}
             />
           ) : null}
         </DragOverlay>
@@ -1112,6 +1180,16 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           currentUser={currentUser}
           onClose={() => setDetailTask(null)}
           onUpdate={handleUpdateFromDetail}
+        />
+      )}
+
+      {responseTask && (
+        <CardResponseModal
+          task={responseTask}
+          currentUser={currentUser}
+          onClose={() => setResponseTask(null)}
+          onUpdate={handleUpdateFromDetail}
+          onResolve={handleResolveFromModal}
         />
       )}
     </div>
