@@ -287,7 +287,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         comments: [],
         source: 'crm',
         condominio_id: o.condominio_id,
-        created_at: o.created_at
+        created_at: o.created_at,
+        projectId: projectId
       };
     });
 
@@ -309,7 +310,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
 
     return enriched;
-  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns]);
+  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns, projectId]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
