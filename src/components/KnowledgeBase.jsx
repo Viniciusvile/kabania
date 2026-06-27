@@ -322,7 +322,10 @@ export default function KnowledgeBase({ currentUser, currentCompany, userRole, o
       
       if (result.type === 'structured') {
         // Handle CSV Bulk via App (Background)
-        onRunBulkImport(result.content, knowledgeItems);
+        onRunBulkImport(result.content, knowledgeItems, (updatedItems) => {
+          setKnowledgeItems(updatedItems);
+          localStorage.setItem(`kb_cache_${currentCompany.id}`, JSON.stringify(updatedItems));
+        });
         showFeedback('Importação Iniciada', 'Sua planilha está sendo processada em segundo plano. Você pode continuar usando o sistema normalmente.', 'info');
       } else {
         // 2. Process single file with AI

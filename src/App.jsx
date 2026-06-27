@@ -259,7 +259,7 @@ function App() {
     }
   };
 
-  const runBackgroundImport = async (rows, currentKnowledge) => {
+  const runBackgroundImport = async (rows, currentKnowledge, onComplete) => {
     setBulkImportStatus({ isActive: true, current: 0, total: rows.length, results: null });
     let newCount = 0;
     let mergeCount = 0;
@@ -323,6 +323,10 @@ function App() {
       isActive: false, 
       results: { total: rows.length, newCount, mergeCount, errorCount } 
     }));
+
+    if (onComplete) {
+      onComplete(localKnowledge);
+    }
     
     logEvent(currentCompany.id, currentUser, 'BULK_UPLOAD_KB', `Background import: ${newCount} created, ${mergeCount} merged, ${errorCount} errors.`);
   };
