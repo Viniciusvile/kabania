@@ -223,7 +223,21 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 // ---- Main Board ----
 export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null }) {
   // Click Condomínios local columns overrides for occurrences
-  const [crmColumns, setCrmColumns] = useState({});
+  const [crmColumns, setCrmColumns] = useState(() => {
+    if (!projectId) return {};
+    const cached = localStorage.getItem(`crm_columns_${projectId}`);
+    return cached ? JSON.parse(cached) : {};
+  });
+
+  // Sync crmColumns when project changes
+  useEffect(() => {
+    if (projectId) {
+      const cached = localStorage.getItem(`crm_columns_${projectId}`);
+      setCrmColumns(cached ? JSON.parse(cached) : {});
+    } else {
+      setCrmColumns({});
+    }
+  }, [projectId]);
 
   // Instant Hydration from cache
   const [tasks, setTasks] = useState(() => {
@@ -758,7 +772,11 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       // 1. CRM Task Column Update
       if (currentTask.id.toString().startsWith('crm-')) {
         if (newColId !== dragStartColumn) {
-          setCrmColumns(prev => ({ ...prev, [currentTask.id]: newColId }));
+          setCrmColumns(prev => {
+            const nextColumns = { ...prev, [currentTask.id]: newColId };
+            localStorage.setItem(`crm_columns_${projectId}`, JSON.stringify(nextColumns));
+            return nextColumns;
+          });
         }
         setActiveTask(null);
         setDragStartColumn(null);
