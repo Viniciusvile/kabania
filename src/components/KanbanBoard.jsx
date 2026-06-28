@@ -41,7 +41,7 @@ const COLUMN_LABELS = {
 // ---- Avatar helpers ----
 function getInitials(email) { return email ? email.substring(0, 2).toUpperCase() : '?'; }
 function getAvatarColor(email) {
-  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
+  const colors = ['rgba(255,255,255,0.85)', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
   let h = 0;
   for (let i = 0; i < email.length; i++) h = email.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -132,7 +132,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
             </span>
           )}
           {task.tag && (
-            <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: `var(--color-${task.tagColor}, #00e5ff)` }}>
+            <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: `var(--color-${task.tagColor}, rgba(255,255,255,0.85))` }}>
               {task.tag}
             </span>
           )}
@@ -986,19 +986,26 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
             return nextColumns;
           });
 
-          // Se tiver override no banco, atualiza a coluna lá também
-          const hasOverride = tasks.some(t => t.id === currentTask.id);
-          if (hasOverride) {
-            const updatedTasks = tasks.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t);
-            setTasks(updatedTasks);
-            localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
-            
-            const payload = { column_id: newColId };
-            if (newColId === 'ai') payload.ai_response = null;
-            supabase.from('tasks').update(payload).eq('id', currentTask.id).then(({ error }) => {
-              if (error) console.error('Error updating CRM override column in DB:', error);
-            });
-          }
+          // Salva/atualiza o override de coluna do CRM no Supabase para sincronizar entre todos os dispositivos/usuários
+          const exists = tasks.some(t => t.id === currentTask.id);
+          const updatedTasks = exists
+            ? tasks.map(t => t.id === currentTask.id ? { ...t, columnId: newColId } : t)
+            : [...tasks, { id: currentTask.id, columnId: newColId, projectId, title: currentTask.title }];
+          
+          setTasks(updatedTasks);
+          localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
+
+          const payload = {
+            id: currentTask.id,
+            column_id: newColId,
+            project_id: projectId,
+            company_id: currentCompany?.id
+          };
+          if (newColId === 'ai') payload.ai_response = null;
+
+          supabase.from('tasks').upsert(payload).then(({ error }) => {
+            if (error) console.error('Error persisting CRM override column in DB:', error);
+          });
 
           // Se foi movido para Done, envia a resolução para a API do CRM
           if (newColId === 'done') {
