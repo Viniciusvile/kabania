@@ -364,7 +364,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         condominio_id: o.condominio_id,
         created_at: o.created_at,
         projectId: projectId,
-        aiResponse: isReaberto ? null : (override?.aiResponse || override?.ai_response || crmAiResponses[crmId] || null),
+        aiResponse: (isReaberto && !override?.aiResponse && !override?.ai_response && !crmAiResponses[crmId]) ? null : (override?.aiResponse || override?.ai_response || crmAiResponses[crmId] || null),
         isAiLoading: override?.isAiLoading || !!crmAiLoading[crmId],
         isReaberto: isReaberto
       };
