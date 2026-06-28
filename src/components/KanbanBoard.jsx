@@ -13,8 +13,8 @@ import {
   Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle
 } from 'lucide-react';
 import {
-  DndContext, closestCorners, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor,
-  useSensor, useSensors, DragOverlay
+  DndContext, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor,
+  useSensor, useSensors, DragOverlay, pointerWithin
 } from '@dnd-kit/core';
 import {
   SortableContext, arrayMove, sortableKeyboardCoordinates,
@@ -918,11 +918,41 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     if (!over || active.id === over.id) return;
     const isActiveTask = active.data.current?.type === 'Task';
     const isOverTask = over.data.current?.type === 'Task';
-    
-    // CRM cards are only moved locally on dragEnd. We avoid sorting relative to CRM items to prevent Index Errors.
-    if (active.id.toString().startsWith('crm-')) return;
-    if (over.id.toString().startsWith('crm-')) return;
 
+    // 1. Handling CRM card dragging
+    if (active.id.toString().startsWith('crm-')) {
+      const overColId = isOverTask
+        ? processedTasks.find(t => t.id === over.id)?.columnId
+        : over.id;
+      
+      if (overColId) {
+        setCrmColumns(prev => {
+          if (prev[active.id] === overColId) return prev;
+          return { ...prev, [active.id]: overColId };
+        });
+      }
+      return;
+    }
+
+    // 2. Handling regular card dragging over a CRM card
+    if (over.id.toString().startsWith('crm-')) {
+      const overColId = processedTasks.find(t => t.id === over.id)?.columnId;
+      if (overColId) {
+        setTasks(prev => {
+          const activeIndex = prev.findIndex(t => t.id === active.id);
+          if (activeIndex !== -1) {
+            if (prev[activeIndex].columnId === overColId) return prev;
+            const updated = [...prev];
+            updated[activeIndex] = { ...updated[activeIndex], columnId: overColId };
+            return updated;
+          }
+          return prev;
+        });
+      }
+      return;
+    }
+
+    // 3. Regular card dragging over regular card or column
     if (isActiveTask && isOverTask) {
       setTasks(tasks => {
         const ai = tasks.findIndex(t => t.id === active.id);
@@ -942,6 +972,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         return arrayMove(tasks, ai, oi);
       });
     }
+
     if (isActiveTask && !isOverTask) {
       const isOverCol = COLUMNS.some(c => c.id === over.id);
       if (isOverCol) {
@@ -1141,7 +1172,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   return (
     <div className="kanban-wrapper">
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="kanban-board">
           {COLUMNS.map(col => {
             const colTasks = processedTasks.filter(t => {
