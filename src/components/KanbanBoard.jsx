@@ -13,7 +13,7 @@ import {
   Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle
 } from 'lucide-react';
 import {
-  DndContext, closestCorners, KeyboardSensor, PointerSensor,
+  DndContext, closestCorners, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor,
   useSensor, useSensors, DragOverlay
 } from '@dnd-kit/core';
 import {
@@ -179,6 +179,7 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
   const isBacklog = col.id === 'backlog';
   return (
     <div 
+      ref={setNodeRef}
       className={`kanban-column ${col.isHighlighted ? 'column-highlighted' : ''}`}
       style={{
         flex: isBacklog ? '2 1 520px' : '1 1 260px',
@@ -194,7 +195,6 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
         )}
       </div>
       <div 
-        ref={setNodeRef} 
         className="column-content relative" 
         style={{ 
           minHeight: '100px',
@@ -903,7 +903,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
