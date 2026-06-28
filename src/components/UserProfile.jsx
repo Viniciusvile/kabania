@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { User, Shield, Camera, Save, CheckCircle, Loader2, AtSign, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import './AccountViews.css';
@@ -226,7 +226,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole, onP
                     flex: 1,
                     borderRadius: '9999px',
                     background: i <= 5 ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.05)',
-                    boxShadow: i <= 5 ? '0 0 8px rgba(0,229,255,0.4)' : 'none'
+                    boxShadow: i <= 5 ? '0 0 8px rgba(255,255,255,0.4)' : 'none'
                   }}
                 />
               ))}
@@ -247,7 +247,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole, onP
               <div style={{ padding: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.625rem', background: 'rgba(0,229,255,0.05)', borderRadius: '12px', border: '1px solid rgba(0,229,255,0.1)', display: 'flex' }}>
+                    <div style={{ padding: '0.625rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex' }}>
                       <User size={20} style={{ color: 'var(--accent-cyan)' }} />
                     </div>
                     <div>
@@ -381,7 +381,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole, onP
               <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', width: '100%', textAlign: 'left' }}>
                 <label className="form-label" style={{ marginBottom: '1rem', display: 'block' }}>Unidade Operacional</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.05)', padding: '1.25rem', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ width: '52px', height: '52px', background: 'linear-gradient(135deg, var(--accent-cyan), #7C3AED)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '1.25rem', flexShrink: 0 }}>
+                  <div style={{ width: '52px', height: '52px', background: 'rgba(255,255,255,0.1)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '1.25rem', flexShrink: 0 }}>
                     {currentCompany?.name?.[0]?.toUpperCase() || 'S'}
                   </div>
                   <div>
@@ -403,7 +403,7 @@ export default function UserProfile({ currentUser, currentCompany, userRole, onP
             </div>
 
             {/* AI Sync Card */}
-            <div style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Sparkles size={14} style={{ color: 'var(--accent-cyan)' }} />
                 <h4 style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Sincronia IA</h4>

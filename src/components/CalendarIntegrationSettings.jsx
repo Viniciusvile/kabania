@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Calendar, RefreshCw, ExternalLink, AlertCircle, CheckCircle, X, Zap, ChevronDown } from 'lucide-react';
 import { CalendarIntegrationService } from '../services/calendarIntegrationService';
 
@@ -13,7 +13,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
       border: 'none', cursor: 'pointer',
       position: 'relative', flexShrink: 0,
       transition: 'background 0.25s ease',
-      boxShadow: checked ? '0 0 12px rgba(0,229,255,0.3)' : 'none',
+      boxShadow: checked ? '0 0 12px rgba(255,255,255,0.3)' : 'none',
     }}
   >
     <span style={{

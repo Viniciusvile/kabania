@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -30,7 +30,7 @@ const COLUMN_LABELS = {
 // ---- Helpers ----
 function getInitials(email) { return email ? email.substring(0, 2).toUpperCase() : '?'; }
 function getAvatarColor(email) {
-  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
+  const colors = ['rgba(255,255,255,0.85)', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
   let h = 0;
   for (let i = 0; i < email.length; i++) h = email.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -231,7 +231,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
       .slice(0, 8);
   }, [tasks]);
 
-  const PIE_COLORS = ['#00e5ff', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
+  const PIE_COLORS = ['rgba(255,255,255,0.85)', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
 
   return (
     <div className="rd-container animate-fade-in">
@@ -321,8 +321,8 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
                 <AreaChart data={chartData.productivity}>
                   <defs>
                     <linearGradient id="rdColorProd" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="rgba(255,255,255,0.85)" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="rgba(255,255,255,0.85)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
@@ -335,7 +335,7 @@ export default function ReportsDashboard({ currentUser, currentCompany }) {
                     key={`area-${chartData.productivity.length}`}
                     type="monotone" 
                     dataKey="entregas" 
-                    stroke="#00e5ff" 
+                    stroke="rgba(255,255,255,0.85)" 
                     fillOpacity={1} 
                     fill="url(#rdColorProd)" 
                     strokeWidth={2} 

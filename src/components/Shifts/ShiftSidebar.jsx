@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { Clock, Plus, CheckCircle, MapPin, Activity, Timer, Layers, Search, GripVertical, LayoutGrid, AlertTriangle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ShiftSidebar({ 
@@ -103,17 +103,17 @@ export default function ShiftSidebar({
     fontSize: '9px',
     fontWeight: 800,
     cursor: 'pointer',
-    border: active ? '1px solid rgba(0,229,255,0.25)' : '1px solid rgba(255,255,255,0.05)',
+    border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.05)',
     background: active 
       ? 'linear-gradient(135deg, rgba(0,194,255,0.08) 0%, rgba(0,114,255,0.12) 100%)' 
       : 'rgba(255,255,255,0.02)',
-    color: active ? '#00e5ff' : 'var(--text-muted)',
+    color: active ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)',
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
     transition: 'all 0.2s',
     flex: 1,
     textAlign: 'center',
-    boxShadow: active ? '0 0 10px rgba(0,229,255,0.08)' : 'none',
+    boxShadow: active ? '0 0 10px rgba(255,255,255,0.08)' : 'none',
   });
 
   // ── Styles ────────────────────────────────────────────────────────────
@@ -145,14 +145,14 @@ export default function ShiftSidebar({
     borderRadius: '12px',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     cursor: 'pointer',
-    border: active ? '1px solid rgba(0,229,255,0.3)' : '1px solid transparent',
+    border: active ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     background: active 
       ? 'linear-gradient(135deg, rgba(0,194,255,0.1) 0%, rgba(0,114,255,0.15) 100%)' 
       : 'transparent',
-    color: active ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-muted)',
-    boxShadow: active ? '0 0 20px rgba(0,229,255,0.15)' : 'none',
+    color: active ? 'var(--accent-cyan, rgba(255,255,255,0.85))' : 'var(--text-muted)',
+    boxShadow: active ? '0 0 20px rgba(255,255,255,0.15)' : 'none',
   });
 
   const cardBase = (isDragging, isRoutine, isUrgent) => ({
@@ -171,7 +171,7 @@ export default function ShiftSidebar({
 
   const badgeStyle = (color = 'cyan') => {
     const colors = {
-      cyan: { bg: 'rgba(0,229,255,0.1)', text: 'var(--accent-cyan, #00e5ff)', border: 'rgba(0,229,255,0.2)' },
+      cyan: { bg: 'rgba(255,255,255,0.1)', text: 'var(--accent-cyan, rgba(255,255,255,0.85))', border: 'rgba(255,255,255,0.2)' },
       purple: { bg: 'rgba(168,85,247,0.1)', text: '#c084fc', border: 'rgba(168,85,247,0.2)' },
       red: { bg: 'rgba(239,68,68,0.1)', text: '#f87171', border: 'rgba(239,68,68,0.2)' },
       orange: { bg: 'rgba(249,115,22,0.1)', text: '#fb923c', border: 'rgba(249,115,22,0.2)' },
@@ -273,7 +273,7 @@ export default function ShiftSidebar({
         onDragEnd={handleDragEnd}
         style={{
           background: 'rgba(255,255,255,0.02)',
-          border: `1px solid ${draggingId === act.id ? 'rgba(0,229,255,0.4)' : 'rgba(255,255,255,0.06)'}`,
+          border: `1px solid ${draggingId === act.id ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.06)'}`,
           borderRadius: '12px',
           padding: '8px 10px',
           position: 'relative',
@@ -304,7 +304,7 @@ export default function ShiftSidebar({
         {/* Header: Condomínio e Gravidade */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '3px', maxWidth: '75%' }}>
-            <MapPin size={9} style={{ color: 'var(--accent-cyan, #00e5ff)', flexShrink: 0 }} />
+            <MapPin size={9} style={{ color: 'var(--accent-cyan, rgba(255,255,255,0.85))', flexShrink: 0 }} />
             <span style={{ 
               fontSize: '9px', 
               fontWeight: 800, 
@@ -362,7 +362,7 @@ export default function ShiftSidebar({
         {act.isOptimistic && (
           <div style={{ 
             fontSize: '8px', 
-            color: 'var(--accent-cyan, #00e5ff)', 
+            color: 'var(--accent-cyan, rgba(255,255,255,0.85))', 
             fontWeight: 800, 
             display: 'flex', 
             alignItems: 'center', 
@@ -407,9 +407,9 @@ export default function ShiftSidebar({
           <button
             onClick={() => onQuickSchedule(act)}
             style={{
-              background: 'rgba(0, 229, 255, 0.06)',
-              border: '1px solid rgba(0, 229, 255, 0.15)',
-              color: '#00e5ff',
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              color: 'rgba(255,255,255,0.85)',
               padding: '2px 6px',
               borderRadius: '5px',
               fontSize: '9px',
@@ -479,9 +479,9 @@ export default function ShiftSidebar({
           WORKSPACE
           {pendingActivities.length > 0 && (
             <span style={{ 
-              background: 'rgba(0,229,255,0.1)', 
+              background: 'rgba(255,255,255,0.1)', 
               color: 'var(--accent-cyan)', 
-              border: '1px solid rgba(0,229,255,0.3)',
+              border: '1px solid rgba(255,255,255,0.3)',
               fontSize: '10px', 
               padding: '2px 8px', 
               borderRadius: '99px', 
@@ -579,7 +579,7 @@ export default function ShiftSidebar({
                   <span style={{ 
                     fontSize: '10px', 
                     fontWeight: 800, 
-                    color: 'var(--accent-cyan, #00e5ff)',
+                    color: 'var(--accent-cyan, rgba(255,255,255,0.85))',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -589,8 +589,8 @@ export default function ShiftSidebar({
                   <span style={{
                     fontSize: '8px',
                     fontWeight: 900,
-                    background: 'rgba(0, 229, 255, 0.08)',
-                    color: '#00e5ff',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    color: 'rgba(255,255,255,0.85)',
                     padding: '1px 5px',
                     borderRadius: '4px',
                   }}>

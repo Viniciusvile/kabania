@@ -1,4 +1,4 @@
-/* ══════════════════════════════════════════════════════
+﻿/* ══════════════════════════════════════════════════════
    💎 DIGITAL TWIN — WORKSPACE BUILDER
    Premium Floating-UI Canvas (Figma/Miro inspired)
 ═══════════════════════════════════════════════════════ */
@@ -329,7 +329,7 @@
 
 .dt-sr-avatar {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 800; color: #fff;
@@ -388,7 +388,7 @@
   gap: 0.5rem;
   width: 100%;
   padding: 0.75rem;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   color: #fff;
   border: none;
   border-radius: 0.75rem;
@@ -735,7 +735,7 @@
   position: absolute;
   top: -11px; right: -11px;
   width: 26px; height: 26px;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   border-radius: 50%;
   border: 2px solid #ffffff;
   display: flex; align-items: center; justify-content: center;
@@ -865,7 +865,7 @@
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   color: #fff;
   display: flex;
   align-items: center;
@@ -962,7 +962,7 @@
 [data-theme='dark'] .dt-dim-btn.outline:hover { background: rgba(255,255,255,0.05); color: #f8fafc; }
 
 .dt-dim-btn.primary {
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   color: #fff;
   box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
 }
@@ -1052,7 +1052,7 @@
 [data-theme='dark'] .dt-btn-secondary:hover { background: rgba(255,255,255,0.06); color: #f8fafc; }
 
 .dt-btn-primary {
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   color: #fff;
   box-shadow: 0 4px 14px rgba(14,165,233,0.3);
 }
@@ -1282,7 +1282,7 @@
 
 .dt-ap-avatar {
   width: 36px; height: 36px;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.7rem; font-weight: 800; color: #fff;
@@ -1344,7 +1344,7 @@
 .dt-ap-cancel:hover { color: #ef4444; }
 .dt-ap-confirm {
   display: flex; align-items: center; gap: 0.35rem;
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0ea5e9, rgba(255,255,255,0.7));
   color: #fff; border: none; cursor: pointer;
   font-size: 0.78rem; font-weight: 700;
   padding: 0.4rem 0.8rem; border-radius: 0.5rem;
@@ -1599,8 +1599,8 @@ kbd {
   border-color: #22c55e !important;
 }
 .dt-desk.wf-to .dt-desk-base {
-  box-shadow: 0 0 0 3px #6366f1, 0 0 14px rgba(99,102,241,0.5) !important;
-  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.7), 0 0 14px rgba(255,255,255,0.5) !important;
+  border-color: rgba(255,255,255,0.7) !important;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1730,7 +1730,7 @@ kbd {
 }
 .dt-lp-wf-info p { font-size: 0.74rem; color: #64748b; margin: 0; line-height: 1.4; }
 [data-theme='dark'] .dt-lp-wf-info p { color: #94a3b8; }
-.dt-lp-wf-info p strong { color: #6366f1; }
+.dt-lp-wf-info p strong { color: rgba(255,255,255,0.7); }
 
 .dt-lp-wf-state {
   display: flex; align-items: center; gap: 0.5rem;

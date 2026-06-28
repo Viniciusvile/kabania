@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical, Calendar, Timer } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 import './ShiftsPremium.css';
@@ -228,14 +228,14 @@ export default function ShiftGrid({
           will-change: transform;
         }
         .drag-over-column {
-          background: rgba(0, 229, 255, 0.06) !important;
-          border: 2px dashed var(--accent-cyan, #00e5ff) !important;
-          box-shadow: inset 0 0 20px rgba(0,229,255,0.05);
+          background: rgba(255, 255, 255, 0.06) !important;
+          border: 2px dashed var(--accent-cyan, rgba(255,255,255,0.85)) !important;
+          box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
         }
         .drag-over-column .empty-day-pixel {
-          border-color: var(--accent-cyan, #00e5ff) !important;
+          border-color: var(--accent-cyan, rgba(255,255,255,0.85)) !important;
           opacity: 1 !important;
-          color: var(--accent-cyan, #00e5ff) !important;
+          color: var(--accent-cyan, rgba(255,255,255,0.85)) !important;
         }
         /* Garante que cards de escala nunca selecionem texto */
         .escala-card-pixel, .premium-shift-card {
@@ -252,8 +252,8 @@ export default function ShiftGrid({
           transition: background 0.15s, color 0.15s;
         }
         .kabania-v2-time-pill--clickable:hover {
-          background: rgba(0,229,255,0.15);
-          color: var(--accent-cyan, #00e5ff);
+          background: rgba(255,255,255,0.15);
+          color: var(--accent-cyan, rgba(255,255,255,0.85));
         }
         .kabania-v2-time-pill--clickable:hover svg {
           opacity: 1 !important;
@@ -263,8 +263,8 @@ export default function ShiftGrid({
           display: flex;
           align-items: center;
           gap: 4px;
-          background: rgba(0,229,255,0.07);
-          border: 1px solid rgba(0,229,255,0.3);
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(255,255,255,0.3);
           border-radius: 100px;
           padding: 3px 8px;
           user-select: none;
@@ -274,7 +274,7 @@ export default function ShiftGrid({
           background: transparent;
           border: none;
           outline: none;
-          color: var(--accent-cyan, #00e5ff);
+          color: var(--accent-cyan, rgba(255,255,255,0.85));
           font-size: 12px;
           font-weight: 800;
           font-family: inherit;
@@ -311,8 +311,8 @@ export default function ShiftGrid({
         .kabania-v2-time-cancel:hover  { color: #ef4444; }
 
         [data-theme='light'] .kabania-v2-time-edit {
-          background: rgba(6,182,212,0.07);
-          border-color: rgba(6,182,212,0.3);
+          background: rgba(255,255,255,0.07);
+          border-color: rgba(255,255,255,0.3);
         }
         [data-theme='light'] .kabania-v2-time-input { color: #0891b2; }
       `}</style>
@@ -337,13 +337,13 @@ export default function ShiftGrid({
             <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <div style={{
                 width: '56px', height: '56px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(168, 85, 247, 0.15))',
-                border: '1px solid rgba(0, 229, 255, 0.25)',
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(168, 85, 247, 0.15))',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 0.75rem',
-                boxShadow: '0 8px 32px rgba(0, 229, 255, 0.1)'
+                boxShadow: '0 8px 32px rgba(255, 255, 255, 0.1)'
               }}>
-                <Clock size={24} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <Clock size={24} style={{ color: 'var(--accent-cyan, rgba(255,255,255,0.85))' }} />
               </div>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 850, marginBottom: '0.25rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
                 Agendar Escala
@@ -365,7 +365,7 @@ export default function ShiftGrid({
               gap: '12px'
             }}>
               <div style={{ 
-                 background: 'rgba(0, 229, 255, 0.08)', 
+                 background: 'rgba(255, 255, 255, 0.08)', 
                  padding: '8px', 
                  borderRadius: '10px',
                  display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -405,9 +405,9 @@ export default function ShiftGrid({
                       padding: '8px 4px',
                       borderRadius: '10px',
                       border: '1px solid rgba(255,255,255,0.06)',
-                      background: timeModal.time === item.label ? 'rgba(0, 229, 255, 0.1)' : 'rgba(255,255,255,0.02)',
-                      color: timeModal.time === item.label ? 'var(--accent-cyan, #00e5ff)' : 'var(--text-muted, #94a3b8)',
-                      borderColor: timeModal.time === item.label ? 'rgba(0, 229, 255, 0.3)' : 'rgba(255,255,255,0.06)',
+                      background: timeModal.time === item.label ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255,255,255,0.02)',
+                      color: timeModal.time === item.label ? 'var(--accent-cyan, rgba(255,255,255,0.85))' : 'var(--text-muted, #94a3b8)',
+                      borderColor: timeModal.time === item.label ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255,255,255,0.06)',
                       fontSize: '11px',
                       fontWeight: 800,
                       cursor: 'pointer',
@@ -447,11 +447,11 @@ export default function ShiftGrid({
                     textAlign: 'center',
                     padding: '8px 20px',
                     background: 'rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(0, 229, 255, 0.25)',
+                    border: '2px solid rgba(255, 255, 255, 0.25)',
                     color: '#fff',
                     borderRadius: '12px',
                     outline: 'none',
-                    boxShadow: '0 0 15px rgba(0, 229, 255, 0.05)',
+                    boxShadow: '0 0 15px rgba(255, 255, 255, 0.05)',
                     width: '150px',
                     letterSpacing: '0.02em',
                     fontFamily: 'inherit'
@@ -500,8 +500,8 @@ export default function ShiftGrid({
 
             {/* calculated summary display */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.05), rgba(168, 85, 247, 0.05))',
-              border: '1px solid rgba(0, 229, 255, 0.12)',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(168, 85, 247, 0.05))',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '12px',
               padding: '10px 12px',
               marginBottom: '1.5rem',
@@ -562,7 +562,7 @@ export default function ShiftGrid({
           >
             {/* Header with visual priority */}
             <div style={{
-              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.05), rgba(168, 85, 247, 0.05))',
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(168, 85, 247, 0.05))',
               borderBottom: '1px solid var(--border-light)',
               padding: '2rem 1.5rem 1.5rem',
               position: 'relative',
@@ -578,7 +578,7 @@ export default function ShiftGrid({
               <div style={{ 
                 margin: '0 auto 12px',
                 width: '48px', height: '48px', borderRadius: '12px',
-                background: 'rgba(0, 229, 255, 0.1)', border: '1px solid rgba(0, 229, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'var(--accent-cyan)'
               }}>
@@ -610,7 +610,7 @@ export default function ShiftGrid({
 
               {/* Local */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-app)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-                <MapPin size={18} style={{ color: 'var(--accent-cyan, #00e5ff)' }} />
+                <MapPin size={18} style={{ color: 'var(--accent-cyan, rgba(255,255,255,0.85))' }} />
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Local do Serviço</span>
                    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -768,9 +768,9 @@ function EscalaCard({ shift, onAddEmployee, onUpdateStatus, onCheckin, onDelete,
       'position:fixed', 'top:-9999px', 'left:-9999px',
       'width:200px', 'height:44px',
       'background:rgba(15,23,42,0.98)',
-      'border:1px solid rgba(0,229,255,0.6)',
+      'border:1px solid rgba(255,255,255,0.6)',
       'border-radius:12px', 'padding:0 14px',
-      'color:#00e5ff', 'font-size:13px', 'font-weight:800',
+      'color:rgba(255,255,255,0.85)', 'font-size:13px', 'font-weight:800',
       'display:flex', 'align-items:center', 'gap:8px',
       'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
       'z-index:9999'

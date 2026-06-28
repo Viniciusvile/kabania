@@ -1,4 +1,4 @@
-/* ================================================
+﻿/* ================================================
    CardDetailModal — right-side drawer
    ================================================ */
 
@@ -197,7 +197,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: #00e5ff;
+  color: rgba(255,255,255,0.85);
   animation: pulse 1.5s infinite;
 }
 
@@ -242,8 +242,8 @@
 }
 
 .cdm-comment.own .cdm-comment-content {
-  background: rgba(0, 229, 255, 0.05);
-  border-color: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .cdm-comment-avatar {
@@ -338,7 +338,7 @@
 }
 
 .cdm-comment-input-wrap textarea:focus {
-  border-color: rgba(0, 229, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .cdm-comment-input-wrap textarea::placeholder {
@@ -349,7 +349,7 @@
   position: absolute;
   bottom: 0.5rem;
   right: 0.6rem;
-  background: #00e5ff;
+  background: rgba(255,255,255,0.85);
   color: #001820;
   border: none;
   border-radius: 7px;
@@ -449,7 +449,7 @@
 }
 
 .cdm-ai-textarea:focus {
-  border-color: rgba(0, 229, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .cdm-ai-edit-actions .btn-cancel {
@@ -469,7 +469,7 @@
 }
 
 .cdm-ai-edit-actions .btn-confirm {
-  background: #00e5ff;
+  background: rgba(255,255,255,0.85);
   border: none;
   color: #001820;
   padding: 0.4rem 0.8rem;
@@ -481,4 +481,53 @@
 
 .cdm-ai-edit-actions .btn-confirm:hover {
   background: #00cde8;
+}
+
+/* ============================================================
+   LIGHT MODE OVERRIDES — CardDetailModal
+   ============================================================ */
+
+[data-theme='light'] .cdm-ai-loading {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='light'] .cdm-comments-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .cdm-comment.own .cdm-comment-content {
+  background: rgba(0, 82, 204, 0.05);
+  border-color: rgba(0, 82, 204, 0.15);
+}
+
+[data-theme='light'] .cdm-comment-input-wrap textarea:focus {
+  border-color: rgba(0, 82, 204, 0.4);
+}
+
+[data-theme='light'] .cdm-send-btn {
+  background: linear-gradient(135deg, #0052CC, #0066FF);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 82, 204, 0.25);
+}
+
+[data-theme='light'] .cdm-send-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0044AA, #0052CC);
+}
+
+[data-theme='light'] .cdm-ai-textarea:focus {
+  border-color: rgba(0, 82, 204, 0.4);
+}
+
+[data-theme='light'] .cdm-ai-edit-actions .btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #0F172A;
+}
+
+[data-theme='light'] .cdm-ai-edit-actions .btn-confirm {
+  background: linear-gradient(135deg, #0052CC, #0066FF);
+  color: #ffffff;
+}
+
+[data-theme='light'] .cdm-ai-edit-actions .btn-confirm:hover {
+  background: linear-gradient(135deg, #0044AA, #0052CC);
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Settings, Moon, Sun, Bell, Globe, Shield, Smartphone, Sparkles, Monitor, AtSign, Zap } from 'lucide-react';
 import './AccountViews.css';
 
@@ -12,7 +12,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
       border: 'none', cursor: 'pointer',
       position: 'relative', flexShrink: 0,
       transition: 'background 0.25s ease',
-      boxShadow: checked ? '0 0 12px rgba(0,229,255,0.3)' : 'none',
+      boxShadow: checked ? '0 0 12px rgba(255,255,255,0.3)' : 'none',
     }}
   >
     <span style={{
@@ -102,7 +102,7 @@ export default function UserSettings({ theme, onSetTheme }) {
               {/* ── Aparência ────────────────────────── */}
               <div style={{ padding: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <div style={{ padding: '0.625rem', background: 'rgba(0,229,255,0.05)', borderRadius: '12px', border: '1px solid rgba(0,229,255,0.1)', display: 'flex' }}>
+                  <div style={{ padding: '0.625rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex' }}>
                     <Monitor size={20} style={{ color: 'var(--accent-cyan)' }} />
                   </div>
                   <div>
@@ -197,7 +197,7 @@ export default function UserSettings({ theme, onSetTheme }) {
                 </div>
                 <div className="profile-grid-premium">
                   {[
-                    { icon: <Globe size={20} />, label: 'Idioma', value: 'Português (Brasil)', color: 'rgba(0,229,255,0.05)', border: 'rgba(0,229,255,0.12)', iconColor: 'var(--accent-cyan)' },
+                    { icon: <Globe size={20} />, label: 'Idioma', value: 'Português (Brasil)', color: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.12)', iconColor: 'var(--accent-cyan)' },
                     { icon: <Smartphone size={20} />, label: 'Sessões Ativas', value: 'Gerenciar dispositivos', color: 'rgba(168,85,247,0.05)', border: 'rgba(168,85,247,0.12)', iconColor: '#a855f7' },
                     { icon: <AtSign size={20} />, label: 'Autenticação 2FA', value: 'Não configurado', color: 'rgba(239,68,68,0.05)', border: 'rgba(239,68,68,0.12)', iconColor: '#ef4444' },
                     { icon: <Zap size={20} />, label: 'API Tokens', value: '2 tokens ativos', color: 'rgba(245,158,11,0.05)', border: 'rgba(245,158,11,0.12)', iconColor: '#f59e0b' },
@@ -230,7 +230,7 @@ export default function UserSettings({ theme, onSetTheme }) {
           {/* SIDE PANEL */}
           <div className="profile-side-panel">
             <div className="identity-card-premium">
-              <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'linear-gradient(135deg, var(--accent-cyan), #7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: '0 12px 30px rgba(0,0,0,0.2)' }}>
+              <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', boxShadow: '0 12px 30px rgba(0,0,0,0.2)' }}>
                 <Settings size={32} style={{ color: '#fff' }} />
               </div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Configurações</h2>
@@ -249,7 +249,7 @@ export default function UserSettings({ theme, onSetTheme }) {
             </div>
 
             {/* AI Tip */}
-            <div style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Sparkles size={14} style={{ color: 'var(--accent-cyan)' }} />
                 <h4 style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Sincronia IA</h4>

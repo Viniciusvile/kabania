@@ -1,4 +1,4 @@
-.knowledge-base-container {
+﻿.knowledge-base-container {
   max-width: 1600px;
   margin: 0 auto;
   padding: 2rem;
@@ -73,9 +73,9 @@
 }
 
 .kb-btn-add {
-  background-color: rgba(0, 229, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-size: 0.9rem;
@@ -88,7 +88,7 @@
 }
 
 .kb-btn-add:hover {
-  background-color: rgba(0, 229, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .kb-grid {
@@ -111,7 +111,7 @@
 
 .kb-card.enabled {
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 .kb-card.disabled {
@@ -270,13 +270,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  box-shadow: 0 4px 15px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
   min-height: 48px;
 }
 
 .kb-btn-template:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
   filter: brightness(1.1);
 }
 
@@ -509,7 +509,7 @@
 
 .kb-card-empty-slot:hover {
   border-color: var(--accent-cyan);
-  background: rgba(0, 229, 255, 0.03);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--accent-cyan);
 }
 
@@ -581,14 +581,14 @@
 }
 
 .ai-modal {
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   background: linear-gradient(135deg, var(--bg-app) 0%, #0a0f1a 100%);
   overflow: hidden;
 }
 
 .ai-suggestion-badge {
   display: inline-block;
-  background: rgba(0, 229, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--accent-cyan);
   padding: 0.4rem 1rem;
   border-radius: 20px;
@@ -597,7 +597,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 1rem;
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .ai-preview-box {
@@ -663,8 +663,8 @@
   justify-content: center;
   gap: 1rem;
   padding: 3rem 1.5rem;
-  border: 1px dashed rgba(0, 229, 255, 0.2);
-  background: rgba(0, 229, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -672,11 +672,11 @@
 }
 
 .kb-card-empty-slot:hover {
-  background: rgba(0, 229, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
   transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 229, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
 }
 
 .kb-card-empty-slot span {
@@ -777,7 +777,7 @@
 }
 
 .kb-guide-tag-blue {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
@@ -807,7 +807,7 @@
 }
 
 .kb-info-item code {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
   padding: 0.1rem 0.3rem;
   border-radius: 4px;
@@ -940,16 +940,16 @@
    ====================================================== */
 
 .kb-card--expanded {
-  border-color: rgba(0, 229, 255, 0.35);
-  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.15), 0 12px 40px rgba(0, 229, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), 0 12px 40px rgba(255, 255, 255, 0.08);
 }
 
 .kb-related-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(0, 229, 255, 0.07);
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--accent-cyan);
   font-size: 0.75rem;
   font-weight: 600;
@@ -961,7 +961,7 @@
 }
 
 .kb-related-btn:hover {
-  background: rgba(0, 229, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-color: var(--accent-cyan);
 }
 
@@ -973,8 +973,8 @@
 .kb-related-panel {
   margin-top: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(0, 229, 255, 0.04);
-  border: 1px solid rgba(0, 229, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   animation: fadeIn 0.2s ease;
 }
@@ -1006,8 +1006,8 @@
 }
 
 .kb-related-chip:hover {
-  background: rgba(0, 229, 255, 0.06);
-  border-color: rgba(0, 229, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .kb-related-chip-icon {

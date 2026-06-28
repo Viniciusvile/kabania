@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    WorkspaceHub — Liquid Glass UI
    ============================================================ */
 
@@ -169,8 +169,8 @@
 }
 
 .workspace-search-input:focus {
-  border-color: rgba(99,102,241,0.45);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), inset 0 1px 3px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.45);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.12), inset 0 1px 3px rgba(0,0,0,0.2);
   width: 240px;
 }
 
@@ -280,4 +280,115 @@
 @keyframes lg-fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   LIGHT MODE OVERRIDES — WorkspaceHub
+   ============================================================ */
+
+[data-theme='light'] .workspace-header {
+  background: rgba(248, 250, 252, 0.88);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .workspace-header-title {
+  color: #0F172A;
+}
+
+[data-theme='light'] .workspace-header-sep {
+  color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] .workspace-header-sub {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='light'] .workspace-tab-rail {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .workspace-tab-btn {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='light'] .workspace-tab-btn:hover {
+  color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .workspace-tab-btn.active {
+  color: #0052CC;
+  background: rgba(0, 82, 204, 0.1);
+  border-color: rgba(0, 82, 204, 0.2);
+  box-shadow:
+    0 1px 4px rgba(0, 82, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .workspace-tab-btn.active::before {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 82, 204, 0.3) 50%,
+    transparent
+  );
+}
+
+[data-theme='light'] .workspace-search-icon {
+  color: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme='light'] .workspace-search-input {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0F172A;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .workspace-search-input::placeholder {
+  color: rgba(0, 0, 0, 0.28);
+}
+
+[data-theme='light'] .workspace-search-input:focus {
+  border-color: rgba(0, 82, 204, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.08), inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .workspace-search-clear {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='light'] .workspace-search-clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+[data-theme='light'] .workspace-refresh-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  color: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='light'] .workspace-refresh-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme='light'] .workspace-project-selector {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+[data-theme='light'] .workspace-project-selector:hover {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.14);
+  color: rgba(0, 0, 0, 0.85);
 }

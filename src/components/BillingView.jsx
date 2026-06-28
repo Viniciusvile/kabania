@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { FileText, CreditCard, Zap, Check, ArrowUpRight, Clock, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react';
 import './AccountViews.css';
 
@@ -77,7 +77,7 @@ export default function BillingView({ currentCompany }) {
               <div style={{ padding: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ padding: '0.625rem', background: 'rgba(0,229,255,0.05)', borderRadius: '12px', border: '1px solid rgba(0,229,255,0.1)', display: 'flex' }}>
+                    <div style={{ padding: '0.625rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex' }}>
                       <CreditCard size={20} style={{ color: 'var(--accent-cyan)' }} />
                     </div>
                     <div>
@@ -92,7 +92,7 @@ export default function BillingView({ currentCompany }) {
                 </div>
 
                 {/* Plan Hero */}
-                <div style={{ background: 'linear-gradient(135deg, rgba(0,229,255,0.06) 0%, rgba(124,58,237,0.06) 100%)', border: '1px solid rgba(0,229,255,0.12)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
+                <div style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(124,58,237,0.06) 100%)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '20px', padding: '2rem', marginBottom: '1.5rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.5, marginBottom: '0.5rem' }}>Plano</div>
                   <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.05em', marginBottom: '0.375rem' }}>{currentPlan}</h2>
                   <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>
@@ -102,7 +102,7 @@ export default function BillingView({ currentCompany }) {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginTop: '1.75rem' }}>
                     {features.map((f, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', fontSize: '0.8rem', fontWeight: 600 }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(0,229,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <Check size={11} style={{ color: 'var(--accent-cyan)' }} />
                         </div>
                         {f}
@@ -198,7 +198,7 @@ export default function BillingView({ currentCompany }) {
             </div>
 
             {/* AI Tip */}
-            <div style={{ background: 'rgba(0,229,255,0.04)', border: '1px solid rgba(0,229,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                 <Sparkles size={14} style={{ color: 'var(--accent-cyan)' }} />
                 <h4 style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Sincronia IA</h4>

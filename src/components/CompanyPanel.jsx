@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Building2, Users, Copy, Check, Crown, Shield, UserCheck2, UserX, RefreshCcw, Plus, Trash2, Calendar, UserPlus, Trophy, Medal, Star, TrendingUp } from 'lucide-react';
 import CustomerCard from './CustomerCard';
 import CustomerFormModal from './CustomerFormModal';
@@ -637,7 +637,7 @@ export default function CompanyPanel({ currentUser, currentCompany, userRole, cr
           <div className="cp-card-premium">
             <div className="cp-members-header">
               <h3 className="cp-card-title">
-                {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: '#00e5ff' }} /> : <Building2 size={18} />} 
+                {isLoadingResources ? <RefreshCcw size={18} className="animate-spin" style={{ color: 'rgba(255,255,255,0.85)' }} /> : <Building2 size={18} />} 
                 Ambientes de Trabalho
               </h3>
             </div>

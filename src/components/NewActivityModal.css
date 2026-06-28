@@ -1,4 +1,4 @@
-/* 💎 NEW ACTIVITY MODAL PREMIUM DESIGN SYSTEM */
+﻿/* 💎 NEW ACTIVITY MODAL PREMIUM DESIGN SYSTEM */
 
 .modal-overlay {
   position: fixed;
@@ -147,7 +147,7 @@
 .tab-item.active {
   color: var(--accent-cyan);
   border-bottom-color: var(--accent-cyan);
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
 .modal-body {
@@ -206,7 +206,7 @@ label {
 
 .input-underlined:focus, .textarea-underlined:focus {
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.4);
 }
 
@@ -250,7 +250,7 @@ select.input-underlined {
   right: 1rem;
   color: var(--accent-cyan);
   cursor: pointer;
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
   padding: 2px;
 }
@@ -397,7 +397,7 @@ select.input-underlined {
 }
 
 .btn-ai-triage {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, #a855f7 100%);
   color: white;
   border: none;
   padding: 6px 12px;

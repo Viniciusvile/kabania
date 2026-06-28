@@ -1,4 +1,4 @@
-/* ServiceCenter.css - Premium Dashboard Aesthetic */
+﻿/* ServiceCenter.css - Premium Dashboard Aesthetic */
 
 .service-center-container {
     padding: 2rem;
@@ -31,7 +31,7 @@
 
 .service-card:hover {
     transform: translateY(-8px);
-    border-color: rgba(0, 229, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
@@ -164,7 +164,7 @@
 }
 
 .ai-tag-pill {
-    background: rgba(0, 229, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
     color: var(--accent-cyan);
     padding: 0.25rem 0.75rem;
     border-radius: 8px;
@@ -246,7 +246,7 @@
     background: rgba(0, 82, 204, 0.1);
 }
 [data-theme='dark'] .btn-service-share {
-    background: rgba(0, 229, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 [data-theme='green'] .btn-service-share {
     background: rgba(4, 217, 79, 0.1);

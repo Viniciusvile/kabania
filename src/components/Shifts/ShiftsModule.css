@@ -1,4 +1,4 @@
-/* ShiftsModule.css */
+﻿/* ShiftsModule.css */
 
 .shifts-module-wrapper {
   padding: 1.5rem 2rem;
@@ -54,7 +54,7 @@
 
 .shifts-tab.active {
   color: var(--accent-cyan);
-  background: rgba(0, 229, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .shifts-tab.active::after {
@@ -65,7 +65,7 @@
   right: 0;
   height: 2px;
   background: var(--accent-cyan);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .shifts-content-area {

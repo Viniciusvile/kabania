@@ -1,4 +1,4 @@
-/* --- Kanban Board — Liquid Glass --- */
+﻿/* --- Kanban Board — Liquid Glass --- */
 .kanban-wrapper {
   margin-top: 0.5rem;
   padding-top: 8px;
@@ -160,19 +160,19 @@
 /* AI Highlighted Column */
 .column-highlighted {
   box-shadow:
-    0 0 0 1.5px rgba(99, 102, 241, 0.6),
-    0 0 28px rgba(99, 102, 241, 0.25),
+    0 0 0 1.5px rgba(255, 255, 255, 0.6),
+    0 0 28px rgba(255, 255, 255, 0.25),
     0 4px 24px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255,255,255,0.12);
-  border: 1px solid rgba(99, 102, 241, 0.5);
-  background: rgba(99, 102, 241, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.07);
   position: relative;
   transform: translateY(-4px);
   z-index: 10;
 }
 
 .column-highlighted .column-header {
-  border-bottom-color: rgba(99, 102, 241, 0.2);
+  border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
 /* AI Suggestion Detailed Card */
@@ -339,8 +339,8 @@
 }
 
 .card-comment-badge:hover {
-  color: #00e5ff;
-  border-color: rgba(0,229,255,0.2);
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.2);
 }
 
 /* Assignee avatars on card */
@@ -447,7 +447,7 @@
   justify-content: space-between;
   padding: 18px 20px 14px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
-  background: linear-gradient(135deg, rgba(99,102,241,0.06) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
 }
 
 .km-modal-header h3 {
@@ -529,8 +529,8 @@
 
 .km-field input:focus,
 .km-field textarea:focus {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.12), inset 0 1px 3px rgba(0,0,0,0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.12), inset 0 1px 3px rgba(0,0,0,0.25);
 }
 
 .km-field textarea { resize: vertical; }
@@ -597,7 +597,7 @@
   flex-shrink: 0;
 }
 
-.km-mp-check { color: #00e5ff; }
+.km-mp-check { color: rgba(255,255,255,0.85); }
 
 .km-modal-footer {
   padding: 1rem 1.5rem;
@@ -626,30 +626,30 @@
 }
 
 .km-btn-submit {
-  background: linear-gradient(135deg, rgba(99,102,241,0.5), rgba(139,92,246,0.4));
+  background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.4));
   color: rgba(255,255,255,0.95);
-  border: 1px solid rgba(99,102,241,0.45);
+  border: 1px solid rgba(255,255,255,0.45);
   padding: 8px 22px;
   border-radius: 999px;
   font-size: 0.825rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s ease;
-  box-shadow: 0 0 16px rgba(99,102,241,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow: 0 0 16px rgba(255,255,255,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 .km-btn-submit:hover {
-  background: linear-gradient(135deg, rgba(99,102,241,0.7), rgba(139,92,246,0.55));
-  border-color: rgba(99,102,241,0.65);
-  box-shadow: 0 0 24px rgba(99,102,241,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
+  background: linear-gradient(135deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+  border-color: rgba(255,255,255,0.65);
+  box-shadow: 0 0 24px rgba(255,255,255,0.4), inset 0 1px 0 rgba(255,255,255,0.18);
   transform: translateY(-1px);
 }
 
 /* CRM Integration Styles */
 .card-customer-badge {
-  background: rgba(0, 229, 255, 0.1) !important;
-  color: #00e5ff !important;
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255,255,255,0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-weight: 700;
   max-width: 120px;
   overflow: hidden;
@@ -674,5 +674,195 @@
 }
 
 .km-select:focus {
-  border-color: rgba(0, 229, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
 }
+
+/* ============================================================
+   LIGHT MODE OVERRIDES — Kanban Board
+   ============================================================ */
+
+[data-theme='light'] .kanban-column {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='light'] .kanban-column::before {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 0, 0, 0.06) 30%,
+    rgba(0, 0, 0, 0.1) 50%,
+    rgba(0, 0, 0, 0.06) 70%,
+    transparent
+  );
+}
+
+[data-theme='light'] .column-header {
+  color: rgba(0, 0, 0, 0.75);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='light'] .column-content {
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+[data-theme='light'] .column-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='light'] .task-card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.99);
+}
+
+[data-theme='light'] .task-card::before {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .task-card:hover {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(0, 82, 204, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(0, 82, 204, 0.08);
+}
+
+[data-theme='light'] .card-title {
+  color: #0F172A;
+}
+
+[data-theme='light'] .card-comment-badge {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #475569;
+}
+
+[data-theme='light'] .card-comment-badge:hover {
+  color: #0F172A;
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme='light'] .card-avatar-empty {
+  background: rgba(0, 0, 0, 0.08);
+  color: #64748b;
+}
+
+[data-theme='light'] .card-customer-badge {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #475569 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .km-modal {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.99);
+}
+
+[data-theme='light'] .km-modal::before {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 0, 0, 0.08) 30%,
+    rgba(0, 0, 0, 0.14) 50%,
+    rgba(0, 0, 0, 0.08) 70%,
+    transparent
+  );
+}
+
+[data-theme='light'] .km-modal-header {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, transparent 60%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+[data-theme='light'] .km-modal-header h3 {
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-modal-close {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='light'] .km-modal-close:hover {
+  background: rgba(0, 0, 0, 0.09);
+  color: rgba(0, 0, 0, 0.8);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='light'] .km-field input,
+[data-theme='light'] .km-field textarea,
+[data-theme='light'] .km-field select {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #0F172A;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .km-field input::placeholder,
+[data-theme='light'] .km-field textarea::placeholder {
+  color: rgba(0, 0, 0, 0.28);
+}
+
+[data-theme='light'] .km-field input:focus,
+[data-theme='light'] .km-field textarea:focus {
+  border-color: rgba(0, 82, 204, 0.5);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1), inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .km-field input[type="date"] {
+  color-scheme: light;
+}
+
+[data-theme='light'] .km-field select option {
+  background: #ffffff;
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-modal-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .km-btn-cancel {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='light'] .km-btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.18);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme='light'] .km-btn-submit {
+  background: linear-gradient(135deg, #0052CC, #0066FF);
+  color: #ffffff;
+  border: 1px solid rgba(0, 82, 204, 0.6);
+  box-shadow: 0 4px 16px rgba(0, 82, 204, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='light'] .km-btn-submit:hover {
+  background: linear-gradient(135deg, #003EA8, #0052CC);
+  border-color: rgba(0, 82, 204, 0.8);
+  box-shadow: 0 6px 20px rgba(0, 82, 204, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+[data-theme='light'] .km-mp-check { color: rgba(0, 0, 0, 0.7); }
+
+[data-theme='light'] .km-select:focus {
+  border-color: rgba(0, 82, 204, 0.4);
+}
+
+[data-theme='light'] .card-dl-green  { background: rgba(16, 185, 129, 0.1); color: #047857; border-color: rgba(16, 185, 129, 0.25); }
+[data-theme='light'] .card-dl-yellow { background: rgba(217, 119, 6, 0.08);  color: #92400e; border-color: rgba(217, 119, 6, 0.22); }
+[data-theme='light'] .card-dl-orange { background: rgba(234, 88, 12, 0.08);  color: #c2410c; border-color: rgba(234, 88, 12, 0.22); }
+[data-theme='light'] .card-dl-red    { background: rgba(220, 38, 38, 0.08);  color: #b91c1c; border-color: rgba(220, 38, 38, 0.22); }

@@ -1,4 +1,4 @@
-
+﻿
 /* ── OVERLAY E CARD PRINCIPAL ── */
 .company-setup-overlay {
   position: fixed;
@@ -38,8 +38,8 @@
 
 [data-theme='dark'] .company-setup-card {
   background: #0b1120;
-  border-color: rgba(0, 229, 255, 0.1);
-  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(0, 229, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 40px rgba(255, 255, 255, 0.03);
 }
 
 @keyframes cs-pop-up {
@@ -51,18 +51,18 @@
 .company-setup-header {
   padding: 3rem 2rem 2.5rem;
   text-align: center;
-  background: linear-gradient(180deg, rgba(0, 229, 255, 0.08) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, transparent 100%);
   border-bottom: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 [data-theme='dark'] .company-setup-header {
-  background: linear-gradient(180deg, rgba(0, 229, 255, 0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 100%);
   border-bottom-color: rgba(255, 255, 255, 0.03);
 }
 
 .cs-logo {
   color: var(--accent-cyan);
-  filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.4));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
   margin-bottom: 1.25rem;
 }
 
@@ -118,12 +118,12 @@
   background: #ffffff;
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
 }
 
 [data-theme='dark'] .cs-dot.active {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .cs-dot.done {
@@ -194,7 +194,7 @@
 
 .cs-mode-card:hover {
   border-color: var(--accent-cyan);
-  background: rgba(0, 229, 255, 0.03);
+  background: rgba(255, 255, 255, 0.03);
   transform: translateY(-5px);
   color: #0f172a;
 }
@@ -206,16 +206,16 @@
 /* 🟢 FIX CRÍTICO DE CONTRASTE: CARD SELECIONADO */
 .cs-mode-card.selected {
   border-color: var(--accent-cyan);
-  background: rgba(0, 229, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #0c4a6e; /* Texto escuro para contraste no modo claro */
-  box-shadow: 0 10px 25px -5px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.2);
   transform: translateY(-2px) scale(1.02);
 }
 
 [data-theme='dark'] .cs-mode-card.selected {
-  background: rgba(0, 229, 255, 0.12);
+  background: rgba(255, 255, 255, 0.12);
   color: #f8fafc; /* Texto claro no modo escuro */
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
 }
 
 .cs-mode-card strong {
@@ -265,7 +265,7 @@
 .cs-input:focus {
   border-color: var(--accent-cyan);
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.1);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
 [data-theme='dark'] .cs-input:focus {
@@ -305,12 +305,12 @@
 }
 
 [data-theme='dark'] .cs-sector-card:hover {
-  background: rgba(0, 229, 255, 0.05);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .cs-sector-card.selected {
   border-color: var(--accent-cyan);
-  background: rgba(0, 229, 255, 0.06);
+  background: rgba(255, 255, 255, 0.06);
   box-shadow: inset 0 0 0 1px var(--accent-cyan);
 }
 
@@ -351,13 +351,13 @@
   justify-content: center;
   gap: 0.75rem;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  box-shadow: 0 10px 25px -5px rgba(0, 229, 255, 0.4);
+  box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.4);
 }
 
 .cs-btn-primary:hover:not(:disabled) {
   transform: translateY(-4px) scale(1.02);
   filter: brightness(1.1);
-  box-shadow: 0 15px 30px -5px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 15px 30px -5px rgba(255, 255, 255, 0.5);
 }
 
 .cs-btn-primary:disabled {
@@ -398,14 +398,14 @@
 /* ── RESUMO FINAL ── */
 .cs-summary {
   background: #f8fafc;
-  border: 2px dashed rgba(0, 229, 255, 0.2);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   padding: 1.5rem 2rem;
   margin-bottom: 2.5rem;
 }
 
 [data-theme='dark'] .cs-summary {
-  background: rgba(0, 229, 255, 0.02);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .cs-summary-row {

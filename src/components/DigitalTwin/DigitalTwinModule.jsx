@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Search, Trash2, Square, RefreshCw, ZoomIn, ZoomOut,
   Monitor, Upload, X, MapPin, Building2, Pin, UserCheck,
@@ -928,17 +928,17 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
               <svg className="dt-wayfinding-svg" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 100 }}>
                 <defs>
                   <marker id="wf-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-                    <path d="M0,0 L0,6 L8,3 z" fill="#6366f1" />
+                    <path d="M0,0 L0,6 L8,3 z" fill="rgba(255,255,255,0.65)" />
                   </marker>
                 </defs>
                 <line
                   x1={`${wayfindingLine.x1}%`} y1={`${wayfindingLine.y1}%`}
                   x2={`${wayfindingLine.x2}%`} y2={`${wayfindingLine.y2}%`}
-                  stroke="#6366f1" strokeWidth="2.5" strokeDasharray="8 5"
+                  stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeDasharray="8 5"
                   markerEnd="url(#wf-arrow)" opacity="0.85"
                 />
                 <circle cx={`${wayfindingLine.x1}%`} cy={`${wayfindingLine.y1}%`} r="6" fill="#22c55e" opacity="0.9" />
-                <circle cx={`${wayfindingLine.x2}%`} cy={`${wayfindingLine.y2}%`} r="6" fill="#6366f1" opacity="0.9" />
+                <circle cx={`${wayfindingLine.x2}%`} cy={`${wayfindingLine.y2}%`} r="6" fill="rgba(255,255,255,0.65)" opacity="0.9" />
               </svg>
             )}
 
@@ -1144,7 +1144,7 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
                   <button
                     className={`dt-lp-chip ${activeDeptFilter === null ? 'active' : ''}`}
                     onClick={() => setActiveDeptFilter(null)}
-                    style={{ borderColor: '#6366f1', color: '#6366f1' }}
+                    style={{ borderColor: 'rgba(255,255,255,0.65)', color: 'rgba(255,255,255,0.65)' }}
                   >Todos</button>
                   {DEPT_PALETTE.map(d => (
                     <button
@@ -1201,7 +1201,7 @@ export default function DigitalTwinModule({ currentCompany, currentUser }) {
                     <span>{wayfindingFrom ? `Origem: ${desks.find(d => d.id === wayfindingFrom)?.user?.name || 'Mesa selecionada'}` : 'Clique na mesa de origem'}</span>
                   </div>
                   <div className="dt-lp-wf-state">
-                    <span className="dt-lp-wf-dot" style={{ background: wayfindingTo ? '#6366f1' : '#cbd5e1' }} />
+                    <span className="dt-lp-wf-dot" style={{ background: wayfindingTo ? 'rgba(255,255,255,0.65)' : '#cbd5e1' }} />
                     <span>{wayfindingTo ? `Destino: ${desks.find(d => d.id === wayfindingTo)?.user?.name || 'Mesa selecionada'}` : 'Clique na mesa de destino'}</span>
                   </div>
                   {(wayfindingFrom || wayfindingTo) && (

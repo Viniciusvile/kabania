@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X, Bell, CheckCheck, BellOff, AlertTriangle, ArrowRight,
   MessageSquare, Calendar, User, Briefcase, CheckCircle,
@@ -22,7 +22,7 @@ const MODULE_MAP = {
 
 const MODULE_LABELS = {
   kanban:  { label: 'Kanban',    color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
-  escalas: { label: 'Escalas',   color: '#00e5ff', bg: 'rgba(0,229,255,0.10)' },
+  escalas: { label: 'Escalas',   color: 'rgba(255,255,255,0.85)', bg: 'rgba(255,255,255,0.10)' },
   sistema: { label: 'Sistema',   color: '#ef4444', bg: 'rgba(239,68,68,0.10)' },
   outros:  { label: 'Outros',    color: '#94a3b8', bg: 'rgba(148,163,184,0.10)' },
 };

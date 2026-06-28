@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { suggestEmailTags } from '../services/geminiService';
 import { 
@@ -263,7 +263,7 @@ export default function EmailArea({ currentCompany, currentUser }) {
                 id="btn-analyze-ai"
                 type="button" 
                 className="btn-email btn-email-secondary"
-                style={{ border: '1px solid rgba(0, 229, 255, 0.3)', color: 'var(--accent-cyan)' }}
+                style={{ border: '1px solid rgba(255, 255, 255, 0.3)', color: 'var(--accent-cyan)' }}
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || isSending || !subject.trim() || !body.trim()}
               >

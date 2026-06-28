@@ -1,4 +1,4 @@
-/* CustomerCard.css */
+﻿/* CustomerCard.css */
 
 .customer-card {
   background: var(--bg-card);
@@ -22,7 +22,7 @@
 
 .customer-card:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 229, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
   transform: translateY(-4px);
   box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.4);
 }
@@ -36,14 +36,14 @@
 .cc-avatar {
   width: 44px;
   height: 44px;
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 229, 255, 0.05));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #00e5ff;
+  color: rgba(255,255,255,0.85);
   font-weight: 700;
-  border: 1px solid rgba(0, 229, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .cc-name {
@@ -85,7 +85,7 @@
 }
 
 .cc-info-item svg {
-  color: #00e5ff;
+  color: rgba(255,255,255,0.85);
   opacity: 0.6;
 }
 
@@ -105,17 +105,17 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.25rem 0.6rem;
-  background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 20px;
   font-size: 0.65rem;
   font-weight: 700;
-  color: #00e5ff;
+  color: rgba(255,255,255,0.85);
   white-space: nowrap;
 }
 
 .customer-card.crm-sourced {
-  border-color: rgba(0, 229, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .customer-card.crm-sourced::before {
@@ -125,7 +125,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #00e5ff, rgba(0, 229, 255, 0.3), transparent);
+  background: linear-gradient(90deg, rgba(255,255,255,0.85), rgba(255, 255, 255, 0.3), transparent);
   border-radius: 16px 16px 0 0;
 }
 
@@ -160,8 +160,8 @@
 
 [data-theme='dark'] .cfm-modal {
   background: #0f172a;
-  border-color: rgba(0, 229, 255, 0.3);
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.9);
 }
 
 @keyframes cfm-pop {
@@ -230,9 +230,9 @@
 
 .cfm-field input:focus {
   outline: none;
-  border-color: #00e5ff;
-  background: rgba(0, 229, 255, 0.05);
-  box-shadow: 0 0 0 4px rgba(0, 229, 255, 0.1);
+  border-color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
 }
 
 .cfm-footer {
@@ -263,14 +263,14 @@
 }
 
 .cfm-btn-save {
-  background: #00e5ff;
+  background: rgba(255,255,255,0.85);
   color: #001820;
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -332,14 +332,14 @@
 }
 
 .cfm-contract-item:hover {
-  background: rgba(0, 229, 255, 0.03);
-  border-color: rgba(0, 229, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .cfm-contract-item.selected {
-  background: rgba(0, 229, 255, 0.08);
-  border-color: #00e5ff;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255,255,255,0.85);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 .cfm-checkbox {
@@ -355,16 +355,16 @@
 }
 
 .selected .cfm-checkbox {
-  border-color: #00e5ff;
-  background: rgba(0, 229, 255, 0.1);
+  border-color: rgba(255,255,255,0.85);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .cfm-checkbox-inner {
   width: 10px;
   height: 10px;
-  background: #00e5ff;
+  background: rgba(255,255,255,0.85);
   border-radius: 2px;
-  box-shadow: 0 0 8px #00e5ff;
+  box-shadow: 0 0 8px rgba(255,255,255,0.85);
 }
 
 .cfm-contract-info {

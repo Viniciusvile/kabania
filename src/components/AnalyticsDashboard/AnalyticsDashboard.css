@@ -1,4 +1,4 @@
-.analytics-dashboard {
+﻿.analytics-dashboard {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -101,7 +101,7 @@
 }
 
 .an-icon-box.bg-cyan {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
 }
 
@@ -200,7 +200,7 @@
   background: linear-gradient(180deg, var(--accent-cyan) 0%, var(--accent-cyan-dim) 100%);
   border-radius: 6px 6px 0 0;
   transition: height 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s;
-  box-shadow: 0 -4px 12px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 -4px 12px rgba(255, 255, 255, 0.2);
   cursor: crosshair;
 }
 

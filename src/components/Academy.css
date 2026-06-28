@@ -37,7 +37,7 @@
 .academy-badge {
   display: inline-flex;
   align-items: center;
-  background: rgba(0, 229, 255, 0.12);
+  background: rgba(255,255,255,0.07);
   color: var(--accent-cyan);
   border: 1px solid var(--accent-cyan);
   border-radius: 20px;
@@ -202,7 +202,7 @@
 .academy-trail-cover {
   position: relative;
   height: 120px;
-  background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(99,102,241,0.15));
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -256,7 +256,7 @@
   font-weight: 700;
   padding: 0.2rem 0.55rem;
   border-radius: 20px;
-  background: rgba(0,229,255,0.1);
+  background: rgba(255,255,255,0.07);
   color: var(--accent-cyan);
 }
 
@@ -323,7 +323,7 @@
 
 .academy-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent-cyan), #6366f1);
+  background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.25));
   border-radius: 99px;
   transition: width 0.4s ease;
 }
@@ -395,7 +395,7 @@
   align-items: flex-start;
   gap: 1.5rem;
   padding: 1.75rem;
-  background: linear-gradient(135deg, rgba(0,229,255,0.06), rgba(99,102,241,0.06));
+  background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.03));
   border: 1px solid var(--border-color);
   border-radius: 20px;
 }
@@ -458,7 +458,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.65rem 1rem;
-  background: rgba(0,229,255,0.08);
+  background: rgba(255,255,255,0.06);
   border: 1px solid var(--accent-cyan);
   border-radius: 10px;
   font-size: 0.85rem;
@@ -638,7 +638,7 @@
 }
 
 .academy-reader-module-item:hover { background: var(--border-color); color: var(--text-main); }
-.academy-reader-module-item.current { border-left-color: var(--accent-cyan); color: var(--text-main); background: rgba(0,229,255,0.06); font-weight: 600; }
+.academy-reader-module-item.current { border-left-color: var(--accent-cyan); color: var(--text-main); background: rgba(255,255,255,0.05); font-weight: 600; }
 .academy-reader-module-item.done svg { color: #22c55e; }
 
 .academy-reader-module-num {
@@ -889,7 +889,7 @@
 }
 
 .academy-emoji-btn:hover { border-color: var(--accent-cyan); transform: scale(1.1); }
-.academy-emoji-btn.selected { border-color: var(--accent-cyan); background: rgba(0,229,255,0.1); }
+.academy-emoji-btn.selected { border-color: var(--accent-cyan); background: rgba(255,255,255,0.07); }
 
 /* ---- Light mode ---- */
 [data-theme='light'] .academy-trail-cover {

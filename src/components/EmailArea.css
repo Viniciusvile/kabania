@@ -1,4 +1,4 @@
-/* EmailArea.css - Premium Email Dashboard Aesthetic */
+﻿/* EmailArea.css - Premium Email Dashboard Aesthetic */
 
 .email-area-container {
   padding: 2rem;
@@ -107,7 +107,7 @@
 .form-textarea:focus {
   border-color: var(--accent-cyan);
   background: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
 }
 
 .form-textarea {
@@ -223,11 +223,11 @@
 .ai-spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(0, 229, 255, 0.1);
+  border: 3px solid rgba(255, 255, 255, 0.1);
   border-top-color: var(--accent-cyan);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .ai-analysis-results {
@@ -287,13 +287,13 @@
 }
 
 .tag-pill-authorized {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
-  border-color: rgba(0, 229, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .tag-pill-authorized:hover {
-  background: rgba(0, 229, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }
 
@@ -312,7 +312,7 @@
   background: var(--accent-gradient);
   color: white;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
 }
 
 .ai-meta-pills {
@@ -422,9 +422,9 @@
 }
 
 .email-row-tag-badge-auth {
-  background: rgba(0, 229, 255, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--accent-cyan);
-  border-color: rgba(0, 229, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .btn-icon-table {
@@ -440,7 +440,7 @@
 }
 
 .btn-icon-table:hover {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--accent-cyan);
   border-color: var(--accent-cyan);
   transform: translateY(-1px);

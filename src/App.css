@@ -90,13 +90,13 @@
 .bg-import-icon {
   width: 42px;
   height: 42px;
-  background: linear-gradient(135deg, #00e5ff 0%, #1200ff 100%);
+  background: rgba(255,255,255,0.1);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 8px 16px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
 }
 
 .bg-import-content {
@@ -126,9 +126,9 @@
 
 .bg-import-bar {
   height: 100%;
-  background: linear-gradient(90deg, #00e5ff, #0095ff);
+  background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
 }
 
 .bg-import-summary {

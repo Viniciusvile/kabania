@@ -1,4 +1,4 @@
-/* components.css - Scoped styles for components to keep index.css clean */
+﻿/* components.css - Scoped styles for components to keep index.css clean */
 
 /* Navbar */
 .navbar {
@@ -64,13 +64,13 @@
 .btn-primary {
   background: var(--primary);
   color: white;
-  box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+  box-shadow: 0 4px 14px 0 rgba(255, 255, 255, 0.39);
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
 }
 
 .btn-secondary {
@@ -117,8 +117,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 0.5rem 1rem;
   border-radius: 100px;
   font-size: 0.875rem;
@@ -191,7 +191,7 @@
 .feature-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .feature-icon-wrapper {
@@ -303,7 +303,7 @@
 }
 
 .tag-bug { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.tag-feature { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+.tag-feature { background: rgba(255, 255, 255, 0.1); color: rgba(255,255,255,0.7); }
 
 .ai-assistant {
   width: 350px;
@@ -323,7 +323,7 @@
 }
 
 .ai-icon-bg {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   padding: 0.5rem;
   border-radius: 8px;
   color: var(--primary);
@@ -389,4 +389,26 @@
   .kanban-container { flex-direction: column; }
   .ai-assistant { width: 100%; border-left: none; border-top: 1px solid var(--border-color); padding-left: 0; padding-top: 1.5rem; }
   .nav-links { display: none; }
+}
+
+/* ============================================================
+   LIGHT MODE OVERRIDES — Shared Components
+   ============================================================ */
+
+[data-theme='light'] .btn-secondary {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .btn-secondary:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .tag-feature {
+  background: rgba(0, 82, 204, 0.08);
+  color: #0052CC;
+}
+
+[data-theme='light'] .ai-icon-bg {
+  background: rgba(0, 82, 204, 0.1);
 }

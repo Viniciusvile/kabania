@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
 import { addEmployeeToShift, moveShift, createShift, deleteShift, updateShift, replaceEmployeeInShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
@@ -834,15 +834,15 @@ export default function ShiftsModule({
             gap: 8px;
             font-size: 11px;
             font-weight: 800;
-            color: rgba(0, 229, 255, 0.8);
-            background: rgba(0, 229, 255, 0.04);
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.04);
             padding: 6px 14px;
             border-radius: 100px;
             opacity: 0;
             transform: translateY(-5px);
             transition: all 0.4s ease;
             pointer-events: none;
-            border: 1px solid rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
           }
 
@@ -867,9 +867,9 @@ export default function ShiftsModule({
           }
 
           [data-theme='light'] .sync-status-minimal {
-            background: rgba(0, 229, 255, 0.08);
+            background: rgba(255, 255, 255, 0.08);
             color: #0891b2;
-            border-color: rgba(0, 229, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
           }
         `}</style>
 

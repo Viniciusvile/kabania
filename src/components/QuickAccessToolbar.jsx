@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   FolderKanban, ClipboardList, LifeBuoy, Search,
   Focus, X, Zap
@@ -42,7 +42,7 @@ export default function QuickAccessToolbar({ onViewChange, onClose }) {
       icon: <FolderKanban size={22} />,
       label: 'Projetos',
       desc: 'Abrir área de projetos',
-      color: '#00e5ff',
+      color: 'rgba(255,255,255,0.85)',
       onClick: () => go('projects'),
     },
     {

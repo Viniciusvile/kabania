@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Calendar, Users, MessageSquare, Sparkles, Send,
   AlertTriangle, Clock, CheckCircle2, Edit2, Zap
@@ -16,7 +16,7 @@ function getInitials(email) {
 }
 
 function getAvatarColor(email) {
-  const colors = ['#00e5ff', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
+  const colors = ['rgba(255,255,255,0.85)', '#a78bfa', '#34d399', '#fb923c', '#f472b6', '#60a5fa'];
   let hash = 0;
   for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -120,12 +120,12 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
             <h2>{task.title}</h2>
             <div className="flex gap-2">
               {task.customer_name && (
-                <span className="cdm-tag" style={{ background: 'rgba(0, 229, 255, 0.1)', color: '#00e5ff' }}>
+                <span className="cdm-tag" style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.85)' }}>
                   {task.customer_name}
                 </span>
               )}
               {task.tag && (
-                <span className="cdm-tag" style={{ color: `var(--color-${task.tagColor}, #00e5ff)` }}>
+                <span className="cdm-tag" style={{ color: `var(--color-${task.tagColor}, rgba(255,255,255,0.85))` }}>
                   {task.tag}
                 </span>
               )}
@@ -152,7 +152,7 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
               </div>
             )}
             {!estimating && estimation && (
-              <div className="cdm-estimate-box" style={{ borderColor: COMPLEXITY_COLOR[estimation.complexity] || '#00e5ff', background: COMPLEXITY_BG[estimation.complexity] || 'rgba(0,229,255,0.06)' }}>
+              <div className="cdm-estimate-box" style={{ borderColor: COMPLEXITY_COLOR[estimation.complexity] || 'rgba(255,255,255,0.85)', background: COMPLEXITY_BG[estimation.complexity] || 'rgba(255,255,255,0.06)' }}>
                 <div className="cdm-estimate-header">
                   <span className="cdm-estimate-value">{estimation.estimate}</span>
                   <span className="cdm-estimate-badge" style={{ color: COMPLEXITY_COLOR[estimation.complexity], background: COMPLEXITY_BG[estimation.complexity] }}>
@@ -209,7 +209,7 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
               {!isEditingResponse && (
                 <button 
                   onClick={() => setIsEditingResponse(true)} 
-                  style={{ background: 'none', border: 'none', color: '#00e5ff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.85)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 >
                   <Edit2 size={12} /> Editar
                 </button>

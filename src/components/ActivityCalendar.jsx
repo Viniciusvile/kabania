@@ -59,7 +59,7 @@ function sameDay(d1, d2) {
 
 // ─── Event chip ───────────────────────────────────────────────────────────────
 function EventChip({ activity, onClick }) {
-  const col = STATUS_COLORS[activity.status] || { bg: '#6366f1', text: '#fff' };
+  const col = STATUS_COLORS[activity.status] || { bg: 'rgba(255,255,255,0.55)', text: '#fff' };
   const time = activityTime(activity);
   return (
     <div
@@ -81,7 +81,7 @@ function EventChip({ activity, onClick }) {
 
 // ─── Detail popover ───────────────────────────────────────────────────────────
 function ActivityPopover({ activity, onClose }) {
-  const col = STATUS_COLORS[activity.status] || { bg: '#6366f1', text: '#fff' };
+  const col = STATUS_COLORS[activity.status] || { bg: 'rgba(255,255,255,0.55)', text: '#fff' };
   return (
     <div className="cal-popover-overlay" onClick={onClose}>
       <div className="cal-popover" onClick={e => e.stopPropagation()}>
@@ -231,11 +231,11 @@ function DayView({ date, activitiesByDate, onEventClick }) {
           dayActivities.map(a => (
             <div key={a.id} className="cal-day-row" onClick={() => onEventClick(a)}>
               <div className="cal-day-time">{activityTime(a) || '—'}</div>
-              <div className="cal-day-card" style={{ borderLeftColor: (STATUS_COLORS[a.status] || {}).bg || '#6366f1' }}>
+              <div className="cal-day-card" style={{ borderLeftColor: (STATUS_COLORS[a.status] || {}).bg || 'rgba(255,255,255,0.55)' }}>
                 <div className="cal-day-card-title">{a.location || `#${a.id}`}</div>
                 {a.type && <div className="cal-day-card-sub">{a.type}</div>}
                 {a.collaborator && <div className="cal-day-card-sub">👤 {a.collaborator}</div>}
-                <span className="cal-day-card-status" style={{ color: (STATUS_COLORS[a.status] || {}).bg || '#6366f1' }}>{a.status}</span>
+                <span className="cal-day-card-status" style={{ color: (STATUS_COLORS[a.status] || {}).bg || 'rgba(255,255,255,0.55)' }}>{a.status}</span>
               </div>
             </div>
           ))

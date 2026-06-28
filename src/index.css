@@ -11,17 +11,17 @@
   --border-color: #2F333E;
   --border-light: rgba(255, 255, 255, 0.08);
   
-  --accent-cyan: #00E5FF;
-  --accent-cyan-dim: rgba(0, 229, 255, 0.15);
-  
+  --accent-cyan: rgba(255,255,255,0.85);
+  --accent-cyan-dim: rgba(255,255,255,0.08);
+
   --text-main: #FFFFFF;
   --text-muted: #94A3B8;
   --text-dark: #64748B;
-  
-  --accent-gradient: linear-gradient(135deg, #00E5FF 0%, #7C3AED 100%);
-  
+
+  --accent-gradient: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%);
+
   --color-green: #22C55E;
-  --color-purple: #A855F7;
+  --color-purple: rgba(255,255,255,0.65);
   --color-orange: #F97316;
   --color-red: #EF4444;
 
@@ -42,6 +42,7 @@
 
   --accent-cyan: #0052CC; /* Adjusting for light background */
   --accent-cyan-dim: rgba(0, 82, 204, 0.1);
+  --color-purple: #7C6EAA;
 
   --text-main: #0F172A;   /* Slate 900 - Better readability */
   --text-muted: #475569;  /* Slate 600 */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -143,7 +143,7 @@ export default function AIInsights({ currentUser, currentCompany }) {
     setLoading(prev => ({ ...prev, [type]: false }));
   };
 
-  const PIE_COLORS = ['#00e5ff', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
+  const PIE_COLORS = ['rgba(255,255,255,0.85)', '#a78bfa', '#34d399', '#fbbf24', '#f472b6', '#60a5fa'];
 
   const InsightCard = ({ title, icon: Icon, type, description, colorClass }) => (
     <div className={`ai-insight-card ${colorClass}`}>
@@ -247,8 +247,8 @@ export default function AIInsights({ currentUser, currentCompany }) {
                 <AreaChart data={chartData.productivity}>
                   <defs>
                     <linearGradient id="colorEntregas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00e5ff" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#00e5ff" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="rgba(255,255,255,0.85)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="rgba(255,255,255,0.85)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
@@ -256,9 +256,9 @@ export default function AIInsights({ currentUser, currentCompany }) {
                   <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
                     contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: 'white' }}
-                    itemStyle={{ color: '#00e5ff' }}
+                    itemStyle={{ color: 'rgba(255,255,255,0.85)' }}
                   />
-                  <Area type="monotone" dataKey="entregas" stroke="#00e5ff" fillOpacity={1} fill="url(#colorEntregas)" strokeWidth={3} />
+                  <Area type="monotone" dataKey="entregas" stroke="rgba(255,255,255,0.85)" fillOpacity={1} fill="url(#colorEntregas)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
