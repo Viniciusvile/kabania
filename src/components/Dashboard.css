@@ -1,4 +1,4 @@
-﻿.sidebar {
+.sidebar {
   width: 280px;
   background: rgba(255, 255, 255, 0.028);
   backdrop-filter: blur(28px) saturate(160%);
@@ -189,6 +189,8 @@
   justify-content: space-between;
   padding: 0 1.5rem;
   transition: var(--transition-theme);
+  position: relative;
+  z-index: 100;
 }
 
 .topbar-left {
