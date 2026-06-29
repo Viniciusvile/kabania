@@ -23,7 +23,8 @@ function initLiquidGL() {
 
 export default function WorkspaceHub({
   workspaceTab, searchQuery, onSearchChange, projectName, projects, selectedProjectId,
-  currentUser, currentCompany, userRole, crmOcorrencias = [], selectedCondominioId = null
+  currentUser, currentCompany, userRole, crmOcorrencias = [], selectedCondominioId = null,
+  condominios = []
 }) {
   useEffect(() => {
     const t = setTimeout(initLiquidGL, 400);
@@ -50,6 +51,7 @@ export default function WorkspaceHub({
               projectId={selectedProjectId}
               crmOcorrencias={crmOcorrencias}
               selectedCondominioId={selectedCondominioId}
+              condominios={condominios}
             />
           </div>
         ) : (

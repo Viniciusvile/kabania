@@ -248,7 +248,7 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 }
 
 // ---- Main Board ----
-export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null }) {
+export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null, condominios = [] }) {
   // Click Condomínios local columns overrides for occurrences
   const [crmColumns, setCrmColumns] = useState(() => {
     if (!projectId) return {};
@@ -381,7 +381,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
     // 3. Filtrar por Condomínio se houver filtro ativo
     if (selectedCondominioId) {
-      const selectedNome = crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
+      const selectedNome = condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome || 
+                           crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
       return enriched.filter(t => 
         String(t.condominio_id) === String(selectedCondominioId) ||
         (t.customer_name && selectedNome && t.customer_name.toLowerCase() === selectedNome.toLowerCase())
@@ -389,7 +390,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
 
     return enriched;
-  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, crmColumns, crmAiResponses, crmAiLoading, projectId]);
+  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, condominios, crmColumns, crmAiResponses, crmAiLoading, projectId]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
