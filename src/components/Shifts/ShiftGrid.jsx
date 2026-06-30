@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Briefcase, Clock, MapPin, CheckCircle, Plus, Trash2, ChevronLeft, ChevronRight, Zap, Edit2, GripVertical, Calendar, Timer } from 'lucide-react';
 import { updateShiftStatus } from '../../services/shiftService';
 import './ShiftsPremium.css';
@@ -318,226 +318,392 @@ export default function ShiftGrid({
       `}</style>
     </div>
 
-      {/* ⏰ MODAL DE HORÁRIO — Padrão do sistema (modal-overlay-pixel + premium-modal-pixel) */}
+      {/* ⏰ MODAL DE HORÁRIO — Design premium theme-aware */}
       {timeModal.isOpen && (
         <div
-          className="modal-overlay-pixel"
-          style={{
-            zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-          }}
+          className="modal-overlay-pixel sched-modal-overlay"
           onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
         >
-          <div className="premium-modal-pixel animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '2rem 1.75rem', background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(255, 255, 255, 0.08)', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Icon + Title */}
-            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(168, 85, 247, 0.15))',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 0.75rem',
-                boxShadow: '0 8px 32px rgba(255, 255, 255, 0.1)'
-              }}>
-                <Clock size={24} style={{ color: 'var(--accent-cyan, rgba(255,255,255,0.85))' }} />
+          <style>{`
+            .sched-modal-overlay {
+              background: rgba(0,0,0,0.55) !important;
+              backdrop-filter: blur(14px) !important;
+              -webkit-backdrop-filter: blur(14px) !important;
+              z-index: 9999 !important;
+            }
+            .sched-modal-box {
+              width: 100%;
+              max-width: 420px;
+              border-radius: 24px;
+              padding: 2rem 1.75rem;
+              display: flex;
+              flex-direction: column;
+              gap: 0;
+              /* dark */
+              background: rgba(12, 18, 36, 0.97);
+              border: 1px solid rgba(255,255,255,0.09);
+              box-shadow: 0 32px 72px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+            }
+            [data-theme='light'] .sched-modal-box {
+              background: rgba(255,255,255,0.97) !important;
+              border: 1px solid rgba(0,0,0,0.09) !important;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8) !important;
+            }
+
+            /* Icon header */
+            .sched-icon-ring {
+              width: 58px; height: 58px; border-radius: 50%;
+              background: linear-gradient(135deg, rgba(168,85,247,0.18), rgba(99,102,241,0.18));
+              border: 1px solid rgba(168,85,247,0.3);
+              display: flex; align-items: center; justify-content: center;
+              margin: 0 auto 0.9rem;
+              box-shadow: 0 0 24px rgba(168,85,247,0.15);
+            }
+            [data-theme='light'] .sched-icon-ring {
+              background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(99,102,241,0.1)) !important;
+              border-color: rgba(168,85,247,0.25) !important;
+              box-shadow: 0 0 16px rgba(168,85,247,0.1) !important;
+            }
+            .sched-title {
+              font-size: 1.2rem; font-weight: 850; letter-spacing: -0.025em;
+              text-align: center; margin: 0 0 0.25rem;
+              color: #f1f5f9;
+            }
+            [data-theme='light'] .sched-title { color: #0f172a !important; }
+            .sched-subtitle {
+              font-size: 12px; text-align: center;
+              color: rgba(148,163,184,0.85); margin: 0 0 1.5rem;
+            }
+            [data-theme='light'] .sched-subtitle { color: rgba(71,85,105,0.85) !important; }
+
+            /* Activity card */
+            .sched-activity-card {
+              border-radius: 14px;
+              padding: 12px 14px;
+              margin-bottom: 1.25rem;
+              display: flex; align-items: center; gap: 12px;
+              background: rgba(255,255,255,0.03);
+              border: 1px solid rgba(255,255,255,0.06);
+            }
+            [data-theme='light'] .sched-activity-card {
+              background: rgba(99,102,241,0.05) !important;
+              border-color: rgba(99,102,241,0.12) !important;
+            }
+            .sched-activity-icon {
+              background: rgba(168,85,247,0.12);
+              padding: 9px; border-radius: 10px;
+              display: flex; align-items: center; justify-content: center;
+              flex-shrink: 0;
+            }
+            [data-theme='light'] .sched-activity-icon {
+              background: rgba(168,85,247,0.1) !important;
+            }
+            .sched-activity-name {
+              font-size: 13px; font-weight: 800;
+              color: #f1f5f9; margin-bottom: 2px;
+              white-space: nowrap; text-overflow: ellipsis; overflow: hidden;
+            }
+            [data-theme='light'] .sched-activity-name { color: #0f172a !important; }
+            .sched-activity-date {
+              font-size: 11px; color: rgba(148,163,184,0.8);
+              display: flex; align-items: center; gap: 5px;
+            }
+            [data-theme='light'] .sched-activity-date { color: rgba(71,85,105,0.85) !important; }
+
+            /* Section label */
+            .sched-label {
+              display: block; font-size: 10px; font-weight: 800;
+              text-transform: uppercase; letter-spacing: 0.07em;
+              margin-bottom: 8px;
+              color: rgba(148,163,184,0.5);
+            }
+            [data-theme='light'] .sched-label { color: rgba(71,85,105,0.65) !important; }
+
+            /* Time shortcuts grid */
+            .sched-shortcuts {
+              display: grid; grid-template-columns: repeat(4,1fr); gap: 6px;
+              margin-bottom: 1.25rem;
+            }
+            .sched-shortcut-btn {
+              padding: 9px 4px; border-radius: 12px; cursor: pointer;
+              display: flex; flex-direction: column; align-items: center; gap: 3px;
+              font-size: 11px; font-weight: 800;
+              transition: all 0.18s cubic-bezier(.4,0,.2,1);
+              border: 1px solid rgba(255,255,255,0.07);
+              background: rgba(255,255,255,0.03);
+              color: rgba(148,163,184,0.8);
+            }
+            .sched-shortcut-btn:hover {
+              background: rgba(168,85,247,0.1);
+              border-color: rgba(168,85,247,0.25);
+              color: #c084fc;
+              transform: translateY(-1px);
+            }
+            .sched-shortcut-btn.active {
+              background: rgba(168,85,247,0.15);
+              border-color: rgba(168,85,247,0.35);
+              color: #c084fc;
+              box-shadow: 0 4px 12px rgba(168,85,247,0.15);
+            }
+            [data-theme='light'] .sched-shortcut-btn {
+              background: rgba(0,0,0,0.03) !important;
+              border-color: rgba(0,0,0,0.08) !important;
+              color: rgba(51,65,85,0.75) !important;
+            }
+            [data-theme='light'] .sched-shortcut-btn:hover {
+              background: rgba(168,85,247,0.08) !important;
+              border-color: rgba(168,85,247,0.2) !important;
+              color: #7c3aed !important;
+            }
+            [data-theme='light'] .sched-shortcut-btn.active {
+              background: rgba(168,85,247,0.1) !important;
+              border-color: rgba(168,85,247,0.3) !important;
+              color: #7c3aed !important;
+            }
+            .sched-shortcut-icon { font-size: 15px; line-height: 1; }
+            .sched-shortcut-time { font-size: 11px; font-weight: 800; }
+            .sched-shortcut-name { font-size: 9px; font-weight: 600; opacity: 0.7; }
+
+            /* Time input */
+            .sched-time-wrapper {
+              display: flex; justify-content: center;
+              margin-bottom: 1.25rem;
+            }
+            .sched-time-input {
+              font-size: 2rem; font-weight: 900; text-align: center;
+              padding: 10px 24px; width: 160px;
+              border-radius: 16px; outline: none;
+              font-family: inherit; letter-spacing: 0.02em;
+              background: rgba(0,0,0,0.25);
+              border: 2px solid rgba(168,85,247,0.3);
+              color: #e2e8f0;
+              box-shadow: 0 0 20px rgba(168,85,247,0.08);
+              transition: border-color 0.2s;
+            }
+            .sched-time-input:focus {
+              border-color: rgba(168,85,247,0.6);
+              box-shadow: 0 0 24px rgba(168,85,247,0.18);
+            }
+            [data-theme='light'] .sched-time-input {
+              background: rgba(99,102,241,0.05) !important;
+              border-color: rgba(99,102,241,0.25) !important;
+              color: #0f172a !important;
+              box-shadow: 0 2px 12px rgba(99,102,241,0.08) !important;
+            }
+            [data-theme='light'] .sched-time-input:focus {
+              border-color: rgba(99,102,241,0.5) !important;
+            }
+
+            /* Duration buttons */
+            .sched-durations {
+              display: flex; gap: 6px;
+              margin-bottom: 1.25rem;
+            }
+            .sched-dur-btn {
+              flex: 1; padding: 9px 0; border-radius: 12px; cursor: pointer;
+              font-size: 11px; font-weight: 800;
+              transition: all 0.18s cubic-bezier(.4,0,.2,1);
+              border: 1px solid rgba(255,255,255,0.06);
+              background: rgba(255,255,255,0.02);
+              color: rgba(148,163,184,0.75);
+            }
+            .sched-dur-btn:hover {
+              background: rgba(168,85,247,0.08);
+              border-color: rgba(168,85,247,0.2);
+              color: #c084fc;
+            }
+            .sched-dur-btn.active {
+              background: rgba(168,85,247,0.15);
+              border-color: rgba(168,85,247,0.35);
+              color: #c084fc;
+              box-shadow: 0 4px 12px rgba(168,85,247,0.12);
+            }
+            [data-theme='light'] .sched-dur-btn {
+              background: rgba(0,0,0,0.03) !important;
+              border-color: rgba(0,0,0,0.08) !important;
+              color: rgba(51,65,85,0.7) !important;
+            }
+            [data-theme='light'] .sched-dur-btn:hover {
+              background: rgba(168,85,247,0.07) !important;
+              border-color: rgba(168,85,247,0.2) !important;
+              color: #7c3aed !important;
+            }
+            [data-theme='light'] .sched-dur-btn.active {
+              background: rgba(168,85,247,0.1) !important;
+              border-color: rgba(168,85,247,0.28) !important;
+              color: #7c3aed !important;
+            }
+
+            /* Summary bar */
+            .sched-summary {
+              border-radius: 14px; padding: 12px 16px;
+              margin-bottom: 1.5rem;
+              display: flex; flex-direction: column;
+              align-items: center; gap: 3px;
+              background: linear-gradient(135deg, rgba(168,85,247,0.07), rgba(99,102,241,0.07));
+              border: 1px solid rgba(168,85,247,0.15);
+            }
+            [data-theme='light'] .sched-summary {
+              background: linear-gradient(135deg, rgba(168,85,247,0.05), rgba(99,102,241,0.05)) !important;
+              border-color: rgba(168,85,247,0.15) !important;
+            }
+            .sched-summary-label {
+              font-size: 9px; font-weight: 800; text-transform: uppercase;
+              letter-spacing: 0.07em; color: rgba(148,163,184,0.45);
+            }
+            [data-theme='light'] .sched-summary-label { color: rgba(71,85,105,0.55) !important; }
+            .sched-summary-time {
+              font-size: 14px; font-weight: 900; letter-spacing: 0.02em;
+              color: #f1f5f9; display: flex; align-items: center; gap: 6px;
+            }
+            [data-theme='light'] .sched-summary-time { color: #0f172a !important; }
+            .sched-summary-total {
+              font-size: 10px; font-weight: 700; color: #c084fc;
+            }
+            [data-theme='light'] .sched-summary-total { color: #7c3aed !important; }
+
+            /* Action buttons */
+            .sched-actions {
+              display: flex; gap: 12px;
+            }
+            .sched-btn-cancel {
+              flex: 1; padding: 13px 0; border-radius: 14px; cursor: pointer;
+              font-size: 13px; font-weight: 700;
+              transition: all 0.18s;
+              background: rgba(255,255,255,0.04);
+              border: 1px solid rgba(255,255,255,0.1);
+              color: rgba(148,163,184,0.9);
+            }
+            .sched-btn-cancel:hover {
+              background: rgba(255,255,255,0.08);
+              color: #f1f5f9;
+            }
+            [data-theme='light'] .sched-btn-cancel {
+              background: rgba(0,0,0,0.03) !important;
+              border-color: rgba(0,0,0,0.1) !important;
+              color: rgba(51,65,85,0.8) !important;
+            }
+            [data-theme='light'] .sched-btn-cancel:hover {
+              background: rgba(0,0,0,0.06) !important;
+              color: #0f172a !important;
+            }
+            .sched-btn-confirm {
+              flex: 1; padding: 13px 0; border-radius: 14px; cursor: pointer;
+              font-size: 13px; font-weight: 800;
+              display: flex; align-items: center; justify-content: center; gap: 7px;
+              transition: all 0.18s;
+              background: linear-gradient(135deg, #7c3aed, #6366f1);
+              border: 1px solid rgba(168,85,247,0.4);
+              color: #fff;
+              box-shadow: 0 4px 20px rgba(124,58,237,0.35);
+            }
+            .sched-btn-confirm:hover {
+              background: linear-gradient(135deg, #6d28d9, #4f46e5);
+              box-shadow: 0 6px 28px rgba(124,58,237,0.5);
+              transform: translateY(-1px);
+            }
+            .sched-btn-confirm:active { transform: translateY(0); }
+          `}</style>
+
+          <div className="sched-modal-box animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ textAlign: 'center' }}>
+              <div className="sched-icon-ring">
+                <Clock size={24} color="#a855f7" />
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 850, marginBottom: '0.25rem', color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-                Agendar Escala
-              </h3>
-              <p style={{ fontSize: '12px', opacity: 0.7, color: 'var(--text-muted)' }}>
-                Defina o horário e período de execução
-              </p>
+              <h3 className="sched-title">Agendar Escala</h3>
+              <p className="sched-subtitle">Defina o horário e período de execução</p>
             </div>
 
             {/* Activity Info */}
-            <div style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              borderRadius: '14px',
-              padding: '12px 14px',
-              marginBottom: '1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <div style={{ 
-                 background: 'rgba(255, 255, 255, 0.08)', 
-                 padding: '8px', 
-                 borderRadius: '10px',
-                 display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                 <Zap size={14} style={{ color: 'var(--accent-cyan)' }} />
+            <div className="sched-activity-card">
+              <div className="sched-activity-icon">
+                <Zap size={15} color="#a855f7" />
               </div>
               <div style={{ overflow: 'hidden', flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', marginBottom: '2px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                <div className="sched-activity-name">
                   {(timeModal.activity?.title || timeModal.activity?.location || timeModal.activity?.name || 'Local Não Definido').replace(/^(TITULO|TITLE):\s*/i, '')}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Calendar size={11} /> {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+                <div className="sched-activity-date">
+                  <Calendar size={11} />
+                  {timeModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
                 </div>
               </div>
             </div>
 
             {/* Time Shortcuts */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{
-                display: 'block', fontSize: '10px', fontWeight: 800,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-                color: 'rgba(255,255,255,0.4)', marginBottom: '8px'
-              }}>
-                Sugestões de Início
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
-                {[
-                  { label: '08:00', icon: '🌅', name: 'Manhã' },
-                  { label: '14:00', icon: '☀️', name: 'Tarde' },
-                  { label: '18:00', icon: '🌇', name: 'Noite' },
-                  { label: '22:00', icon: '🌙', name: 'Noturno' }
-                ].map(item => (
-                  <button
-                    key={item.label}
-                    onClick={() => setTimeModal(prev => ({ ...prev, time: item.label }))}
-                    style={{
-                      padding: '8px 4px',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      background: timeModal.time === item.label ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255,255,255,0.02)',
-                      color: timeModal.time === item.label ? 'var(--accent-cyan, rgba(255,255,255,0.85))' : 'var(--text-muted, #94a3b8)',
-                      borderColor: timeModal.time === item.label ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255,255,255,0.06)',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <span style={{ fontSize: '14px' }}>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
+            <span className="sched-label">Sugestões de Início</span>
+            <div className="sched-shortcuts">
+              {[
+                { label: '08:00', icon: '🌅', name: 'Manhã' },
+                { label: '14:00', icon: '☀️', name: 'Tarde' },
+                { label: '18:00', icon: '🌇', name: 'Noite' },
+                { label: '22:00', icon: '🌙', name: 'Noturno' },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  className={`sched-shortcut-btn${timeModal.time === item.label ? ' active' : ''}`}
+                  onClick={() => setTimeModal(prev => ({ ...prev, time: item.label }))}
+                >
+                  <span className="sched-shortcut-icon">{item.icon}</span>
+                  <span className="sched-shortcut-time">{item.label}</span>
+                  <span className="sched-shortcut-name">{item.name}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Centered Time Input */}
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{
-                display: 'block', fontSize: '10px', fontWeight: 800,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-                color: 'rgba(255,255,255,0.4)', marginBottom: '8px',
-                textAlign: 'center'
-              }}>
-                Ajuste Fino de Horário
-              </label>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <input
-                  type="time"
-                  value={timeModal.time}
-                  onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
-                  autoFocus
-                  style={{
-                    fontSize: '1.75rem',
-                    fontWeight: 900,
-                    textAlign: 'center',
-                    padding: '8px 20px',
-                    background: 'rgba(0, 0, 0, 0.2)',
-                    border: '2px solid rgba(255, 255, 255, 0.25)',
-                    color: '#fff',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    boxShadow: '0 0 15px rgba(255, 255, 255, 0.05)',
-                    width: '150px',
-                    letterSpacing: '0.02em',
-                    fontFamily: 'inherit'
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleConfirmDrop();
-                    if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
-                  }}
-                />
-              </div>
+            {/* Time Input */}
+            <span className="sched-label" style={{ textAlign: 'center' }}>Ajuste Fino de Horário</span>
+            <div className="sched-time-wrapper">
+              <input
+                type="time"
+                className="sched-time-input"
+                value={timeModal.time}
+                onChange={(e) => setTimeModal(prev => ({ ...prev, time: e.target.value }))}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleConfirmDrop();
+                  if (e.key === 'Escape') setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' });
+                }}
+              />
             </div>
 
-            {/* Duration Selector */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'block', fontSize: '10px', fontWeight: 800,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
-                color: 'rgba(255,255,255,0.4)', marginBottom: '8px'
-              }}>
-                Duração do Período
-              </label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {[1, 2, 4, 8, 12].map(hours => (
-                  <button
-                    key={hours}
-                    onClick={() => setDuration(hours)}
-                    style={{
-                      flex: 1,
-                      padding: '8px 0',
-                      borderRadius: '10px',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      background: duration === hours ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
-                      color: duration === hours ? '#c084fc' : 'var(--text-muted, #94a3b8)',
-                      borderColor: duration === hours ? 'rgba(168, 85, 247, 0.3)' : 'rgba(255,255,255,0.06)',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {hours}h
-                  </button>
-                ))}
-              </div>
+            {/* Duration */}
+            <span className="sched-label">Duração do Período</span>
+            <div className="sched-durations">
+              {[1, 2, 4, 8, 12].map(hours => (
+                <button
+                  key={hours}
+                  className={`sched-dur-btn${duration === hours ? ' active' : ''}`}
+                  onClick={() => setDuration(hours)}
+                >
+                  {hours}h
+                </button>
+              ))}
             </div>
 
-            {/* calculated summary display */}
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(168, 85, 247, 0.05))',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              marginBottom: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '2px',
-              boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)'
-            }}>
-              <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.35)' }}>
-                Período Agendado
+            {/* Summary */}
+            <div className="sched-summary">
+              <span className="sched-summary-label">Período Agendado</span>
+              <span className="sched-summary-time">
+                <Timer size={14} color="#a855f7" />
+                {timeModal.time} às {getEndTimeStr(timeModal.time, duration)}
               </span>
-              <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Timer size={14} style={{ color: 'var(--accent-cyan)' }} /> {timeModal.time} às {getEndTimeStr(timeModal.time, duration)}
-              </span>
-              <span style={{ fontSize: '9px', fontWeight: 700, color: '#c084fc' }}>
+              <span className="sched-summary-total">
                 Total de {duration} {duration === 1 ? 'hora' : 'horas'}
               </span>
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+            <div className="sched-actions">
               <button
-                className="glow-btn-ghost py-3.5"
-                style={{ flex: 1, borderRadius: '12px', fontSize: '13px', fontWeight: 700 }}
+                className="sched-btn-cancel"
                 onClick={() => setTimeModal({ isOpen: false, activity: null, date: null, time: '08:00' })}
               >
                 Cancelar
               </button>
-              <button
-                className="glow-btn-primary py-3.5"
-                style={{ flex: 1, borderRadius: '12px', fontSize: '13px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                onClick={handleConfirmDrop}
-              >
-                <Zap size={14} /> Confirmar
+              <button className="sched-btn-confirm" onClick={handleConfirmDrop}>
+                <Zap size={15} /> Confirmar
               </button>
             </div>
           </div>
