@@ -1,5 +1,5 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
-import { Loader2, Search, ChevronDown, ChevronUp, Users, HardHat, UserX } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Loader2, Search, ChevronDown, ChevronUp, ChevronRight, Users, HardHat, UserX } from 'lucide-react';
 import { addEmployeeToShift, moveShift, createShift, deleteShift, updateShift, replaceEmployeeInShift } from '../../services/shiftService';
 import { supabase } from '../../supabaseClient';
 import { useShifts } from '../../hooks/useShifts';
@@ -998,111 +998,382 @@ export default function ShiftsModule({
         </div>
       )}
 
-      {/* 🤝 ASSIGNMENT MODAL OVERHAUL */}
+      {/* 🤝 ASSIGNMENT MODAL — redesenho profissional */}
       {assignmentModal.isOpen && (
-        <div className="modal-overlay-pixel glass-morphism">
-          <div className="premium-modal-pixel assignment-modal animate-slide-up" style={{ width: '90%', maxWidth: '500px', height: 'auto', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-            <div className="premium-modal-header">
-              <div className="flex items-center gap-2">
-                <Users className="text-accent" size={20} />
+        <div className="modal-overlay-pixel glass-morphism" style={{ backdropFilter: 'blur(12px)', background: 'rgba(0,0,0,0.45)' }}>
+          <style>{`
+            /* ── Assign modal scoped styles ── */
+            .assign-modal {
+              width: 92%;
+              max-width: 480px;
+              max-height: 82vh;
+              display: flex;
+              flex-direction: column;
+              border-radius: 20px;
+              overflow: hidden;
+              background: #0f172a;
+              border: 1px solid rgba(255,255,255,0.09);
+              box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+            }
+            [data-theme='light'] .assign-modal {
+              background: #ffffff !important;
+              border-color: rgba(0,0,0,0.1) !important;
+              box-shadow: 0 8px 40px rgba(0,0,0,0.12) !important;
+            }
+
+            /* Header */
+            .assign-modal-header {
+              padding: 18px 20px;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border-bottom: 1px solid rgba(255,255,255,0.07);
+              flex-shrink: 0;
+            }
+            [data-theme='light'] .assign-modal-header {
+              background: #f8fafc;
+              border-bottom-color: #e2e8f0 !important;
+            }
+            .assign-modal-title {
+              display: flex;
+              align-items: center;
+              gap: 10px;
+            }
+            .assign-modal-title-icon {
+              width: 34px; height: 34px; border-radius: 10px;
+              background: rgba(255,255,255,0.07);
+              display: flex; align-items: center; justify-content: center;
+              flex-shrink: 0;
+            }
+            [data-theme='light'] .assign-modal-title-icon {
+              background: #e2e8f0 !important;
+            }
+            .assign-modal-title h3 {
+              font-size: 15px;
+              font-weight: 700;
+              color: #f1f5f9;
+              letter-spacing: -0.01em;
+            }
+            [data-theme='light'] .assign-modal-title h3 {
+              color: #0f172a !important;
+            }
+            .assign-modal-close {
+              width: 30px; height: 30px; border-radius: 8px;
+              background: rgba(255,255,255,0.05);
+              border: 1px solid rgba(255,255,255,0.08);
+              color: rgba(148,163,184,0.8);
+              display: flex; align-items: center; justify-content: center;
+              cursor: pointer; font-size: 18px; line-height: 1;
+              transition: all 0.15s;
+            }
+            .assign-modal-close:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+            [data-theme='light'] .assign-modal-close {
+              background: #f1f5f9 !important;
+              border-color: #e2e8f0 !important;
+              color: #64748b !important;
+            }
+
+            /* Search */
+            .assign-search-box {
+              padding: 14px 16px;
+              border-bottom: 1px solid rgba(255,255,255,0.05);
+              flex-shrink: 0;
+            }
+            [data-theme='light'] .assign-search-box {
+              background: #ffffff;
+              border-bottom-color: #e2e8f0 !important;
+            }
+            .assign-search-inner {
+              display: flex; align-items: center; gap: 10px;
+              background: rgba(255,255,255,0.05);
+              border: 1px solid rgba(255,255,255,0.1);
+              border-radius: 10px;
+              padding: 9px 13px;
+              transition: border-color 0.15s;
+            }
+            .assign-search-inner:focus-within {
+              border-color: rgba(255,255,255,0.25);
+            }
+            [data-theme='light'] .assign-search-inner {
+              background: #f8fafc !important;
+              border-color: #e2e8f0 !important;
+            }
+            [data-theme='light'] .assign-search-inner:focus-within {
+              border-color: #94a3b8 !important;
+            }
+            .assign-search-inner svg { color: rgba(148,163,184,0.6); flex-shrink: 0; }
+            [data-theme='light'] .assign-search-inner svg { color: #94a3b8 !important; }
+            .assign-search-input {
+              flex: 1; background: none; border: none; outline: none;
+              font-size: 13px; color: #e2e8f0; font-family: inherit;
+            }
+            .assign-search-input::placeholder { color: rgba(148,163,184,0.5); }
+            [data-theme='light'] .assign-search-input { color: #0f172a !important; }
+            [data-theme='light'] .assign-search-input::placeholder { color: #94a3b8 !important; }
+
+            /* Scrollable list area */
+            .assign-modal-body {
+              flex: 1;
+              overflow-y: auto;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(255,255,255,0.1) transparent;
+            }
+            [data-theme='light'] .assign-modal-body { background: #ffffff; }
+            .assign-modal-body::-webkit-scrollbar { width: 4px; }
+            .assign-modal-body::-webkit-scrollbar-track { background: transparent; }
+            .assign-modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 8px; }
+
+            /* Section header (accordion trigger) */
+            .assign-section-header {
+              padding: 11px 16px;
+              display: flex; align-items: center; justify-content: space-between;
+              cursor: pointer;
+              border-bottom: 1px solid rgba(255,255,255,0.04);
+              transition: background 0.15s;
+              position: sticky; top: 0;
+              background: #0f172a;
+              z-index: 1;
+            }
+            .assign-section-header:hover { background: rgba(255,255,255,0.02); }
+            [data-theme='light'] .assign-section-header {
+              background: #f8fafc !important;
+              border-bottom-color: #f1f5f9 !important;
+            }
+            [data-theme='light'] .assign-section-header:hover { background: #f1f5f9 !important; }
+            .assign-section-left {
+              display: flex; align-items: center; gap: 8px;
+            }
+            .assign-section-left svg { color: rgba(148,163,184,0.5); }
+            [data-theme='light'] .assign-section-left svg { color: #94a3b8 !important; }
+            .assign-section-label {
+              font-size: 10px; font-weight: 700; text-transform: uppercase;
+              letter-spacing: 0.07em; color: rgba(148,163,184,0.6);
+            }
+            [data-theme='light'] .assign-section-label { color: #94a3b8 !important; }
+            .assign-section-count {
+              font-size: 10px; font-weight: 800; padding: 1px 7px;
+              border-radius: 20px; background: rgba(255,255,255,0.08);
+              color: rgba(148,163,184,0.7);
+            }
+            [data-theme='light'] .assign-section-count {
+              background: #e2e8f0 !important;
+              color: #64748b !important;
+            }
+            .assign-section-chevron { color: rgba(148,163,184,0.4); transition: transform 0.2s; }
+            .assign-section-chevron.open { transform: rotate(180deg); }
+            [data-theme='light'] .assign-section-chevron { color: #94a3b8 !important; }
+
+            /* Employee list */
+            .assign-emp-list {
+              padding: 6px 10px 10px;
+              display: flex; flex-direction: column; gap: 4px;
+            }
+
+            /* Employee row */
+            .assign-emp-row {
+              display: flex; align-items: center; gap: 12px;
+              padding: 10px 12px;
+              border-radius: 10px;
+              cursor: pointer;
+              transition: all 0.15s;
+              border: 1px solid transparent;
+            }
+            .assign-emp-row:hover {
+              background: rgba(255,255,255,0.05);
+              border-color: rgba(255,255,255,0.08);
+            }
+            [data-theme='light'] .assign-emp-row:hover {
+              background: #f1f5f9 !important;
+              border-color: #e2e8f0 !important;
+            }
+
+            /* Avatar */
+            .assign-avatar {
+              width: 38px; height: 38px; border-radius: 10px;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 14px; font-weight: 700;
+              flex-shrink: 0; overflow: hidden;
+              background: rgba(255,255,255,0.08);
+              border: 1px solid rgba(255,255,255,0.1);
+              color: #cbd5e1;
+            }
+            .assign-avatar img { width: 100%; height: 100%; object-fit: cover; }
+            [data-theme='light'] .assign-avatar {
+              background: #e2e8f0 !important;
+              border-color: rgba(0,0,0,0.06) !important;
+              color: #475569 !important;
+            }
+
+            /* Name + role */
+            .assign-emp-info { flex: 1; min-width: 0; }
+            .assign-emp-name {
+              font-size: 13px; font-weight: 600;
+              color: #e2e8f0;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              display: block;
+            }
+            [data-theme='light'] .assign-emp-name { color: #0f172a !important; }
+            .assign-emp-sub {
+              font-size: 11px; color: rgba(148,163,184,0.65);
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+              display: block; margin-top: 1px;
+            }
+            [data-theme='light'] .assign-emp-sub { color: #64748b !important; }
+
+            /* Skills chips */
+            .assign-skills {
+              display: flex; gap: 4px; flex-shrink: 0;
+            }
+            .assign-skill-chip {
+              font-size: 10px; font-weight: 600; padding: 2px 7px;
+              border-radius: 6px;
+              background: rgba(255,255,255,0.06);
+              border: 1px solid rgba(255,255,255,0.08);
+              color: rgba(148,163,184,0.75);
+              white-space: nowrap;
+            }
+            [data-theme='light'] .assign-skill-chip {
+              background: #e2e8f0 !important;
+              border-color: rgba(0,0,0,0.04) !important;
+              color: #475569 !important;
+            }
+
+            /* Add arrow icon on hover */
+            .assign-emp-arrow {
+              color: rgba(148,163,184,0.25);
+              flex-shrink: 0;
+              transition: all 0.15s;
+            }
+            .assign-emp-row:hover .assign-emp-arrow { color: rgba(148,163,184,0.7); transform: translateX(2px); }
+            [data-theme='light'] .assign-emp-arrow { color: #cbd5e1 !important; }
+            [data-theme='light'] .assign-emp-row:hover .assign-emp-arrow { color: #94a3b8 !important; }
+
+            /* Empty state */
+            .assign-empty {
+              padding: 32px 16px; text-align: center;
+              color: rgba(148,163,184,0.45); font-size: 13px;
+              display: flex; flex-direction: column; align-items: center; gap: 10px;
+            }
+            [data-theme='light'] .assign-empty { color: #94a3b8 !important; }
+            .assign-empty svg { opacity: 0.3; }
+          `}</style>
+
+          <div className="assign-modal animate-slide-up">
+            {/* Header */}
+            <div className="assign-modal-header">
+              <div className="assign-modal-title">
+                <div className="assign-modal-title-icon">
+                  <Users size={16} style={{ color: 'rgba(148,163,184,0.8)' }} />
+                </div>
                 <h3>Direcionar para Colaboradores</h3>
               </div>
-              <button className="premium-close-btn" onClick={() => { setAssignmentModal({ isOpen: false, shiftId: null }); setSearchTerm(''); }}>×</button>
+              <button className="assign-modal-close" onClick={() => { setAssignmentModal({ isOpen: false, shiftId: null }); setSearchTerm(''); }}>×</button>
             </div>
 
-            <div className="assignment-search-container py-4 px-6">
-              <div className="premium-search-input-wrapper">
-                <Search size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar colaborador ou habilidade..." 
-                  className="premium-search-input"
+            {/* Search */}
+            <div className="assign-search-box">
+              <div className="assign-search-inner">
+                <Search size={15} />
+                <input
+                  type="text"
+                  className="assign-search-input"
+                  placeholder="Buscar colaborador ou habilidade..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   autoFocus
                 />
               </div>
             </div>
-            
-            <div className="assignment-tabs flex-1 overflow-y-auto custom-scrollbar">
-              {/* SECTION: FIELD WORKERS */}
-              <div className="accordion-section-premium">
-                <button 
-                  className={`accordion-header-premium ${expandedCategory === 'field' ? 'active' : ''}`}
+
+            {/* Body */}
+            <div className="assign-modal-body">
+              {/* Colaboradores de Campo */}
+              <div>
+                <div
+                  className="assign-section-header"
                   onClick={() => setExpandedCategory(expandedCategory === 'field' ? '' : 'field')}
                 >
-                  <div className="header-left">
-                    <HardHat size={18} />
-                    <h4>Colaboradores de Campo</h4>
-                    <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
-                      {filteredFieldWorkers.length}
-                    </span>
+                  <div className="assign-section-left">
+                    <HardHat size={14} />
+                    <span className="assign-section-label">Colaboradores de Campo</span>
+                    <span className="assign-section-count">{filteredFieldWorkers.length}</span>
                   </div>
-                  {expandedCategory === 'field' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-                
-                <div className={`accordion-content-premium ${expandedCategory === 'field' ? 'active' : ''}`}>
-                  <div className="employee-grid-select">
-                    {filteredFieldWorkers.map(emp => (
-                      <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
-                        <div className="emp-avatar-premium">
-                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
+                  <ChevronDown size={14} className={`assign-section-chevron${expandedCategory === 'field' ? ' open' : ''}`} />
+                </div>
+
+                {expandedCategory === 'field' && (
+                  <div className="assign-emp-list">
+                    {filteredFieldWorkers.length === 0 ? (
+                      <div className="assign-empty">
+                        <UserX size={28} />
+                        <span>Nenhum colaborador encontrado</span>
+                      </div>
+                    ) : filteredFieldWorkers.map(emp => (
+                      <div
+                        key={emp.profile_id}
+                        className="assign-emp-row"
+                        onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}
+                      >
+                        <div className="assign-avatar">
+                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name?.[0]?.toUpperCase() || '?'}</span>}
                         </div>
-                        <div className="emp-details-premium">
-                          <span className="emp-name-premium">{emp.name}</span>
-                          <div className="emp-skills-preview flex gap-1 mt-1">
-                            {emp.skills?.slice(0, 2).map(s => <span key={s} className="skill-mini-tag">{s}</span>)}
+                        <div className="assign-emp-info">
+                          <span className="assign-emp-name">{emp.name}</span>
+                          {emp.skills?.length > 0 && (
+                            <span className="assign-emp-sub">{emp.skills.slice(0, 3).join(' · ')}</span>
+                          )}
+                        </div>
+                        {emp.skills?.length > 0 && (
+                          <div className="assign-skills">
+                            {emp.skills.slice(0, 2).map(s => <span key={s} className="assign-skill-chip">{s}</span>)}
                           </div>
-                        </div>
+                        )}
+                        <ChevronRight size={14} className="assign-emp-arrow" />
                       </div>
                     ))}
-                    {filteredFieldWorkers.length === 0 && (
-                      <div className="empty-state-premium">
-                        <UserX className="empty-state-icon" size={32} />
-                        <p>Nenhum colaborador de campo encontrado.</p>
-                      </div>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* SECTION: STAFF MEMBERS */}
-              <div className="accordion-section-premium">
-                <button 
-                  className={`accordion-header-premium ${expandedCategory === 'staff' ? 'active' : ''}`}
+              {/* Membros da Equipe */}
+              <div>
+                <div
+                  className="assign-section-header"
                   onClick={() => setExpandedCategory(expandedCategory === 'staff' ? '' : 'staff')}
                 >
-                  <div className="header-left">
-                    <Users size={18} />
-                    <h4>Membros da Equipe</h4>
-                    <span className="pending-badge-glow" style={{ fontSize: '0.6rem', padding: '1px 6px', opacity: 0.8 }}>
-                      {filteredStaffMembers.length}
-                    </span>
+                  <div className="assign-section-left">
+                    <Users size={14} />
+                    <span className="assign-section-label">Membros da Equipe</span>
+                    <span className="assign-section-count">{filteredStaffMembers.length}</span>
                   </div>
-                  {expandedCategory === 'staff' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-                
-                <div className={`accordion-content-premium ${expandedCategory === 'staff' ? 'active' : ''}`}>
-                  <div className="employee-grid-select">
-                    {filteredStaffMembers.map(emp => (
-                      <div key={emp.profile_id} className="assignment-emp-card pulse-on-hover" onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}>
-                        <div className="emp-avatar-premium">
-                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name[0]}</span>}
+                  <ChevronDown size={14} className={`assign-section-chevron${expandedCategory === 'staff' ? ' open' : ''}`} />
+                </div>
+
+                {expandedCategory === 'staff' && (
+                  <div className="assign-emp-list">
+                    {filteredStaffMembers.length === 0 ? (
+                      <div className="assign-empty">
+                        <UserX size={28} />
+                        <span>Nenhum membro encontrado</span>
+                      </div>
+                    ) : filteredStaffMembers.map(emp => (
+                      <div
+                        key={emp.profile_id}
+                        className="assign-emp-row"
+                        onClick={() => handleAddEmployee(emp.shift_profile_id || emp.profile_id, null, emp.is_external)}
+                      >
+                        <div className="assign-avatar">
+                          {emp.avatar_url ? <img src={emp.avatar_url} alt="" /> : <span>{emp.name?.[0]?.toUpperCase() || '?'}</span>}
                         </div>
-                        <div className="emp-details-premium">
-                          <span className="emp-name-premium">{emp.name}</span>
-                          <span className="emp-role-premium">{emp.role}</span>
+                        <div className="assign-emp-info">
+                          <span className="assign-emp-name">{emp.name}</span>
+                          {emp.role && <span className="assign-emp-sub">{emp.role}</span>}
                         </div>
+                        <ChevronRight size={14} className="assign-emp-arrow" />
                       </div>
                     ))}
-                    {filteredStaffMembers.length === 0 && (
-                      <div className="empty-state-premium">
-                        <UserX className="empty-state-icon" size={32} />
-                        <p>Nenhum membro da equipe encontrado.</p>
-                      </div>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
