@@ -10,7 +10,8 @@ import {
 } from '../services/notificationService';
 import {
   MoreHorizontal, Plus, AlertTriangle, Sparkles, Trash2, Edit2,
-  Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle, User
+  Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle, User,
+  FileText, ChevronDown, Flag, AlignLeft, Tag, Loader2
 } from 'lucide-react';
 import {
   DndContext, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor,
@@ -415,6 +416,11 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [formAssignees, setFormAssignees] = useState([]);
   const [formCustomer, setFormCustomer] = useState('');
   const [formAiResponse, setFormAiResponse] = useState('');
+  const [formPriority, setFormPriority] = useState('media');
+  const [formColumn, setFormColumn] = useState('backlog');
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [aiWriting, setAiWriting] = useState(false);
+  const [openPopover, setOpenPopover] = useState(null); // 'status'|'assignee'|'deadline'|'priority'|'customer'|null
   const [customers, setCustomers] = useState([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
 
@@ -501,7 +507,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           companyId: t.company_id,
           columnId: t.column_id,
           aiResponse: t.ai_response,
-          tagColor: t.tag_color
+          tagColor: t.tag_color,
+          priority: t.priority || 'media'
         }));
         
         setTasks(mapped);
@@ -540,10 +547,11 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
                 companyId: newTask.company_id,
                 columnId: newTask.column_id,
                 aiResponse: newTask.ai_response,
-                tagColor: newTask.tag_color
+                tagColor: newTask.tag_color,
+                priority: newTask.priority || 'media'
               });
             }
-          } 
+          }
           else if (payload.eventType === 'UPDATE') {
             const updatedTask = payload.new;
             updated = updated.map(t => t.id === updatedTask.id ? {
@@ -554,7 +562,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
               companyId: updatedTask.company_id,
               columnId: updatedTask.column_id,
               aiResponse: updatedTask.ai_response,
-              tagColor: updatedTask.tag_color
+              tagColor: updatedTask.tag_color,
+              priority: updatedTask.priority || 'media'
             } : t);
           } 
           else if (payload.eventType === 'DELETE') {
@@ -662,7 +671,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   const openAddModal = (colId) => {
     setNewTaskCol(colId);
-    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]); setFormCustomer(''); setFormAiResponse('');
+    setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]);
+    setFormCustomer(''); setFormAiResponse(''); setFormPriority('media');
+    setFormColumn(colId || 'backlog'); setDescExpanded(false); setOpenPopover(null);
     setIsAddingTask(true);
   };
 
@@ -674,16 +685,21 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     setFormAssignees(task.assignees || []);
     setFormCustomer(task.customer_name || '');
     setFormAiResponse(task.aiResponse || '');
+    setFormPriority(task.priority || 'media');
+    setFormColumn(task.columnId || 'backlog');
+    setDescExpanded(!!(task.desc));
+    setOpenPopover(null);
   };
 
   const handleAddTask = async (e) => {
     e.preventDefault();
     if (!formTitle.trim()) return;
-    
+
+    const targetCol = formColumn || newTaskCol || 'backlog';
     const newId = `t_${Date.now()}`;
     const newTask = {
       id: newId,
-      column_id: newTaskCol,
+      column_id: targetCol,
       title: formTitle.trim(),
       description: formDesc.trim(),
       tag: 'New',
@@ -693,17 +709,19 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       comments: [],
       company_id: currentCompany?.id,
       project_id: projectId,
-      customer_name: formCustomer
+      customer_name: formCustomer,
+      priority: formPriority || 'media'
     };
 
     // Optimistic Mapping
-    const mapped = { 
-      ...newTask, 
-      columnId: newTaskCol, 
-      desc: formDesc.trim(), 
-      tagColor: 'green', 
-      projectId, 
-      companyId: currentCompany?.id 
+    const mapped = {
+      ...newTask,
+      columnId: targetCol,
+      desc: formDesc.trim(),
+      tagColor: 'green',
+      projectId,
+      companyId: currentCompany?.id,
+      priority: formPriority || 'media'
     };
 
     // 1. Update State & Cache Immediately
@@ -739,14 +757,16 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       deadline: formDeadline || null,
       assignees: formAssignees,
       ai_response: null,
-      customer_name: formCustomer
+      customer_name: formCustomer,
+      priority: formPriority || 'media',
+      column_id: formColumn || prevTask.columnId || 'backlog'
     };
 
     let error;
     if (isCrmOverride) {
       const upsertPayload = {
         id: prevTask.id,
-        column_id: prevTask.columnId || 'backlog',
+        column_id: formColumn || prevTask.columnId || 'backlog',
         project_id: projectId,
         company_id: currentCompany?.id,
         title: formTitle.trim(),
@@ -754,7 +774,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         deadline: formDeadline || null,
         assignees: formAssignees,
         ai_response: formAiResponse.trim() || null,
-        customer_name: formCustomer
+        customer_name: formCustomer,
+        priority: formPriority || 'media'
       };
       const res = await supabase.from('tasks').upsert(upsertPayload);
       error = res.error;
@@ -771,7 +792,9 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
         deadline: formDeadline || null,
         assignees: formAssignees,
         aiResponse: isCrmOverride ? (formAiResponse.trim() || null) : null,
-        isAiLoading: false
+        isAiLoading: false,
+        priority: formPriority || 'media',
+        columnId: formColumn || prevTask.columnId || 'backlog'
       };
       
       setTasks(prev => {
@@ -1103,89 +1126,293 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     setDragStartColumn(null);
   };
 
-  const closeModal = () => { setIsAddingTask(false); setEditingTask(null); };
+  const closeModal = () => {
+    setIsAddingTask(false);
+    setEditingTask(null);
+    setOpenPopover(null);
+  };
 
-  // Shared Modal Form JSX
-  const renderModalForm = (isEditing, onSubmit) => (
-    <div
-      style={{ position: 'fixed', inset: 0, zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onClick={closeModal}
-    >
+  const PRIORITY_OPTIONS = [
+    { value: 'baixa',   label: 'Baixa',   color: '#64748b' },
+    { value: 'media',   label: 'Média',   color: '#3b82f6' },
+    { value: 'alta',    label: 'Alta',    color: '#f97316' },
+    { value: 'urgente', label: 'Urgente', color: '#ef4444' },
+  ];
+
+  const handleWriteWithAI = async () => {
+    if (!formTitle.trim()) return;
+    setAiWriting(true);
+    setDescExpanded(true);
+    try {
+      const suggestion = await processTaskWithAI(formTitle.trim(), currentCompany?.id, true);
+      setFormDesc(suggestion || '');
+    } catch {
+      setFormDesc('');
+    } finally {
+      setAiWriting(false);
+    }
+  };
+
+  // Shared Modal Form JSX — redesign estilo ClickUp
+  const renderModalForm = (isEditing, onSubmit) => {
+    const currentPriority = PRIORITY_OPTIONS.find(p => p.value === formPriority) || PRIORITY_OPTIONS[1];
+    const currentCol = COLUMNS.find(c => c.id === formColumn) || COLUMNS[0];
+    const isCrmTask = editingTask?.id?.toString().startsWith('crm-');
+
+    return (
       <div
-        className="km-modal animate-slide-up"
-        onClick={e => e.stopPropagation()}
+        className="km-overlay"
+        onClick={closeModal}
       >
-        <div className="km-modal-header">
-          <h3><Edit2 size={17} style={{ color: 'var(--accent-cyan)' }} /> {isEditing ? 'Editar Tarefa' : `Nova Tarefa — ${COLUMNS.find(c => c.id === newTaskCol)?.title}`}</h3>
-          <button className="km-modal-close" onClick={closeModal}><X size={18} /></button>
-        </div>
-        <form onSubmit={onSubmit}>
-          <div className="km-modal-body">
-            <div className="km-field">
-              <label>Título <span className="km-required">*</span></label>
+        <div
+          className="km-modal km-modal--clickup animate-slide-up"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* ── Aba única "Tarefa" ── */}
+          <div className="km-tabs">
+            <button type="button" className="km-tab km-tab--active">
+              <Edit2 size={13} /> Tarefa
+            </button>
+            <button type="button" className="km-tab km-tab--disabled" disabled title="Em breve">
+              <FileText size={13} /> Doc
+            </button>
+            <button type="button" className="km-tab km-tab--disabled" disabled title="Em breve">
+              <MessageSquare size={13} /> Chat
+            </button>
+            <div className="km-tabs-spacer" />
+            <button type="button" className="km-modal-close" onClick={closeModal}><X size={18} /></button>
+          </div>
+
+          <form onSubmit={onSubmit}>
+            <div className="km-modal-body">
+              {/* ── Linha de contexto: cliente + tipo ── */}
+              <div className="km-context-row">
+                <div className="km-context-pill-wrap">
+                  <button
+                    type="button"
+                    className={`km-context-pill ${openPopover === 'customer' ? 'km-context-pill--active' : ''}`}
+                    onClick={() => setOpenPopover(openPopover === 'customer' ? null : 'customer')}
+                  >
+                    <Users size={13} />
+                    <span>{formCustomer || 'Cliente'}</span>
+                    <ChevronDown size={11} />
+                  </button>
+                  {openPopover === 'customer' && (
+                    <div className="km-popover km-popover--customer">
+                      <div className="km-popover-header">Cliente (CRM)</div>
+                      <button
+                        type="button"
+                        className={`km-popover-option ${!formCustomer ? 'active' : ''}`}
+                        onClick={() => { setFormCustomer(''); setOpenPopover(null); }}
+                      >Nenhum</button>
+                      {customers.map(name => (
+                        <button
+                          key={name}
+                          type="button"
+                          className={`km-popover-option ${formCustomer === name ? 'active' : ''}`}
+                          onClick={() => { setFormCustomer(name); setOpenPopover(null); }}
+                        >{name}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="km-context-pill-wrap">
+                  <button
+                    type="button"
+                    className={`km-context-pill ${openPopover === 'status' ? 'km-context-pill--active' : ''}`}
+                    onClick={() => setOpenPopover(openPopover === 'status' ? null : 'status')}
+                  >
+                    <span className="km-status-dot" style={{ background: currentCol.isHighlighted ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.4)' }} />
+                    <span>{currentCol.title}</span>
+                    <ChevronDown size={11} />
+                  </button>
+                  {openPopover === 'status' && (
+                    <div className="km-popover">
+                      <div className="km-popover-header">Coluna</div>
+                      {COLUMNS.map(col => (
+                        <button
+                          key={col.id}
+                          type="button"
+                          className={`km-popover-option ${formColumn === col.id ? 'active' : ''}`}
+                          onClick={() => { setFormColumn(col.id); setOpenPopover(null); }}
+                        >{col.title}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Título grande sem borda ── */}
               <input
                 autoFocus
                 type="text"
-                placeholder="Ex: Revisar contrato"
+                className="km-title-input"
+                placeholder="Nome do chamado ou tarefa…"
                 value={formTitle}
                 onChange={e => setFormTitle(e.target.value)}
                 required
               />
-            </div>
 
-            <div className="km-field">
-              <label>Cliente (CRM)</label>
-              <select
-                value={formCustomer}
-                onChange={e => setFormCustomer(e.target.value)}
-                className="km-select"
-                disabled={loadingCustomers}
-              >
-                <option value="">Selecione um cliente...</option>
-                {customers.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
-            </div>
+              {/* ── Descrição colapsável + Escrever com IA ── */}
+              {!descExpanded ? (
+                <div className="km-desc-actions">
+                  <button type="button" className="km-desc-trigger" onClick={() => setDescExpanded(true)}>
+                    <AlignLeft size={14} /> Adicionar descrição
+                  </button>
+                  <button
+                    type="button"
+                    className="km-ai-write-btn"
+                    onClick={handleWriteWithAI}
+                    disabled={!formTitle.trim() || aiWriting}
+                  >
+                    {aiWriting
+                      ? <><Loader2 size={13} className="km-spin" /> Escrevendo…</>
+                      : <><Sparkles size={13} /> Escrever com IA</>
+                    }
+                  </button>
+                </div>
+              ) : (
+                <div className="km-desc-expanded">
+                  <div className="km-desc-toolbar">
+                    <span className="km-desc-label"><AlignLeft size={12} /> Descrição</span>
+                    <button
+                      type="button"
+                      className="km-ai-write-btn km-ai-write-btn--inline"
+                      onClick={handleWriteWithAI}
+                      disabled={!formTitle.trim() || aiWriting}
+                    >
+                      {aiWriting
+                        ? <><Loader2 size={13} className="km-spin" /> Escrevendo…</>
+                        : <><Sparkles size={13} /> Escrever com IA</>
+                      }
+                    </button>
+                  </div>
+                  <textarea
+                    className="km-desc-textarea"
+                    placeholder="Descreva o chamado ou tarefa…"
+                    value={formDesc}
+                    onChange={e => setFormDesc(e.target.value)}
+                    rows={4}
+                    autoFocus={!formTitle}
+                  />
+                </div>
+              )}
 
-            <div className="km-field">
-              <label>Descrição</label>
-              <textarea placeholder="Descreva a tarefa..." value={formDesc} onChange={e => setFormDesc(e.target.value)} rows={3} />
-            </div>
+              {/* ── Resposta CRM (apenas ao editar chamados CRM) ── */}
+              {isCrmTask && (
+                <div className="km-field km-field--crm">
+                  <label><Sparkles size={13} className="text-accent" /> Resposta para o Cliente (CRM)</label>
+                  <textarea
+                    placeholder="Edite a sugestão ou escreva a resolução..."
+                    value={formAiResponse}
+                    onChange={e => setFormAiResponse(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              )}
 
-            {editingTask?.id?.toString().startsWith('crm-') && (
-              <div className="km-field">
-                <label>
-                  <Sparkles size={13} className="text-accent" />
-                  Resposta para o Cliente (CRM)
-                </label>
-                <textarea
-                  placeholder="Edite a sugestão de resposta gerada pela IA ou digite a resolução..."
-                  value={formAiResponse}
-                  onChange={e => setFormAiResponse(e.target.value)}
-                  rows={4}
-                />
+              {/* ── Pílulas de propriedade ── */}
+              <div className="km-props-row">
+                {/* Responsáveis */}
+                <div className="km-prop-wrap">
+                  <button
+                    type="button"
+                    className={`km-prop-pill ${openPopover === 'assignee' ? 'km-prop-pill--active' : ''} ${formAssignees.length ? 'km-prop-pill--filled' : ''}`}
+                    onClick={() => setOpenPopover(openPopover === 'assignee' ? null : 'assignee')}
+                  >
+                    <Users size={13} />
+                    {formAssignees.length
+                      ? `${formAssignees.length} responsável${formAssignees.length > 1 ? 'is' : ''}`
+                      : 'Responsável'
+                    }
+                  </button>
+                  {openPopover === 'assignee' && (
+                    <div className="km-popover km-popover--assignee">
+                      <div className="km-popover-header">Responsáveis</div>
+                      <AssigneePicker companyMembers={companyMembers} selected={formAssignees} onChange={setFormAssignees} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Prazo */}
+                <div className="km-prop-wrap">
+                  <button
+                    type="button"
+                    className={`km-prop-pill ${openPopover === 'deadline' ? 'km-prop-pill--active' : ''} ${formDeadline ? 'km-prop-pill--filled' : ''}`}
+                    onClick={() => setOpenPopover(openPopover === 'deadline' ? null : 'deadline')}
+                  >
+                    <Calendar size={13} />
+                    {formDeadline
+                      ? new Date(formDeadline + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                      : 'Prazo'
+                    }
+                  </button>
+                  {openPopover === 'deadline' && (
+                    <div className="km-popover km-popover--date">
+                      <div className="km-popover-header">Prazo / Deadline</div>
+                      <input
+                        type="date"
+                        className="km-date-input"
+                        value={formDeadline}
+                        onChange={e => { setFormDeadline(e.target.value); if (e.target.value) setOpenPopover(null); }}
+                        autoFocus
+                      />
+                      {formDeadline && (
+                        <button type="button" className="km-popover-clear" onClick={() => { setFormDeadline(''); setOpenPopover(null); }}>
+                          Limpar prazo
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Prioridade */}
+                <div className="km-prop-wrap">
+                  <button
+                    type="button"
+                    className={`km-prop-pill km-prop-pill--priority ${openPopover === 'priority' ? 'km-prop-pill--active' : ''}`}
+                    style={{ '--priority-color': currentPriority.color }}
+                    onClick={() => setOpenPopover(openPopover === 'priority' ? null : 'priority')}
+                  >
+                    <Flag size={13} style={{ color: currentPriority.color }} />
+                    {currentPriority.label}
+                  </button>
+                  {openPopover === 'priority' && (
+                    <div className="km-popover">
+                      <div className="km-popover-header">Prioridade</div>
+                      {PRIORITY_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`km-popover-option km-popover-option--priority ${formPriority === opt.value ? 'active' : ''}`}
+                          onClick={() => { setFormPriority(opt.value); setOpenPopover(null); }}
+                        >
+                          <Flag size={12} style={{ color: opt.color }} /> {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tag/Categoria (info) */}
+                <div className="km-prop-pill km-prop-pill--tag">
+                  <Tag size={13} /> Chamado
+                </div>
               </div>
-            )}
-            <div className="km-two-col">
-              <div className="km-field">
-                <label><Calendar size={13} /> Prazo / Deadline</label>
-                <input type="date" value={formDeadline} onChange={e => setFormDeadline(e.target.value)} />
-              </div>
             </div>
-            <div className="km-field">
-              <label><Users size={13} /> Responsáveis</label>
-              <AssigneePicker companyMembers={companyMembers} selected={formAssignees} onChange={setFormAssignees} />
+
+            {/* ── Rodapé ── */}
+            <div className="km-modal-footer km-modal-footer--clickup">
+              <button type="button" className="km-btn-cancel" onClick={closeModal}>Cancelar</button>
+              <button type="submit" className="km-btn-submit" disabled={!formTitle.trim()}>
+                {isEditing ? 'Salvar Alterações' : 'Criar Tarefa'}
+              </button>
             </div>
-          </div>
-          <div className="km-modal-footer">
-            <button type="button" className="km-btn-cancel" onClick={closeModal}>Cancelar</button>
-            <button type="submit" className="km-btn-submit">{isEditing ? 'Salvar Alterações' : 'Criar Tarefa'}</button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="kanban-wrapper">

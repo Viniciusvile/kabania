@@ -487,9 +487,22 @@
 }
 
 /* ============================================
-   Kanban Modal (Add/Edit Task)
+   Kanban Modal — Redesign ClickUp style
    ============================================ */
 
+/* Overlay */
+.km-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal base */
 .km-modal {
   background: rgba(12, 12, 16, 0.88);
   backdrop-filter: blur(32px) saturate(200%);
@@ -735,6 +748,419 @@
   transform: translateY(-1px);
 }
 
+.km-btn-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Modal ClickUp variant ──────────────────── */
+.km-modal--clickup {
+  width: 560px;
+}
+
+/* ── Linha de abas (topo) ── */
+.km-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.02);
+  flex-shrink: 0;
+}
+
+.km-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.45);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s;
+  margin-bottom: -1px;
+}
+
+.km-tab--active {
+  color: rgba(255,255,255,0.9);
+  border-bottom-color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.km-tab--disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.km-tabs-spacer { flex: 1; }
+
+/* ── Linha de contexto (cliente + coluna) ── */
+.km-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px 0;
+  flex-wrap: wrap;
+}
+
+.km-context-pill-wrap {
+  position: relative;
+}
+
+.km-context-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.km-context-pill:hover,
+.km-context-pill--active {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.9);
+}
+
+.km-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Título grande sem borda ── */
+.km-title-input {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  padding: 12px 20px 4px;
+  font-family: inherit;
+  line-height: 1.3;
+  box-sizing: border-box;
+}
+
+.km-title-input::placeholder {
+  color: rgba(255,255,255,0.22);
+  font-weight: 400;
+}
+
+/* ── Descrição: trigger colapsado ── */
+.km-desc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 20px 2px;
+  flex-wrap: wrap;
+}
+
+.km-desc-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+
+.km-desc-trigger:hover { color: rgba(255,255,255,0.7); }
+
+/* ── Botão "Escrever com IA" ── */
+.km-ai-write-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,180,216,0.1);
+  border: 1px solid rgba(0,180,216,0.25);
+  color: var(--accent-cyan);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+
+.km-ai-write-btn:hover:not(:disabled) {
+  background: rgba(0,180,216,0.18);
+  border-color: rgba(0,180,216,0.5);
+  box-shadow: 0 0 12px rgba(0,180,216,0.2);
+}
+
+.km-ai-write-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.km-ai-write-btn--inline {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+}
+
+/* ── Spin animation para IA loading ── */
+@keyframes km-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.km-spin { animation: km-spin 0.8s linear infinite; }
+
+/* ── Descrição expandida ── */
+.km-desc-expanded {
+  padding: 4px 20px 0;
+}
+
+.km-desc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.km-desc-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.4);
+}
+
+.km-desc-textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.88);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s;
+  line-height: 1.5;
+}
+
+.km-desc-textarea:focus {
+  border-color: rgba(255,255,255,0.22);
+}
+
+/* ── Campo CRM (resposta) ── */
+.km-field--crm {
+  padding: 0 20px;
+}
+
+.km-field--crm label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.km-field--crm textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.88);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.18s;
+}
+
+.km-field--crm textarea:focus {
+  border-color: rgba(255,255,255,0.22);
+}
+
+/* ── Pílulas de propriedade ── */
+.km-props-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px 2px;
+  flex-wrap: wrap;
+}
+
+.km-prop-wrap {
+  position: relative;
+}
+
+.km-prop-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.km-prop-pill:hover,
+.km-prop-pill--active {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.85);
+}
+
+.km-prop-pill--filled {
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.07);
+}
+
+.km-prop-pill--priority {
+  border-color: rgba(var(--priority-color), 0.3);
+  color: var(--priority-color);
+}
+
+.km-prop-pill--tag {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* ── Popovers ── */
+.km-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  min-width: 180px;
+  background: rgba(18, 18, 28, 0.96);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+  backdrop-filter: blur(20px);
+  padding: 6px;
+  animation: km-appear 0.15s ease;
+}
+
+.km-popover--customer,
+.km-popover--assignee {
+  min-width: 220px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.km-popover--date {
+  min-width: 200px;
+}
+
+.km-popover-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.35);
+  padding: 4px 8px 6px;
+}
+
+.km-popover-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.82rem;
+  font-family: inherit;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+}
+
+.km-popover-option:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.95); }
+.km-popover-option.active { background: rgba(255,255,255,0.1); color: #fff; font-weight: 600; }
+
+.km-popover-option--priority { }
+
+.km-popover-clear {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.4);
+  font-size: 0.75rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s;
+}
+.km-popover-clear:hover { color: #f87171; }
+
+/* Date input dentro do popover */
+.km-date-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.88);
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  color-scheme: dark;
+}
+
+/* ── Rodapé ClickUp ── */
+.km-modal-footer--clickup {
+  padding: 10px 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* ── Modal body padding reset para ClickUp ── */
+.km-modal--clickup .km-modal-body {
+  padding: 0;
+  gap: 10px;
+}
+
 /* ============================================
    Unified Card Tags — mesma altura/padding/raio, cor por tipo
    ============================================ */
@@ -814,6 +1240,129 @@
 
 .km-select:focus {
   border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================================
+   LIGHT MODE — Modal ClickUp
+   ============================================================ */
+
+[data-theme='light'] .km-tabs {
+  border-bottom-color: rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);
+}
+
+[data-theme='light'] .km-tab {
+  color: rgba(0,0,0,0.38);
+}
+
+[data-theme='light'] .km-tab--active {
+  color: #0F172A;
+  border-bottom-color: #0052CC;
+}
+
+[data-theme='light'] .km-context-pill {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.1);
+  color: #475569;
+}
+
+[data-theme='light'] .km-context-pill:hover,
+[data-theme='light'] .km-context-pill--active {
+  background: rgba(0,0,0,0.08);
+  border-color: rgba(0,0,0,0.2);
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-title-input {
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-title-input::placeholder {
+  color: rgba(0,0,0,0.25);
+}
+
+[data-theme='light'] .km-desc-trigger {
+  color: rgba(0,0,0,0.35);
+}
+
+[data-theme='light'] .km-desc-trigger:hover { color: #475569; }
+
+[data-theme='light'] .km-ai-write-btn {
+  background: rgba(0,82,204,0.08);
+  border-color: rgba(0,82,204,0.22);
+  color: #0052CC;
+}
+
+[data-theme='light'] .km-ai-write-btn:hover:not(:disabled) {
+  background: rgba(0,82,204,0.14);
+  border-color: rgba(0,82,204,0.4);
+}
+
+[data-theme='light'] .km-desc-textarea,
+[data-theme='light'] .km-field--crm textarea {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.1);
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-desc-textarea:focus,
+[data-theme='light'] .km-field--crm textarea:focus {
+  border-color: rgba(0,82,204,0.4);
+}
+
+[data-theme='light'] .km-desc-label { color: rgba(0,0,0,0.4); }
+
+[data-theme='light'] .km-field--crm label { color: rgba(0,0,0,0.4); }
+
+[data-theme='light'] .km-prop-pill {
+  border-color: rgba(0,0,0,0.1);
+  color: #64748b;
+}
+
+[data-theme='light'] .km-prop-pill:hover,
+[data-theme='light'] .km-prop-pill--active {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.2);
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-prop-pill--filled {
+  background: rgba(0,0,0,0.05);
+  border-color: rgba(0,0,0,0.18);
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-popover {
+  background: rgba(255,255,255,0.98);
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+[data-theme='light'] .km-popover-header { color: rgba(0,0,0,0.38); }
+
+[data-theme='light'] .km-popover-option {
+  color: #334155;
+}
+
+[data-theme='light'] .km-popover-option:hover {
+  background: rgba(0,0,0,0.05);
+  color: #0F172A;
+}
+
+[data-theme='light'] .km-popover-option.active {
+  background: rgba(0,82,204,0.08);
+  color: #0052CC;
+}
+
+[data-theme='light'] .km-date-input {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.1);
+  color: #0F172A;
+  color-scheme: light;
+}
+
+[data-theme='light'] .km-modal-footer--clickup {
+  border-top-color: rgba(0,0,0,0.07);
 }
 
 /* ============================================================
