@@ -1,4 +1,4 @@
-﻿/* 💎 SHIFTS PREMIUM DESIGN SYSTEM */
+/* 💎 SHIFTS PREMIUM DESIGN SYSTEM */
 
 :root {
   --glass-bg: rgba(24, 26, 32, 0.8);
@@ -2204,27 +2204,119 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
 }
 
 [data-theme='light'] .premium-search-input {
-  background: #f1f5f9 !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
   color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+[data-theme='light'] .premium-search-input:focus {
+  border-color: #94a3b8 !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06) !important;
+}
+
+[data-theme='light'] .premium-search-input-wrapper svg {
+  color: #64748b;
 }
 
 [data-theme='light'] .assignment-search-container {
-  border-bottom-color: #f1f5f9;
+  border-bottom-color: #e2e8f0;
+  background: #ffffff;
 }
 
 [data-theme='light'] .accordion-section-premium {
   border-bottom-color: #f1f5f9;
 }
 
-[data-theme='light'] .btn-ask-brain {
-    background: #f8fafc;
-    border-color: rgba(0, 0, 0, 0.1);
+[data-theme='light'] .accordion-header-premium h4 {
+  color: #64748b;
 }
 
-/* 🌀 GLOBAL ACCENT OVERRIDE FOR LIGHT MODE */
+[data-theme='light'] .accordion-header-premium.active h4 {
+  color: #0f172a;
+}
+
+[data-theme='light'] .accordion-header-premium {
+  color: #475569;
+}
+
+[data-theme='light'] .accordion-header-premium:hover {
+  background: #f8fafc;
+}
+
+[data-theme='light'] .accordion-content-premium {
+  background: #ffffff;
+}
+
+[data-theme='light'] .assignment-emp-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme='light'] .assignment-emp-card:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.07) !important;
+}
+
+[data-theme='light'] .emp-avatar-premium {
+  background: #e2e8f0;
+  border-color: rgba(0,0,0,0.08);
+  color: #475569;
+}
+
+[data-theme='light'] .emp-name-premium {
+  color: #0f172a;
+}
+
+[data-theme='light'] .emp-role-premium {
+  color: #64748b;
+}
+
+[data-theme='light'] .skill-mini-tag {
+  background: #e2e8f0;
+  color: #475569;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+[data-theme='light'] .empty-state-premium {
+  background: #f8fafc;
+  border-color: rgba(0,0,0,0.06);
+  color: #94a3b8;
+}
+
+[data-theme='light'] .btn-ask-brain {
+  background: #f8fafc;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 🌀 GLOBAL ACCENT OVERRIDE FOR LIGHT MODE — neutral, sem azul no gradient btn */
 [data-theme='light'] {
   --accent-gradient: linear-gradient(135deg, #0088ff 0%, #0052cc 100%);
+}
+
+/* Botão "Bater Ponto" no light mode: padrão escuro do sistema */
+[data-theme='light'] .kabania-v2-gradient-btn {
+  background: #0f172a !important;
+  border: 1px solid #0f172a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18) !important;
+}
+
+[data-theme='light'] .kabania-v2-gradient-btn:hover:not(:disabled) {
+  background: #1e293b !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25) !important;
+  filter: none !important;
+}
+
+[data-theme='light'] .kabania-v2-gradient-btn:disabled {
+  background: #cbd5e1 !important;
+  border-color: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 /* 🛠️ MODAL OVERLAY (CLEAN - TRANSPARENT) */
