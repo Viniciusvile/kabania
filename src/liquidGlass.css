@@ -1712,6 +1712,12 @@ textarea.premium-input-field {
   background: rgba(255,255,255,0.6) !important;
   border-bottom-color: rgba(0,0,0,0.07) !important;
 }
+[data-theme='light'] .day-name {
+  color: rgba(15, 23, 42, 0.6) !important;
+}
+[data-theme='light'] .premium-day-num {
+  color: rgba(15, 23, 42, 0.9) !important;
+}
 [data-theme='light'] .grid-drag-container {
   background: rgba(0,0,0,0.015) !important;
 }
@@ -1721,7 +1727,19 @@ textarea.premium-input-field {
   box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
 }
 [data-theme='light'] .empty-day-pixel {
-  color: rgba(0,0,0,0.25) !important;
+  color: rgba(15, 23, 42, 0.45) !important;
+}
+[data-theme='light'] .controls-bar-pixel .glow-btn-ghost,
+[data-theme='light'] .controls-bar-pixel button:not(.glow-btn-primary):not(.active) {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  color: rgba(15, 23, 42, 0.7) !important;
+}
+[data-theme='light'] .controls-bar-pixel .glow-btn-ghost:hover,
+[data-theme='light'] .controls-bar-pixel button:not(.glow-btn-primary):not(.active):hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.14) !important;
+  color: rgba(15, 23, 42, 0.95) !important;
 }
 [data-theme='light'] .period-selector-pixel {
   background: rgba(255,255,255,0.75) !important;

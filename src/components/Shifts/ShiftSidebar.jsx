@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Clock, Plus, CheckCircle, MapPin, Activity, Timer, Layers, Search, GripVertical, LayoutGrid, AlertTriangle, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ShiftSidebar({ 
@@ -97,106 +97,7 @@ export default function ShiftSidebar({
 
   const handleDragEnd = () => setDraggingId(null);
 
-  const groupBtnStyle = (active) => ({
-    padding: '6px 8px',
-    borderRadius: '8px',
-    fontSize: '9px',
-    fontWeight: 800,
-    cursor: 'pointer',
-    border: active ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.05)',
-    background: active 
-      ? 'linear-gradient(135deg, rgba(0,194,255,0.08) 0%, rgba(0,114,255,0.12) 100%)' 
-      : 'rgba(255,255,255,0.02)',
-    color: active ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em',
-    transition: 'all 0.2s',
-    flex: 1,
-    textAlign: 'center',
-    boxShadow: active ? '0 0 10px rgba(255,255,255,0.08)' : 'none',
-  });
-
-  // ── Styles ────────────────────────────────────────────────────────────
-  const sidebarStyle = {
-    height: 'calc(100vh - 120px)',
-    maxHeight: '850px',
-    position: 'sticky',
-    top: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    borderRadius: '20px',
-    background: 'var(--bg-card, rgba(255,255,255,0.03))',
-    border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-  };
-
-  const tabStyle = (active) => ({
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 10px',
-    fontSize: '11px',
-    fontWeight: 800,
-    borderRadius: '12px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    cursor: 'pointer',
-    border: active ? '1px solid rgba(255,255,255,0.3)' : '1px solid transparent',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    background: active 
-      ? 'linear-gradient(135deg, rgba(0,194,255,0.1) 0%, rgba(0,114,255,0.15) 100%)' 
-      : 'transparent',
-    color: active ? 'var(--accent-cyan, rgba(255,255,255,0.85))' : 'var(--text-muted)',
-    boxShadow: active ? '0 0 20px rgba(255,255,255,0.15)' : 'none',
-  });
-
-  const cardBase = (isDragging, isRoutine, isUrgent) => ({
-    background: 'var(--bg-card, rgba(255,255,255,0.04))',
-    border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : isRoutine ? 'rgba(168,85,247,0.2)' : 'var(--border-color, rgba(255,255,255,0.08))'}`,
-    borderRadius: '16px',
-    padding: '0.875rem',
-    position: 'relative',
-    overflow: 'hidden',
-    transition: 'all 0.25s cubic-bezier(0.175,0.885,0.32,1.275)',
-    cursor: 'grab',
-    opacity: isDragging ? 0.5 : 1,
-    boxShadow: isDragging ? '0 0 0 2px var(--accent-cyan)' : '0 2px 8px rgba(0,0,0,0.06)',
-    userSelect: 'none',
-  });
-
-  const badgeStyle = (color = 'cyan') => {
-    const colors = {
-      cyan: { bg: 'rgba(255,255,255,0.1)', text: 'var(--accent-cyan, rgba(255,255,255,0.85))', border: 'rgba(255,255,255,0.2)' },
-      purple: { bg: 'rgba(168,85,247,0.1)', text: '#c084fc', border: 'rgba(168,85,247,0.2)' },
-      red: { bg: 'rgba(239,68,68,0.1)', text: '#f87171', border: 'rgba(239,68,68,0.2)' },
-      orange: { bg: 'rgba(249,115,22,0.1)', text: '#fb923c', border: 'rgba(249,115,22,0.2)' },
-      green: { bg: 'rgba(34,197,94,0.1)', text: '#4ade80', border: 'rgba(34,197,94,0.2)' },
-    };
-    const c = colors[color] || colors.cyan;
-    return {
-      display: 'inline-flex', alignItems: 'center', gap: '4px',
-      fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
-      padding: '2px 8px', borderRadius: '6px',
-      background: c.bg, color: c.text, border: `1px solid ${c.border}`,
-    };
-  };
-
-  const scheduleBtn = (isRoutine) => ({
-    display: 'flex', alignItems: 'center', gap: '5px',
-    padding: '6px 14px', borderRadius: '8px', border: 'none',
-    fontSize: '11px', fontWeight: 800, cursor: 'pointer',
-    background: isRoutine
-      ? 'rgba(168,85,247,0.15)'
-      : 'var(--accent-cyan)',
-    color: isRoutine ? '#c084fc' : 'var(--bg-app)',
-    transition: 'all 0.2s',
-    boxShadow: isRoutine ? 'none' : '0 4px 12px var(--accent-cyan-dim)',
-  });
+  // Style helpers removed in favor of semantic CSS classes
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -247,14 +148,6 @@ export default function ShiftSidebar({
 
     // Resolve severity
     const severity = act.severidade || (act.type?.toLowerCase().includes('urgente') || act.status === 'priority' || act.status === 'urgent' ? 'alta' : 'media');
-    
-    const severityColors = {
-      alta: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.2)', text: '#f87171', bar: '#ef4444' },
-      media: { bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.2)', text: '#fb923c', bar: '#f97316' },
-      baixa: { bg: 'rgba(34,197,94,0.1)', border: 'rgba(34,197,94,0.2)', text: '#4ade80', bar: '#22c55e' }
-    };
-    
-    const sev = severityColors[severity?.toLowerCase()] || severityColors.media;
 
     // SLA calculations
     let slaContent = null, slaColor = 'green';
@@ -271,134 +164,61 @@ export default function ShiftSidebar({
         draggable
         onDragStart={(e) => handleDragStart(e, act, false)}
         onDragEnd={handleDragEnd}
+        className={`sidebar-card-premium ${draggingId === act.id ? 'dragging' : ''} ${severity?.toLowerCase()}`}
         style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: `1px solid ${draggingId === act.id ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.06)'}`,
-          borderRadius: '12px',
-          padding: '8px 10px',
-          position: 'relative',
-          cursor: 'grab',
-          opacity: draggingId === act.id ? 0.5 : 1,
-          transition: 'all 0.25s ease',
-          userSelect: 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          backdropFilter: 'blur(10px)',
           animationDelay: `${index * 0.04}s`
         }}
         title="Arraste para o calendário ou clique em Agendar"
       >
         {/* Left accent line based on severity */}
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '3px',
-          background: sev.bar,
-          borderRadius: '12px 0 0 12px'
-        }} />
+        <div className="sidebar-card-accent-line" />
 
         {/* Header: Condomínio e Gravidade */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', maxWidth: '75%' }}>
-            <MapPin size={9} style={{ color: 'var(--accent-cyan, rgba(255,255,255,0.85))', flexShrink: 0 }} />
-            <span style={{ 
-              fontSize: '9px', 
-              fontWeight: 800, 
-              color: 'var(--text-muted, #94a3b8)', 
-              whiteSpace: 'nowrap', 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis' 
-            }}>
+        <div className="sidebar-card-header">
+          <div className="sidebar-card-header-left">
+            <MapPin size={9} className="sidebar-card-header-icon" />
+            <span className="sidebar-card-header-text">
               {condo}
             </span>
           </div>
-          <span style={{
-            fontSize: '8px',
-            fontWeight: 900,
-            textTransform: 'uppercase',
-            padding: '1px 5px',
-            borderRadius: '4px',
-            background: sev.bg,
-            border: `1px solid ${sev.border}`,
-            color: sev.text,
-            letterSpacing: '0.04em'
-          }}>
+          <span className={`severity-badge ${severity?.toLowerCase()}`}>
             {severity?.toUpperCase()}
           </span>
         </div>
 
         {/* Title */}
-        <div style={{
-          fontSize: '11px',
-          fontWeight: 800,
-          color: '#fff',
-          lineHeight: '1.25',
-          paddingLeft: '2px'
-        }}>
+        <div className="sidebar-card-title">
           {cleanTitle}
         </div>
 
         {/* Description */}
         {cleanDesc && (
-          <div style={{
-            fontSize: '9px',
-            color: 'rgba(255,255,255,0.45)',
-            lineHeight: '1.35',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            paddingLeft: '2px'
-          }}>
+          <div className="sidebar-card-desc">
             {cleanDesc}
           </div>
         )}
 
         {/* Sync loading state indicator */}
         {act.isOptimistic && (
-          <div style={{ 
-            fontSize: '8px', 
-            color: 'var(--accent-cyan, rgba(255,255,255,0.85))', 
-            fontWeight: 800, 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '3px',
-            opacity: 0.8,
-            paddingLeft: '2px'
-          }}>
+          <div className="sidebar-card-sync">
             <Timer size={8} className="animate-spin" /> RESTAURANDO DO BANCO...
           </div>
         )}
 
         {/* Footer: Date, Source label, and Quick button */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderTop: '1px solid rgba(255,255,255,0.04)',
-          paddingTop: '5px',
-          marginTop: '2px'
-        }}>
+        <div className="sidebar-card-footer">
           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <span style={{
-              fontSize: '8px',
-              color: 'rgba(255,255,255,0.3)',
-              fontWeight: 700
-            }}>
+            <span className="sidebar-card-source">
               {isCrm ? '🔌 CRM' : isKanban ? '📋 KANBAN' : '📥 SOLICITAÇÃO'}
             </span>
             <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)' }}>•</span>
-            <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+            <span className="sidebar-card-time">
               {getTimeAgo(act.created_at || act.created)}
             </span>
             {slaContent && (
               <>
                 <span style={{ fontSize: '8px', color: 'rgba(255,255,255,0.2)' }}>•</span>
-                <span style={badgeStyle(slaColor)}>
+                <span className={`sidebar-badge ${slaColor}`}>
                   {slaContent}
                 </span>
               </>
@@ -406,20 +226,6 @@ export default function ShiftSidebar({
           </div>
           <button
             onClick={() => onQuickSchedule(act)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: 'rgba(255,255,255,0.85)',
-              padding: '2px 6px',
-              borderRadius: '5px',
-              fontSize: '9px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px',
-              transition: 'all 0.2s',
-            }}
             className="quick-schedule-btn"
           >
             <Plus size={9} /> Agendar
@@ -431,7 +237,7 @@ export default function ShiftSidebar({
 
   return (
     <aside 
-      style={{ ...sidebarStyle, position: 'relative' }}
+      className="shifts-sidebar-premium"
       onDragOver={(e) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -473,37 +279,27 @@ export default function ShiftSidebar({
         </div>
       )}
       {/* ── Tabs ── */}
-      <div style={{ display: 'flex', padding: '10px', gap: '6px', borderBottom: '1px solid var(--border-color, rgba(255,255,255,0.07))' }}>
-        <button style={tabStyle(activeTab === 'pending')} onClick={() => setActiveTab('pending')}>
+      <div className="sidebar-tabs-container">
+        <button 
+          className={`sidebar-tab-premium ${activeTab === 'pending' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('pending')}
+        >
           <LayoutGrid size={13} />
           WORKSPACE
           {pendingActivities.length > 0 && (
-            <span style={{ 
-              background: 'rgba(255,255,255,0.1)', 
-              color: 'var(--accent-cyan)', 
-              border: '1px solid rgba(255,255,255,0.3)',
-              fontSize: '10px', 
-              padding: '2px 8px', 
-              borderRadius: '99px', 
-              fontWeight: 900 
-            }}>
+            <span className="sidebar-tab-count">
               {pendingActivities.length}
             </span>
           )}
         </button>
-        <button style={tabStyle(activeTab === 'routine')} onClick={() => setActiveTab('routine')}>
+        <button 
+          className={`sidebar-tab-premium ${activeTab === 'routine' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('routine')}
+        >
           <Layers size={13} />
           ATIVIDADES
           {routineActivities.length > 0 && (
-            <span style={{ 
-              background: activeTab === 'routine' ? 'rgba(168,85,247,0.1)' : 'rgba(255,255,255,0.05)', 
-              color: activeTab === 'routine' ? '#c084fc' : 'var(--text-muted)', 
-              border: `1px solid ${activeTab === 'routine' ? 'rgba(168,85,247,0.3)' : 'transparent'}`,
-              fontSize: '10px', 
-              padding: '2px 8px', 
-              borderRadius: '99px', 
-              fontWeight: 900 
-            }}>
+            <span className="sidebar-tab-count routine-badge">
               {routineActivities.length}
             </span>
           )}
@@ -511,29 +307,38 @@ export default function ShiftSidebar({
       </div>
 
       {/* ── Search ── */}
-      <div style={{ padding: '10px 12px 6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', padding: '8px 12px', borderRadius: '10px' }}>
+      <div className="sidebar-search-wrapper">
+        <div className="sidebar-search-container">
           <Search size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="text"
             placeholder={`Buscar no ${activeTab === 'pending' ? 'Workspace' : 'Atividades'}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-main)', fontSize: '11px', width: '100%' }}
+            className="sidebar-search-input"
           />
         </div>
       </div>
 
       {/* ── Agrupamento (Somente para Workspace) ── */}
       {activeTab === 'pending' && (
-        <div style={{ padding: '2px 12px 8px', display: 'flex', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <button style={groupBtnStyle(groupingMode === 'none')} onClick={() => setGroupingMode('none')}>
+        <div className="sidebar-group-wrapper">
+          <button 
+            className={`sidebar-group-btn ${groupingMode === 'none' ? 'active' : ''}`} 
+            onClick={() => setGroupingMode('none')}
+          >
             Sem Agrupamento
           </button>
-          <button style={groupBtnStyle(groupingMode === 'condominio')} onClick={() => setGroupingMode('condominio')}>
+          <button 
+            className={`sidebar-group-btn ${groupingMode === 'condominio' ? 'active' : ''}`} 
+            onClick={() => setGroupingMode('condominio')}
+          >
             Condomínio
           </button>
-          <button style={groupBtnStyle(groupingMode === 'categoria')} onClick={() => setGroupingMode('categoria')}>
+          <button 
+            className={`sidebar-group-btn ${groupingMode === 'categoria' ? 'active' : ''}`} 
+            onClick={() => setGroupingMode('categoria')}
+          >
             Categoria
           </button>
         </div>
@@ -542,16 +347,16 @@ export default function ShiftSidebar({
       {/* Auto-Pilot removido do Workspace - era exclusivo de solicitações */}
 
       {/* ── Drag Hint ── */}
-      <div style={{ padding: '4px 12px 2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className="sidebar-drag-hint">
         <GripVertical size={11} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
-        <span style={{ fontSize: '9px', fontWeight: 700, opacity: 0.35, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <span>
           Arraste para o calendário
         </span>
       </div>
 
       {/* ── Card List ── */}
-      <div style={{ flex: 1, padding: '8px 12px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}
-        className="custom-scrollbar"
+      <div 
+        className="sidebar-card-list custom-scrollbar"
       >
         {/* WORKSPACE: Service Requests + Kanban Tasks */}
         {activeTab === 'pending' && groupingMode === 'none' && filteredPending.map((act, index) => renderPendingCard(act, index))}
@@ -559,41 +364,16 @@ export default function ShiftSidebar({
         {activeTab === 'pending' && groupingMode !== 'none' && Object.entries(groupedPending || {}).map(([groupName, items]) => {
           const isCollapsed = !!collapsedGroups[groupName];
           return (
-            <div key={groupName} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div key={groupName} className="sidebar-group-section">
               <div 
                 onClick={() => toggleGroup(groupName)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '6px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  transition: 'background 0.2s'
-                }}
+                className="sidebar-group-header"
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', maxWidth: '85%' }}>
-                  <span style={{ 
-                    fontSize: '10px', 
-                    fontWeight: 800, 
-                    color: 'var(--accent-cyan, rgba(255,255,255,0.85))',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}>
+                  <span className="sidebar-group-title">
                     {groupName}
                   </span>
-                  <span style={{
-                    fontSize: '8px',
-                    fontWeight: 900,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: 'rgba(255,255,255,0.85)',
-                    padding: '1px 5px',
-                    borderRadius: '4px',
-                  }}>
+                  <span className="sidebar-group-count">
                     {items.length}
                   </span>
                 </div>
@@ -601,7 +381,7 @@ export default function ShiftSidebar({
               </div>
               
               {!isCollapsed && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingLeft: '2px' }}>
+                <div className="sidebar-group-items">
                   {items.map((act, index) => renderPendingCard(act, index))}
                 </div>
               )}
@@ -615,32 +395,33 @@ export default function ShiftSidebar({
           return (
             <div
               key={act.id}
-              style={{ ...cardBase(isDragging, true, false), animationDelay: `${index * 0.04}s` }}
+              className={`sidebar-card-premium routine-card ${isDragging ? 'dragging' : ''}`}
+              style={{ animationDelay: `${index * 0.04}s` }}
               draggable
               onDragStart={(e) => handleDragStart(e, act, true)}
               onDragEnd={handleDragEnd}
               title="Arraste para o calendário ou clique em Programar"
             >
               {/* Purple accent line */}
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '3px', height: '100%', background: 'linear-gradient(180deg, #a855f7, #7c3aed)', borderRadius: '16px 0 0 16px' }} />
+              <div className="sidebar-card-accent-line" />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
-                <span style={badgeStyle('purple')}>{truncateUUID(act.id)}</span>
-                <span style={{ fontSize: '9px', opacity: 0.4, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Rotina Corporativa</span>
+              <div className="sidebar-card-header">
+                <span className="sidebar-badge purple">{truncateUUID(act.id)}</span>
+                <span className="sidebar-routine-label">Rotina Corporativa</span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>
-                <Activity size={12} style={{ color: '#c084fc', flexShrink: 0 }} />
+              <div className="sidebar-routine-title">
+                <Activity size={12} className="sidebar-routine-icon" />
                 {act.location || act.name}
               </div>
 
-              <p style={{ fontSize: '11px', opacity: 0.5, marginBottom: '10px' }}>
+              <p className="sidebar-routine-desc">
                 {act.type ? `${act.type} — ` : ''}
                 Arraste para o grid ou clique para programar.
               </p>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px' }}>
-                <button style={scheduleBtn(true)} onClick={() => onQuickSchedule(act)}>
+              <div className="sidebar-card-footer routine-footer">
+                <button className="routine-schedule-btn" onClick={() => onQuickSchedule(act)}>
                   <Plus size={12} /> Programar
                 </button>
               </div>
@@ -651,8 +432,8 @@ export default function ShiftSidebar({
         {/* Empty state */}
         {((activeTab === 'pending' && filteredPending.length === 0) ||
           (activeTab === 'routine' && filteredRoutine.length === 0)) && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', gap: '1rem', opacity: 0.5 }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="sidebar-empty-state">
+            <div className="sidebar-empty-icon-wrapper">
               <CheckCircle size={28} style={{ color: '#10b981' }} />
             </div>
             <div style={{ textAlign: 'center' }}>
