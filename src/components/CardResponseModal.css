@@ -124,6 +124,21 @@
   color: var(--text-main);
 }
 
+/* Caixa read-only: sinaliza visualmente que o campo não é editável */
+.crm-modal-desc-box--readonly {
+  opacity: 0.75;
+  cursor: default;
+  border-style: dashed;
+  user-select: text;
+}
+
+.crm-readonly-hint {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
 .crm-modal-ai-box {
   background: var(--accent-cyan-dim);
   border: 1px solid rgba(255, 255, 255, 0.25);

@@ -2,6 +2,39 @@
    WorkspaceHub — Liquid Glass UI
    ============================================================ */
 
+/* ------ Tab placeholders (Documentos / Carga de trabalho) -- */
+
+.ws-tab-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 280px;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.ws-tab-placeholder svg {
+  opacity: 0.4;
+  margin-bottom: 0.5rem;
+}
+
+.ws-tab-placeholder h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.ws-tab-placeholder p {
+  font-size: 0.85rem;
+  margin: 0;
+  max-width: 320px;
+}
+
 /* ------ Layout --------------------------------------------- */
 
 .workspace-hub {

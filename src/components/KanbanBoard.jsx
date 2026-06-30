@@ -10,7 +10,7 @@ import {
 } from '../services/notificationService';
 import {
   MoreHorizontal, Plus, AlertTriangle, Sparkles, Trash2, Edit2,
-  Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle
+  Calendar, Users, MessageSquare, X, Check, Clock, CheckCircle, User
 } from 'lucide-react';
 import {
   DndContext, KeyboardSensor, PointerSensor, TouchSensor, MouseSensor,
@@ -28,14 +28,14 @@ import { resolveCrmOccurrence } from '../services/crmIntegrationService';
 import './Kanban.css';
 
 const COLUMNS = [
-  { id: 'backlog',  title: 'BACKLOG' },
-  { id: 'progress', title: 'IN PROGRESS' },
-  { id: 'ai',       title: 'AI ANALYSIS', isHighlighted: true },
-  { id: 'done',     title: 'DONE' }
+  { id: 'backlog',  title: 'A Fazer' },
+  { id: 'progress', title: 'Em Andamento' },
+  { id: 'ai',       title: 'Análise IA', isHighlighted: true },
+  { id: 'done',     title: 'Concluídos' }
 ];
 
 const COLUMN_LABELS = {
-  backlog: 'Backlog', progress: 'Em Progresso', ai: 'AI Analysis', done: 'Concluído'
+  backlog: 'A Fazer', progress: 'Em Andamento', ai: 'Análise IA', done: 'Concluídos'
 };
 
 // ---- Avatar helpers ----
@@ -74,30 +74,37 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
       {/* Card Header */}
       <div className="card-header">
         <span className="card-title">{task.title}</span>
-        <div className="flex items-center gap-3">
-          {deadlineStatus?.color === 'red' && <AlertTriangle size={13} className="text-red-500" />}
-          {task.hasAlert && !deadlineStatus && <AlertTriangle size={14} className="text-red-500" />}
-          {!task.hasAlert && !deadlineStatus && <Sparkles size={14} className="text-accent opacity-30" />}
+        <div className="card-header-actions">
+          {deadlineStatus?.color === 'red' && (
+            <span title="Prazo vencido" className="card-header-icon"><AlertTriangle size={13} className="text-red-500" /></span>
+          )}
+          {task.hasAlert && !deadlineStatus && (
+            <span title="Atenção" className="card-header-icon"><AlertTriangle size={14} className="text-red-500" /></span>
+          )}
+          {!task.hasAlert && !deadlineStatus && (
+            <span title="Análise por IA disponível" className="card-header-icon"><Sparkles size={14} className="text-accent opacity-30" /></span>
+          )}
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
             onPointerDown={e => e.stopPropagation()}
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
-            style={{ marginLeft: '4px' }}
-            title="Editar"
+            title="Editar chamado"
           ><Edit2 size={13} /></button>
           {task.source !== 'crm' && (
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
               onPointerDown={e => e.stopPropagation()}
               className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-              title="Excluir"
+              title="Excluir chamado"
             ><Trash2 size={14} /></button>
           )}
         </div>
       </div>
 
-      {/* Description */}
-      <p className="card-desc">{task.desc}</p>
+      {/* Description — oculta quando redundante com o título (caso das ocorrências CRM) */}
+      {task.desc && task.desc !== task.title && (
+        <p className="card-desc">{task.desc}</p>
+      )}
 
       {/* AI Loading / Response */}
       {task.isAiLoading && (
@@ -106,11 +113,11 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
         </div>
       )}
       {task.aiResponse && (
-        <div className="mt-2 p-2 bg-black/20 rounded border border-accent/20 text-xs">
-          <div className="flex items-center gap-1 text-accent font-semibold mb-1">
+        <div className="card-ai-suggestion">
+          <div className="card-ai-suggestion-header">
             <Sparkles size={12} /> Sugestão da IA
           </div>
-          <p className="text-gray-300 leading-tight">{task.aiResponse}</p>
+          <p className="card-ai-suggestion-text">{task.aiResponse}</p>
         </div>
       )}
 
@@ -127,22 +134,22 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
       <div className="card-footer">
         <div className="card-meta-left">
           {task.customer_name && (
-            <span className="badge card-customer-badge">
+            <span className="card-tag card-tag--customer">
               {task.customer_name}
             </span>
           )}
           {task.tag && (
-            <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: `var(--color-${task.tagColor}, rgba(255,255,255,0.85))` }}>
+            <span className="card-tag card-tag--category" style={{ color: `var(--color-${task.tagColor}, var(--accent-orange, #fb923c))` }}>
               {task.tag}
             </span>
           )}
           {task.isReaberto && (
-            <span className="badge font-bold animate-pulse" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+            <span className="card-tag card-tag--reopened animate-pulse">
               REABERTO
             </span>
           )}
           {task.isScheduled && (
-            <span className="badge" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <span className="card-tag card-tag--scheduled">
               <CheckCircle size={10} /> Agendado
             </span>
           )}
@@ -165,7 +172,9 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
             </div>
           ))}
           {!task.assignees?.length && (
-            <div className="card-avatar card-avatar-empty" title="Sem responsável">?</div>
+            <div className="card-avatar card-avatar-empty" title="Sem responsável">
+              <User size={12} />
+            </div>
           )}
         </div>
       </div>
@@ -187,7 +196,10 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
       }}
     >
       <div className={`column-header ${col.isHighlighted ? 'text-accent' : ''}`}>
-        <span>{col.title}</span>
+        <span className="column-header-label">
+          {col.title}
+          <span className="column-count">{tasks.length}</span>
+        </span>
         {!col.isHighlighted && (
           <button onClick={() => onAddTask(col.id)} className="add-task-btn" style={{ padding: '0.25rem', borderRadius: '4px', cursor: 'pointer', outline: 'none' }}>
             <Plus size={16} className="text-muted" />
@@ -349,8 +361,12 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       }
       
       return {
+        // O assunto do chamado (descricao) é o título; a categoria vira apenas tag.
+        // Ocorrências do CRM só têm um campo de texto (descricao), então title e desc
+        // referenciam o mesmo conteúdo — o card suprime o desc redundante, mas o modal
+        // "Responder e Solucionar" continua lendo task.desc na "Descrição do Chamado".
         id: crmId,
-        title: override?.title || o.categoria || 'Ocorrência',
+        title: override?.title || o.descricao || o.categoria || 'Ocorrência',
         desc: override?.desc || override?.description || o.descricao,
         columnId: colId,
         tag: override?.tag || o.categoria,

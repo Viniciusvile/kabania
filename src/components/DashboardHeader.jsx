@@ -1,29 +1,50 @@
 import React from 'react';
-import { Search, RotateCcw, LayoutGrid, SlidersHorizontal, X } from 'lucide-react';
+import { Search, RotateCcw, LayoutGrid, SlidersHorizontal, X, LayoutDashboard, FileText, BarChart3 } from 'lucide-react';
 import './Dashboard.css';
 
-export default function DashboardHeader({ 
-  projectName, 
-  searchQuery = '', 
-  onSearchChange, 
+const HEADER_TABS = [
+  { id: 'quadro',     label: 'Quadro',            icon: LayoutDashboard },
+  { id: 'documentos', label: 'Documentos',        icon: FileText },
+  { id: 'carga',      label: 'Carga de trabalho', icon: BarChart3 }
+];
+
+export default function DashboardHeader({
+  projectName,
+  searchQuery = '',
+  onSearchChange,
   onRefresh,
   viewMode = 'grid',
   onViewModeChange,
   filterActive = false,
-  onFilterToggle
+  onFilterToggle,
+  activeTab = 'quadro',
+  onTabChange
 }) {
   return (
     <div className="dashboard-header">
       <div className="header-title-area">
-        <h1>{projectName || 'Painel do Projeto'}</h1>
-        <div className="breadcrumbs text-muted text-sm mt-1">
+        <div className="breadcrumbs text-muted text-sm">
           <span>Gestão de Projetos</span>
           <span className="mx-2">/</span>
-          <span className="text-accent">{projectName}</span>
         </div>
-        <div className="header-tags mt-3">
-          <span className="tag-filled">+ Documento</span>
-          <span className="tag-filled dark">Carga</span>
+        <h1>{projectName || 'Painel do Projeto'}</h1>
+        <div className="header-tabs mt-3" role="tablist">
+          {HEADER_TABS.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`header-tab ${activeTab === tab.id ? 'header-tab--active' : ''}`}
+                onClick={() => onTabChange?.(tab.id)}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

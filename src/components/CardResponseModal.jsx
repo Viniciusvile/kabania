@@ -49,8 +49,8 @@ export default function CardResponseModal({ task, currentUser, onClose, onUpdate
           {/* Original Ticket Description */}
           {task.desc && (
             <section className="crm-modal-section">
-              <label>Descrição do Chamado</label>
-              <div className="crm-modal-desc-box">
+              <label>Descrição do Chamado <span className="crm-readonly-hint">(somente leitura)</span></label>
+              <div className="crm-modal-desc-box crm-modal-desc-box--readonly">
                 <p>{task.desc}</p>
               </div>
             </section>
@@ -96,7 +96,7 @@ export default function CardResponseModal({ task, currentUser, onClose, onUpdate
             className="crm-btn-secondary" 
             onClick={handleSaveOnly}
           >
-            <Save size={16} /> Apenas Salvar
+            <Save size={16} /> Salvar rascunho
           </button>
           <button 
             type="button" 

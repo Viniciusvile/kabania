@@ -127,6 +127,19 @@
   opacity: 0;
   transition: all 0.3s ease;
   pointer-events: none;
+  position: relative;
+}
+
+/* Linha-guia vertical ligando o item pai aos sub-itens */
+.nav-submenu::before {
+  content: '';
+  position: absolute;
+  left: 2.25rem;
+  top: 0.1rem;
+  bottom: 0.55rem;
+  width: 1px;
+  background: var(--border-color);
+  opacity: 0.6;
 }
 
 .nav-group.expanded .nav-submenu {
@@ -145,16 +158,22 @@
   position: relative;
 }
 
+/* Conector horizontal que liga a linha-guia vertical ao texto do sub-item */
 .submenu-item::before {
   content: '';
   position: absolute;
   left: -1rem;
   top: 50%;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  transform: translateY(-50%);
+  width: 0.7rem;
+  height: 1px;
   background-color: var(--border-color);
-  opacity: 0.5;
+  opacity: 0.6;
+}
+
+.submenu-item.active::before {
+  background-color: var(--accent-cyan);
+  opacity: 0.8;
 }
 
 .submenu-item:hover {
@@ -451,6 +470,12 @@
 
 
 
+.header-title-area .breadcrumbs {
+  margin-bottom: 0.15rem;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
 .header-title-area h1 {
   font-size: 1.5rem;
   margin-bottom: 0.25rem;
@@ -466,6 +491,40 @@
 
 .tag-filled.dark {
   background: var(--bg-sidebar);
+}
+
+/* Abas de visualização do projeto (Quadro / Documentos / Carga de trabalho) */
+.header-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0;
+}
+
+.header-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.45rem 0.85rem;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.header-tab:hover {
+  color: var(--text-main);
+}
+
+.header-tab--active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+  font-weight: 600;
 }
 
 .header-stats {
