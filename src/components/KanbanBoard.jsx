@@ -53,7 +53,7 @@ function formatDeadlineShort(isoDate) {
 }
 
 // ---- Sortable Task Card ----
-function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse }) {
+function SortableTaskCard({ task, onDelete, onDismiss, onEdit, onOpenDetail, onOpenResponse }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id, data: { type: 'Task', task }
   });
@@ -91,14 +91,15 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
             className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-blue-400 p-1 pointer-events-auto"
             title="Editar chamado"
           ><Edit2 size={13} /></button>
-          {task.source !== 'crm' && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-              onPointerDown={e => e.stopPropagation()}
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
-              title="Excluir chamado"
-            ><Trash2 size={14} /></button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              task.source === 'crm' ? onDismiss(task.id) : onDelete(task.id);
+            }}
+            onPointerDown={e => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted hover:text-red-500 p-1 pointer-events-auto"
+            title={task.source === 'crm' ? 'Remover do quadro' : 'Excluir chamado'}
+          ><Trash2 size={14} /></button>
         </div>
       </div>
 
@@ -184,7 +185,7 @@ function SortableTaskCard({ task, onDelete, onEdit, onOpenDetail, onOpenResponse
 }
 
 // ---- Kanban Column ----
-function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenDetail, onOpenResponse }) {
+function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onDismissTask, onEditTask, onOpenDetail, onOpenResponse }) {
   const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column', column: col } });
   const isBacklog = col.id === 'backlog';
   return (
@@ -222,7 +223,7 @@ function KanbanColumn({ col, tasks, onAddTask, onDeleteTask, onEditTask, onOpenD
           strategy={isBacklog ? rectSortingStrategy : verticalListSortingStrategy}
         >
           {tasks.map(task => (
-            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} onOpenResponse={onOpenResponse} />
+            <SortableTaskCard key={task.id} task={task} onDelete={onDeleteTask} onDismiss={onDismissTask} onEdit={onEditTask} onOpenDetail={onOpenDetail} onOpenResponse={onOpenResponse} />
           ))}
         </SortableContext>
       </div>
@@ -276,6 +277,12 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     return saved ? JSON.parse(saved) : {};
   });
 
+  // IDs de ocorrências CRM arquivadas (removidas da view sem deletar do CRM)
+  const [dismissedCrmIds, setDismissedCrmIds] = useState(() => {
+    const saved = localStorage.getItem(`crm_dismissed_${projectId}`);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
   const [crmAiLoading, setCrmAiLoading] = useState({});
 
   // Sync crmColumns and crmAiResponses when project changes
@@ -288,6 +295,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     } else {
       setCrmColumns({});
       setCrmAiResponses({});
+      setDismissedCrmIds(new Set());
     }
   }, [projectId]);
 
@@ -396,18 +404,21 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       isScheduled: shifts.some(s => s.notes?.includes(`[KANBAN_ID:${t.id}]`))
     }));
 
-    // 3. Filtrar por Condomínio se houver filtro ativo
+    // 3. Filtrar ocorrências CRM arquivadas localmente
+    const visible = enriched.filter(t => !dismissedCrmIds.has(t.id));
+
+    // 4. Filtrar por Condomínio se houver filtro ativo
     if (selectedCondominioId) {
-      const selectedNome = condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome || 
+      const selectedNome = condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome ||
                            crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
-      return enriched.filter(t => 
+      return visible.filter(t =>
         String(t.condominio_id) === String(selectedCondominioId) ||
         (t.customer_name && selectedNome && t.customer_name.toLowerCase() === selectedNome.toLowerCase())
       );
     }
 
-    return enriched;
-  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, condominios, crmColumns, crmAiResponses, crmAiLoading, projectId]);
+    return visible;
+  }, [tasks, shifts, crmOcorrencias, selectedCondominioId, condominios, crmColumns, crmAiResponses, crmAiLoading, projectId, dismissedCrmIds]);
 
   // Modal form state
   const [formTitle, setFormTitle] = useState('');
@@ -942,6 +953,23 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     }
   };
 
+  // Arquiva ocorrência CRM localmente (não toca no CRM real, só remove da view)
+  const handleDismissCrm = (taskId) => {
+    setDismissedCrmIds(prev => {
+      const next = new Set(prev);
+      next.add(taskId);
+      localStorage.setItem(`crm_dismissed_${projectId}`, JSON.stringify([...next]));
+      return next;
+    });
+    // Limpa também o override de coluna local para não "vazar" se o dismiss for desfeito
+    setCrmColumns(prev => {
+      const next = { ...prev };
+      delete next[taskId];
+      localStorage.setItem(`crm_columns_${projectId}`, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
@@ -1434,6 +1462,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
                 tasks={colTasks}
                 onAddTask={openAddModal}
                 onDeleteTask={handleDeleteTask}
+                onDismissTask={handleDismissCrm}
                 onEditTask={openEditModal}
                 onOpenDetail={(task) => setDetailTask(task)}
                 onOpenResponse={(task) => setResponseTask(task)}

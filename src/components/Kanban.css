@@ -177,6 +177,7 @@
 /* Bloco de Sugestão da IA — container próprio, separado da descrição */
 .card-ai-suggestion {
   margin-top: 0.6rem;
+  margin-bottom: 0.6rem;
   padding: 8px 10px;
   border-radius: 8px;
   background: rgba(0, 180, 216, 0.06);
