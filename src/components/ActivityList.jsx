@@ -123,7 +123,7 @@ const formatDisplayDate = (dString) => {
   return dString;
 };
 
-export default function ActivityList({ currentUser, currentCompany }) {
+export default function ActivityList({ currentUser, currentCompany, crmData }) {
   const getCacheKey = () => `kabania_activities_${currentCompany?.id}`;
 
   const [activities, setActivities] = useState(() => {
@@ -131,6 +131,34 @@ export default function ActivityList({ currentUser, currentCompany }) {
     return cached ? JSON.parse(cached) : [];
   });
   const [loading, setLoading] = useState(false);
+
+  // ─── Local customers + CRM merge ───────────────────────────────────────────
+  const [localCustomers, setLocalCustomers] = useState([]);
+
+  useEffect(() => {
+    if (!currentCompany?.id) return;
+    supabase
+      .from('customers')
+      .select('id,name,address,email,phone')
+      .eq('company_id', currentCompany.id)
+      .order('name')
+      .then(({ data }) => setLocalCustomers(data || []));
+  }, [currentCompany?.id]);
+
+  // Merge local customers + CRM condominios (same logic as CompanyPanel.allCustomers)
+  const allCustomers = React.useMemo(() => {
+    const crmCusts = (crmData?.condominios || []).map(condo => ({
+      id: `crm-condo-${condo.id}`,
+      name: condo.nome,
+      address: condo.cidade ? `${condo.cidade}/${condo.uf || ''}` : (condo.address || 'CRM Sync'),
+      isCrm: true,
+    }));
+    // Deduplicate by name (prefer local if same name exists)
+    const localNames = new Set(localCustomers.map(c => c.name?.toLowerCase()));
+    const uniqueCrm = crmCusts.filter(c => !localNames.has(c.name?.toLowerCase()));
+    return [...localCustomers, ...uniqueCrm];
+  }, [localCustomers, crmData]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
 
   const syncWithExternalCalendars = async (activity) => {
@@ -576,6 +604,7 @@ export default function ActivityList({ currentUser, currentCompany }) {
         onSave={handleSave}
         currentCompany={currentCompany}
         existingActivities={activities}
+        customers={allCustomers}
       />
 
       {/* Detail / Edit modal */}

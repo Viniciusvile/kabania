@@ -49,34 +49,39 @@ function calcProgress(form) {
   return Math.round(((req * 2 + opt) / (REQUIRED_FIELDS.length * 2 + OPTIONAL_SCORED.length)) * 100);
 }
 
-export default function NewActivityModal({ isOpen, onClose, onSave, currentCompany, existingActivities }) {
+export default function NewActivityModal({ isOpen, onClose, onSave, currentCompany, existingActivities, customers: customersProp }) {
   const [activeTab, setActiveTab] = useState('GERAL');
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [suggestedKB, setSuggestedKB] = useState(null);
-  const [customers, setCustomers] = useState([]);
+  // If parent passes customers (merged local + CRM), use them; otherwise fetch locally
+  const [localCustomers, setLocalCustomers] = useState([]);
+  const customers = customersProp?.length > 0 ? customersProp : localCustomers;
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [collaborators, setCollaborators] = useState([]);
   const [loadingCollabs, setLoadingCollabs] = useState(false);
   const [syncCalendar, setSyncCalendar] = useState(() => localStorage.getItem('kabania_sync_calendar') === 'true');
   const [form, setForm] = useState(EMPTY_FORM);
 
-  // Parallel fetch on open
+  // Fetch collaborators (always) + local customers only if prop not given
   useEffect(() => {
     if (!isOpen || !currentCompany?.id) return;
-    setLoadingCustomers(true);
-    setLoadingCollabs(true);
 
-    Promise.all([
-      supabase.from('customers').select('id,name,address').eq('company_id', currentCompany.id).order('name'),
-      supabase.from('collaborators').select('id,name,specialty').eq('company_id', currentCompany.id).order('name'),
-    ]).then(([custRes, collabRes]) => {
-      setCustomers(custRes.data || []);
-      setCollaborators(collabRes.data || []);
-    }).catch(console.error).finally(() => {
-      setLoadingCustomers(false);
-      setLoadingCollabs(false);
-    });
+    // Always fetch collaborators
+    setLoadingCollabs(true);
+    supabase.from('collaborators').select('id,name,specialty').eq('company_id', currentCompany.id).order('name')
+      .then(({ data }) => setCollaborators(data || []))
+      .catch(console.error)
+      .finally(() => setLoadingCollabs(false));
+
+    // Only fetch local customers if prop not provided
+    if (!customersProp?.length) {
+      setLoadingCustomers(true);
+      supabase.from('customers').select('id,name,address').eq('company_id', currentCompany.id).order('name')
+        .then(({ data }) => setLocalCustomers(data || []))
+        .catch(console.error)
+        .finally(() => setLoadingCustomers(false));
+    }
   }, [isOpen, currentCompany?.id]);
 
   // Debounced duplicate check — fires 500ms after user stops typing

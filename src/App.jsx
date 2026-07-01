@@ -829,7 +829,7 @@ function App() {
                   onRunBulkImport={runBackgroundImport}
                 />
               ) : currentView === 'activities' ? (
-                <ActivityList currentUser={currentUser} currentCompany={currentCompany} />
+                <ActivityList currentUser={currentUser} currentCompany={currentCompany} crmData={crmData} />
               ) : currentView === 'calendar' ? (
                 <ActivityCalendar currentUser={currentUser} currentCompany={currentCompany} />
               ) : currentView === 'company' ? (
