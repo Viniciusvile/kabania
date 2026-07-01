@@ -131,12 +131,25 @@
 .action-btn-icon:hover,
 .action-btn-icon.active {
   background: #f1f5f9;
-  color: var(--accent-cyan);
-  border-color: var(--accent-cyan);
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+[data-theme='dark'] .action-btn-icon {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(148, 163, 184, 0.8);
+}
+
+[data-theme='dark'] .action-btn-icon:hover,
+[data-theme='dark'] .action-btn-icon.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-new-request {
-  background-color: #0052cc;
+  background-color: #0f172a;
   color: white;
   border: none;
   padding: 0.6rem 1.25rem;
@@ -144,13 +157,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .btn-new-request:hover {
-  background-color: #0747a6;
+  background-color: #1e293b;
+}
+
+[data-theme='dark'] .btn-new-request {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+}
+
+[data-theme='dark'] .btn-new-request:hover {
+  background-color: #ffffff;
 }
 
 .activity-table-wrapper {
@@ -317,6 +340,19 @@
   font-size: 0.85rem;
   color: #334155;
   width: 160px;
+}
+
+[data-theme='dark'] .activity-search-bar {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .activity-search-bar input {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .activity-search-bar input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
 }
 
 .action-cell {

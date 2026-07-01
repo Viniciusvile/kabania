@@ -12,6 +12,30 @@
   white-space: nowrap;
 }
 
+[data-theme='light'] .sidebar {
+  background: #f8fafc;
+  border-right-color: #e2e8f0;
+}
+
+/* All SVG icons inside nav-items become visible in light mode */
+[data-theme='light'] .sidebar .nav-item > svg,
+[data-theme='light'] .sidebar .nav-item svg {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .sidebar .nav-item.active > svg,
+[data-theme='light'] .sidebar .nav-item.active svg {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .brand-icon {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .brand-name {
+  color: #0f172a;
+}
+
 .sidebar.collapsed {
   width: 80px;
   padding: 1.5rem 0; /* Remove horizontal padding so we can center on full width */
@@ -115,6 +139,20 @@
   font-weight: 500;
 }
 
+[data-theme='light'] .nav-item {
+  color: #475569;
+}
+
+[data-theme='light'] .nav-item:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .nav-item.active {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #0f172a !important;
+}
+
 .nav-submenu {
   display: flex;
   flex-direction: column;
@@ -184,6 +222,29 @@
 .submenu-item.active {
   color: var(--accent-cyan);
   font-weight: 600;
+}
+
+/* ── Light mode overrides ── */
+[data-theme='light'] .submenu-item {
+  color: #64748b;
+}
+
+[data-theme='light'] .submenu-item:hover {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .submenu-item.active {
+  color: #0f172a !important;
+  font-weight: 700;
+}
+
+[data-theme='light'] .submenu-item.active::before {
+  background-color: #0f172a;
+  opacity: 0.5;
+}
+
+[data-theme='light'] .nav-submenu::before {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .sidebar.collapsed .nav-submenu {
