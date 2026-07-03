@@ -1,7 +1,8 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Calendar, Users, MessageSquare, Sparkles, Send,
-  AlertTriangle, Clock, CheckCircle2, Edit2, Zap
+  AlertTriangle, Clock, CheckCircle2, Edit2, Zap,
+  CalendarClock, Wrench, ClipboardList, ArrowRight
 } from 'lucide-react';
 import { getDeadlineStatus } from '../services/notificationService';
 import { notifyComment } from '../services/notificationService';
@@ -36,7 +37,7 @@ function formatCommentTime(isoString) {
 const COMPLEXITY_COLOR = { baixa: '#34d399', média: '#fbbf24', alta: '#f87171' };
 const COMPLEXITY_BG   = { baixa: 'rgba(52,211,153,0.08)', média: 'rgba(251,191,36,0.08)', alta: 'rgba(239,68,68,0.08)' };
 
-export default function CardDetailModal({ task, currentUser, onClose, onUpdate }) {
+export default function CardDetailModal({ task, currentUser, onClose, onUpdate, onSendToShifts, onCreateActivity }) {
   const [commentText, setCommentText] = useState('');
   const commentsEndRef = useRef(null);
   const [estimation, setEstimation] = useState(null); // { estimate, complexity, reasoning }
@@ -257,6 +258,45 @@ export default function CardDetailModal({ task, currentUser, onClose, onUpdate }
               </div>
             )}
           </section>
+
+          {/* ── Quick Actions ── */}
+          {(onSendToShifts || onCreateActivity) && (
+            <section className="cdm-section cdm-quick-actions-section">
+              <label><ArrowRight size={13} /> Ações Rápidas</label>
+              <div className="cdm-quick-actions">
+                {onSendToShifts && (
+                  <button
+                    className="cdm-qa-btn cdm-qa-shifts"
+                    onClick={() => onSendToShifts(task)}
+                    title="Agendar uma escala com base neste card"
+                  >
+                    <CalendarClock size={15} />
+                    <span>Agendar Escala</span>
+                  </button>
+                )}
+                {onCreateActivity && (
+                  <>
+                    <button
+                      className="cdm-qa-btn cdm-qa-ticket"
+                      onClick={() => onCreateActivity(task, 'Manutenção')}
+                      title="Criar chamado técnico de Manutenção"
+                    >
+                      <Wrench size={15} />
+                      <span>Chamado Técnico</span>
+                    </button>
+                    <button
+                      className="cdm-qa-btn cdm-qa-activity"
+                      onClick={() => onCreateActivity(task, null)}
+                      title="Adicionar à Lista de Atividades"
+                    >
+                      <ClipboardList size={15} />
+                      <span>Lista de Atividades</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Comments */}
           <section className="cdm-section cdm-comments-section">

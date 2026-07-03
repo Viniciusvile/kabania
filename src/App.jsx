@@ -820,6 +820,7 @@ function App() {
                   crmOcorrencias={crmData.ocorrencias}
                   selectedCondominioId={selectedCondominioId}
                   condominios={crmData.condominios}
+                  onViewChange={setCurrentView}
                 />
               ) : currentView === 'knowledge' ? (
                 <KnowledgeBase 

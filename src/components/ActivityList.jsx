@@ -160,6 +160,23 @@ export default function ActivityList({ currentUser, currentCompany, crmData }) {
   }, [localCustomers, crmData]);
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // ─── Contexto de navegação vindo do Kanban ────────────────────────────────
+  const [kanbanToast, setKanbanToast] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('kanban_to_activity_msg');
+      if (raw) { sessionStorage.removeItem('kanban_to_activity_msg'); return raw; }
+    } catch (_) {}
+    return null;
+  });
+
+  useEffect(() => {
+    if (kanbanToast) {
+      const t = setTimeout(() => setKanbanToast(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [kanbanToast]);
+  // ─────────────────────────────────────────────────────────────────────────────
+
 
   const syncWithExternalCalendars = async (activity) => {
     if (!currentCompany?.id) return null;
@@ -524,6 +541,18 @@ export default function ActivityList({ currentUser, currentCompany, crmData }) {
 
   return (
     <div className="activity-list-container animate-fade-in" onClick={() => { setOpenMenu(null); }}>
+      {/* Kanban context toast */}
+      {kanbanToast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(15,23,42,0.95)', color: '#4ade80', padding: '0.75rem 1.5rem',
+          borderRadius: '12px', fontSize: '0.875rem', fontWeight: 600, zIndex: 9999,
+          border: '1px solid rgba(74,222,128,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+          ✓ {kanbanToast}
+        </div>
+      )}
       <header className="activity-header">
         <h1 className="activity-title">Solicitações de serviços</h1>
         <div className="activity-actions">

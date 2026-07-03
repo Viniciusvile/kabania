@@ -262,7 +262,7 @@ function AssigneePicker({ companyMembers, selected, onChange }) {
 }
 
 // ---- Main Board ----
-export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null, condominios = [] }) {
+export default function KanbanBoard({ searchQuery = '', currentUser = 'default', currentCompany = null, projectId = null, crmOcorrencias = [], selectedCondominioId = null, condominios = [], onNavigate }) {
   // Click Condomínios local columns overrides for occurrences
   const [crmColumns, setCrmColumns] = useState(() => {
     if (!projectId) return {};
@@ -316,6 +316,56 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const [responseTask, setResponseTask] = useState(null);
   const [dragStartColumn, setDragStartColumn] = useState(null);
   const [shifts, setShifts] = useState([]);
+  const [crossModuleToast, setCrossModuleToast] = useState(null);
+
+  // ─── Cross-module action handlers ───
+  const handleSendToShifts = (task) => {
+    sessionStorage.setItem('kanban_to_shift', JSON.stringify({
+      title: task.title,
+      desc: task.desc || '',
+      customer_name: task.customer_name || '',
+      tag: task.tag || '',
+      deadline: task.deadline || null,
+      source_card_id: task.id,
+    }));
+    if (onNavigate) {
+      setDetailTask(null);
+      onNavigate('shifts');
+    }
+  };
+
+  const handleCreateActivity = async (task, activityType) => {
+    if (!currentCompany?.id) return;
+    const nowIso = new Date().toISOString();
+    const payload = {
+      id: crypto.randomUUID(),
+      location: task.customer_name || task.title,
+      type: activityType || task.tag || 'Outro',
+      status: 'Pendente',
+      rating: 0,
+      description: [task.title, task.desc].filter(Boolean).join('\n\n'),
+      observation: `Criado a partir do card do Kanban (${task.id})`,
+      created: nowIso,
+      updated: nowIso,
+      company_id: currentCompany.id,
+      created_by: currentUser,
+    };
+    const { error } = await supabase.from('activities').insert([payload]);
+    if (!error) {
+      sessionStorage.setItem('kanban_to_activity_msg', `Atividade "${task.title}" criada com sucesso!`);
+      setCrossModuleToast('Atividade criada! Redirecionando...');
+      setTimeout(() => setCrossModuleToast(null), 3500);
+      if (onNavigate) {
+        setDetailTask(null);
+        onNavigate('activities');
+      }
+    } else {
+      setCrossModuleToast('Erro ao criar atividade.');
+      setTimeout(() => setCrossModuleToast(null), 3500);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────────
+
 
   // Sincronização de Escalas (Shifts) para mostrar o selo "Agendado"
   useEffect(() => {
@@ -1492,6 +1542,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           currentUser={currentUser}
           onClose={() => setDetailTask(null)}
           onUpdate={handleUpdateFromDetail}
+          onSendToShifts={handleSendToShifts}
+          onCreateActivity={handleCreateActivity}
         />
       )}
 
@@ -1503,6 +1555,19 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           onUpdate={handleUpdateFromDetail}
           onResolve={handleResolveFromModal}
         />
+      )}
+
+      {/* Cross-module toast */}
+      {crossModuleToast && (
+        <div style={{
+          position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(15,23,42,0.95)', color: '#e2e8f0', padding: '0.75rem 1.5rem',
+          borderRadius: '12px', fontSize: '0.875rem', fontWeight: 600, zIndex: 9999,
+          border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'slideUp 0.25s ease-out',
+        }}>
+          {crossModuleToast}
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-﻿/* ================================================
+/* ================================================
    CardDetailModal — right-side drawer
    ================================================ */
 
@@ -530,4 +530,106 @@
 
 [data-theme='light'] .cdm-ai-edit-actions .btn-confirm:hover {
   background: linear-gradient(135deg, #0044AA, #0052CC);
+}
+
+/* ── Quick Actions ────────────────────────────────────── */
+.cdm-quick-actions-section {
+  border-top: 1px solid var(--border-light);
+  padding-top: 1rem;
+}
+
+.cdm-quick-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.cdm-qa-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex: 1;
+  min-width: 130px;
+  justify-content: center;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.cdm-qa-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Agendar Escala — azul sutil */
+.cdm-qa-shifts {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+}
+.cdm-qa-shifts:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #93c5fd;
+}
+
+/* Chamado Técnico — âmbar */
+.cdm-qa-ticket {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+.cdm-qa-ticket:hover {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fcd34d;
+}
+
+/* Lista de Atividades — verde sutil */
+.cdm-qa-activity {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #4ade80;
+}
+.cdm-qa-activity:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.45);
+  color: #86efac;
+}
+
+/* Light mode overrides */
+[data-theme='light'] .cdm-qa-shifts {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+[data-theme='light'] .cdm-qa-shifts:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+[data-theme='light'] .cdm-qa-ticket {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+}
+[data-theme='light'] .cdm-qa-ticket:hover {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
+[data-theme='light'] .cdm-qa-activity {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+[data-theme='light'] .cdm-qa-activity:hover {
+  background: #dcfce7;
+  border-color: #86efac;
 }

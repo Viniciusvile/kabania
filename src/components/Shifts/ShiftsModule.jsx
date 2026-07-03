@@ -122,6 +122,25 @@ export default function ShiftsModule({
     fetchKanbanTasks();
   }, [companyId]);
 
+  // ── Ler contexto de navegação do Kanban ──────────────────────────────
+  const [kanbanToShift, setKanbanToShift] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem('kanban_to_shift');
+      if (raw) { sessionStorage.removeItem('kanban_to_shift'); return JSON.parse(raw); }
+    } catch (_) {}
+    return null;
+  });
+
+  // Quando vem do Kanban, abre modal de nova escala com dados pré-preenchidos
+  useEffect(() => {
+    if (kanbanToShift) {
+      // Pequeno delay para garantir que o módulo carregou
+      const t = setTimeout(() => setIsModalOpen(true), 400);
+      return () => clearTimeout(t);
+    }
+  }, [kanbanToShift]);
+  // ─────────────────────────────────────────────────────────────────────
+
   // Merge local Kanban tasks and CRM occurrences
   const mergedKanbanTasks = useMemo(() => {
     const crmTasks = (crmOcorrencias || []).map(o => ({
@@ -1395,6 +1414,26 @@ export default function ShiftsModule({
             </div>
             
             <form className="modal-form p-8" onSubmit={handleCreateShift}>
+              {/* Banner de contexto do Kanban */}
+              {kanbanToShift && !editingShiftId && (
+                <div style={{
+                  background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
+                  display: 'flex', flexDirection: 'column', gap: '4px',
+                }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(96,165,250,0.9)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                    📋 Card do Kanban
+                  </span>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#e2e8f0' }}>
+                    {kanbanToShift.title}
+                  </span>
+                  {(kanbanToShift.customer_name || kanbanToShift.tag) && (
+                    <span style={{ fontSize: '0.78rem', color: 'rgba(148,163,184,0.85)' }}>
+                      {[kanbanToShift.customer_name, kanbanToShift.tag].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="form-grid-premium mb-8">
                 <div className="form-group-premium full-width">
                   <label className="premium-label flex items-center gap-2">

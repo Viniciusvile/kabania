@@ -25,7 +25,7 @@ function initLiquidGL() {
 export default function WorkspaceHub({
   workspaceTab, searchQuery, onSearchChange, projectName, projects, selectedProjectId,
   currentUser, currentCompany, userRole, crmOcorrencias = [], selectedCondominioId = null,
-  condominios = []
+  condominios = [], onViewChange
 }) {
   const [boardTab, setBoardTab] = useState('quadro');
 
@@ -58,6 +58,7 @@ export default function WorkspaceHub({
                 crmOcorrencias={crmOcorrencias}
                 selectedCondominioId={selectedCondominioId}
                 condominios={condominios}
+                onNavigate={onViewChange}
               />
             )}
             {boardTab === 'documentos' && (
