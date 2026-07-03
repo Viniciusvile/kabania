@@ -1554,6 +1554,8 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           onClose={() => setResponseTask(null)}
           onUpdate={handleUpdateFromDetail}
           onResolve={handleResolveFromModal}
+          onSendToShifts={handleSendToShifts}
+          onCreateActivity={handleCreateActivity}
         />
       )}
 

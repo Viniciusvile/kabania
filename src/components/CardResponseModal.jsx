@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, CheckCircle2, Save, Copy } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, Save, Copy, CalendarClock, Wrench, ClipboardList } from 'lucide-react';
 import './CardResponseModal.css';
 
-export default function CardResponseModal({ task, currentUser, onClose, onUpdate, onResolve }) {
+export default function CardResponseModal({ task, currentUser, onClose, onUpdate, onResolve, onSendToShifts, onCreateActivity }) {
   const [responseText, setResponseText] = useState(task?.aiResponse || '');
 
   useEffect(() => {
@@ -88,6 +88,43 @@ export default function CardResponseModal({ task, currentUser, onClose, onUpdate
             />
           </section>
         </div>
+
+        {/* Ações Rápidas */}
+        {(onSendToShifts || onCreateActivity) && (
+          <div className="crm-quick-actions">
+            <span className="crm-qa-label">Ações Rápidas:</span>
+            {onSendToShifts && (
+              <button
+                type="button"
+                className="crm-qa-btn crm-qa-shifts"
+                onClick={() => { onSendToShifts(task); onClose(); }}
+                title="Agendar escala com base neste card"
+              >
+                <CalendarClock size={13} /> Agendar Escala
+              </button>
+            )}
+            {onCreateActivity && (
+              <>
+                <button
+                  type="button"
+                  className="crm-qa-btn crm-qa-ticket"
+                  onClick={() => { onCreateActivity(task, 'Manutenção'); onClose(); }}
+                  title="Criar chamado técnico de Manutenção"
+                >
+                  <Wrench size={13} /> Chamado Técnico
+                </button>
+                <button
+                  type="button"
+                  className="crm-qa-btn crm-qa-activity"
+                  onClick={() => { onCreateActivity(task, null); onClose(); }}
+                  title="Adicionar à Lista de Atividades"
+                >
+                  <ClipboardList size={13} /> Adicionar à Atividades
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="crm-modal-footer">
