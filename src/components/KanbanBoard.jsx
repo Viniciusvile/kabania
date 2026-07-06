@@ -339,16 +339,20 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     const nowIso = new Date().toISOString();
     const payload = {
       id: crypto.randomUUID(),
-      location: task.customer_name || task.title,
+      location: task.customer_name || task.title || 'Sem cliente',
       type: activityType || task.tag || 'Outro',
       status: 'Pendente',
       rating: 0,
-      description: [task.title, task.desc].filter(Boolean).join('\n\n'),
-      observation: `Criado a partir do card do Kanban (${task.id})`,
       created: nowIso,
       updated: nowIso,
+      last_appointment: null,
+      collaborator: null,
+      address: null,
+      description: [task.title, task.desc].filter(Boolean).join('\n\n'),
+      observation: `Criado a partir do card do Kanban (${task.id})`,
       company_id: currentCompany.id,
       created_by: currentUser,
+      google_event_id: null,
     };
     const { error } = await supabase.from('activities').insert([payload]);
     if (!error) {
@@ -357,11 +361,13 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       setTimeout(() => setCrossModuleToast(null), 3500);
       if (onNavigate) {
         setDetailTask(null);
+        setResponseTask(null);
         onNavigate('activities');
       }
     } else {
-      setCrossModuleToast('Erro ao criar atividade.');
-      setTimeout(() => setCrossModuleToast(null), 3500);
+      console.error('[handleCreateActivity] Supabase error:', error);
+      setCrossModuleToast('Erro ao criar atividade: ' + (error.message || 'verifique o console'));
+      setTimeout(() => setCrossModuleToast(null), 4000);
     }
   };
   // ────────────────────────────────────────────────────────────────────────────
@@ -800,7 +806,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       const rolledBack = tasks.filter(t => t.id !== newId);
       setTasks(rolledBack);
       localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(rolledBack));
-      alert('Erro ao salvar no banco. O card foi removido.');
+      alert(`Erro ao salvar no banco: ${error.message || 'Erro desconhecido'}. O card foi removido.`);
     } else {
       if (formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
     }
