@@ -760,132 +760,143 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
 
   const handleAddTask = async (e) => {
     e.preventDefault();
-    if (!formTitle.trim()) return;
+    try {
+      if (!formTitle || !formTitle.trim()) return;
 
-    const targetCol = formColumn || newTaskCol || 'backlog';
-    const newId = `t_${Date.now()}`;
-    const newTask = {
-      id: newId,
-      column_id: targetCol,
-      title: formTitle.trim(),
-      description: formDesc.trim(),
-      tag: 'New',
-      tag_color: 'green',
-      deadline: formDeadline || null,
-      assignees: formAssignees,
-      comments: [],
-      company_id: currentCompany?.id,
-      project_id: projectId,
-      customer_name: formCustomer,
-      priority: formPriority || 'media'
-    };
+      const targetCol = formColumn || newTaskCol || 'backlog';
+      const newId = `t_${Date.now()}`;
+      const newTask = {
+        id: newId,
+        column_id: targetCol,
+        title: formTitle.trim(),
+        description: (formDesc || '').trim(),
+        tag: 'New',
+        tag_color: 'green',
+        deadline: formDeadline || null,
+        assignees: formAssignees || [],
+        comments: [],
+        company_id: currentCompany?.id,
+        project_id: projectId,
+        customer_name: formCustomer || '',
+        priority: formPriority || 'media'
+      };
 
-    // Optimistic Mapping
-    const mapped = {
-      ...newTask,
-      columnId: targetCol,
-      desc: formDesc.trim(),
-      tagColor: 'green',
-      projectId,
-      companyId: currentCompany?.id,
-      priority: formPriority || 'media'
-    };
+      // Optimistic Mapping
+      const mapped = {
+        ...newTask,
+        columnId: targetCol,
+        desc: (formDesc || '').trim(),
+        tagColor: 'green',
+        projectId,
+        companyId: currentCompany?.id,
+        priority: formPriority || 'media'
+      };
 
-    // 1. Update State & Cache Immediately
-    const updatedTasks = [...tasks, mapped];
-    setTasks(updatedTasks);
-    localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
-    setIsAddingTask(false);
+      // 1. Update State & Cache Immediately
+      const updatedTasks = [...tasks, mapped];
+      setTasks(updatedTasks);
+      localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(updatedTasks));
+      setIsAddingTask(false);
 
-    // 2. Persist to DB in background
-    const { error } = await supabase.from('tasks').insert([newTask]);
+      // 2. Persist to DB in background
+      const { error } = await supabase.from('tasks').insert([newTask]);
 
-    if (error) {
-      console.error('Error adding task:', error);
-      // Rollback on error
-      const rolledBack = tasks.filter(t => t.id !== newId);
-      setTasks(rolledBack);
-      localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(rolledBack));
-      alert(`Erro ao salvar no banco: ${error.message || 'Erro desconhecido'}. O card foi removido.`);
-    } else {
-      if (formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
+      if (error) {
+        console.error('Error adding task:', error);
+        // Rollback on error
+        const rolledBack = tasks.filter(t => t.id !== newId);
+        setTasks(rolledBack);
+        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(rolledBack));
+        alert(`Erro ao salvar no banco: ${error.message || 'Erro desconhecido'}. O card foi removido.`);
+      } else {
+        if (formAssignees && formAssignees.length > 0) notifyAssignment(mapped, formAssignees, currentUser);
+      }
+    } catch (err) {
+      console.error("Exception in handleAddTask:", err);
+      alert("Erro ao adicionar tarefa: " + err.message);
     }
   };
 
   const handleUpdateTask = async (e) => {
     e.preventDefault();
-    if (!formTitle.trim()) return;
-    const prevTask = editingTask;
-    const isCrmOverride = prevTask.id.toString().startsWith('crm-oc-');
+    try {
+      if (!formTitle || !formTitle.trim()) return;
+      const prevTask = editingTask;
+      const isCrmOverride = prevTask.id.toString().startsWith('crm-oc-');
 
-    const payload = {
-      title: formTitle.trim(),
-      description: formDesc.trim(),
-      deadline: formDeadline || null,
-      assignees: formAssignees,
-      ai_response: null,
-      customer_name: formCustomer,
-      priority: formPriority || 'media',
-      column_id: formColumn || prevTask.columnId || 'backlog'
-    };
-
-    let error;
-    if (isCrmOverride) {
-      const upsertPayload = {
-        id: prevTask.id,
-        column_id: formColumn || prevTask.columnId || 'backlog',
-        project_id: projectId,
-        company_id: currentCompany?.id,
+      const payload = {
         title: formTitle.trim(),
-        description: formDesc.trim(),
+        description: (formDesc || '').trim(),
         deadline: formDeadline || null,
-        assignees: formAssignees,
-        ai_response: formAiResponse.trim() || null,
-        customer_name: formCustomer,
-        priority: formPriority || 'media'
-      };
-      const res = await supabase.from('tasks').upsert(upsertPayload);
-      error = res.error;
-    } else {
-      const res = await supabase.from('tasks').update(payload).eq('id', prevTask.id);
-      error = res.error;
-    }
-
-    if (!error) {
-      const updatedTask = {
-        ...prevTask,
-        title: formTitle.trim(),
-        desc: formDesc.trim(),
-        deadline: formDeadline || null,
-        assignees: formAssignees,
-        aiResponse: isCrmOverride ? (formAiResponse.trim() || null) : null,
-        isAiLoading: false,
+        assignees: formAssignees || [],
+        ai_response: null,
+        customer_name: formCustomer || '',
         priority: formPriority || 'media',
-        columnId: formColumn || prevTask.columnId || 'backlog'
+        column_id: formColumn || prevTask.columnId || 'backlog'
       };
-      
-      setTasks(prev => {
-        const exists = prev.some(t => t.id === prevTask.id);
-        const next = exists
-          ? prev.map(t => t.id === prevTask.id ? updatedTask : t)
-          : [...prev, {
-              ...updatedTask,
-              column_id: prevTask.columnId,
-              project_id: projectId,
-              company_id: currentCompany?.id,
-              columnId: prevTask.columnId,
-              projectId: projectId,
-              companyId: currentCompany?.id
-            }];
-        localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
-        return next;
-      });
-      
-      const newAssignees = formAssignees.filter(e => !(prevTask.assignees || []).includes(e));
-      if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
-      setEditingTask(null);
-    } else {
-      console.error('Error updating task:', error);
+
+      let error;
+      if (isCrmOverride) {
+        const upsertPayload = {
+          id: prevTask.id,
+          column_id: formColumn || prevTask.columnId || 'backlog',
+          project_id: projectId,
+          company_id: currentCompany?.id,
+          title: formTitle.trim(),
+          description: (formDesc || '').trim(),
+          deadline: formDeadline || null,
+          assignees: formAssignees || [],
+          ai_response: (formAiResponse || '').trim() || null,
+          customer_name: formCustomer || '',
+          priority: formPriority || 'media'
+        };
+        const res = await supabase.from('tasks').upsert(upsertPayload);
+        error = res.error;
+      } else {
+        const res = await supabase.from('tasks').update(payload).eq('id', prevTask.id);
+        error = res.error;
+      }
+
+      if (!error) {
+        const updatedTask = {
+          ...prevTask,
+          title: formTitle.trim(),
+          desc: (formDesc || '').trim(),
+          deadline: formDeadline || null,
+          assignees: formAssignees || [],
+          aiResponse: isCrmOverride ? ((formAiResponse || '').trim() || null) : null,
+          isAiLoading: false,
+          priority: formPriority || 'media',
+          columnId: formColumn || prevTask.columnId || 'backlog'
+        };
+        
+        setTasks(prev => {
+          const exists = prev.some(t => t.id === prevTask.id);
+          const next = exists
+            ? prev.map(t => t.id === prevTask.id ? updatedTask : t)
+            : [...prev, {
+                ...updatedTask,
+                column_id: prevTask.columnId,
+                project_id: projectId,
+                company_id: currentCompany?.id,
+                columnId: prevTask.columnId,
+                projectId: projectId,
+                companyId: currentCompany?.id
+              }];
+          localStorage.setItem(`kanban_tasks_${projectId}`, JSON.stringify(next));
+          return next;
+        });
+        
+        const newAssignees = (formAssignees || []).filter(e => !(prevTask.assignees || []).includes(e));
+        if (newAssignees.length > 0) notifyAssignment(updatedTask, newAssignees, currentUser);
+        setEditingTask(null);
+      } else {
+        console.error('Error updating task:', error);
+        alert(`Erro ao atualizar no banco: ${error.message || 'Erro desconhecido'}`);
+      }
+    } catch (err) {
+      console.error("Exception in handleUpdateTask:", err);
+      alert("Erro ao atualizar tarefa: " + err.message);
     }
   };
 
