@@ -32,5 +32,15 @@ CREATE POLICY "RLS_Profiles" ON public.profiles FOR ALL TO authenticated
     USING (user_id::text = auth.uid()::text OR email = auth.jwt()->>'email')
     WITH CHECK (user_id::text = auth.uid()::text OR email = auth.jwt()->>'email');
 
+-- 3. Limpar e recriar Políticas RLS na tabela Tasks
+-- Garante que usem a função centralizada que aceita validação por email do JWT.
+DROP POLICY IF EXISTS "Users can only see their own company's tasks" ON public.tasks;
+DROP POLICY IF EXISTS "Tasks Isolation" ON public.tasks;
+
+CREATE POLICY "Tasks Isolation" ON public.tasks FOR ALL TO authenticated
+    USING (check_company_access(company_id))
+    WITH CHECK (check_company_access(company_id));
+
 -- Notifica o PostgREST para recarregar o esquema
 NOTIFY pgrst, 'reload schema';
+
