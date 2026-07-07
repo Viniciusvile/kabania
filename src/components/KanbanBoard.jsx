@@ -467,9 +467,13 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
     if (selectedCondominioId) {
       const selectedNome = condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome ||
                            crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
+      
+      const normalize = (name) => name ? name.replace(/\s*\(crm\)$/i, '').trim().toLowerCase() : '';
+      const targetNome = normalize(selectedNome);
+
       return visible.filter(t =>
         String(t.condominio_id) === String(selectedCondominioId) ||
-        (t.customer_name && selectedNome && t.customer_name.toLowerCase() === selectedNome.toLowerCase())
+        (t.customer_name && targetNome && normalize(t.customer_name) === targetNome)
       );
     }
 

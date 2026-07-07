@@ -64,10 +64,11 @@ export default function ShiftsModule({
     
     const merged = [...local, ...crmMapped];
     if (selectedCondominioId && selectedCondominioNome) {
-      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      const normalize = (name) => name ? name.replace(/\s*\(crm\)$/i, '').trim().toLowerCase() : '';
+      const targetNome = normalize(selectedCondominioNome);
       return merged.filter(e => 
         String(e.condominio_id) === String(selectedCondominioId) ||
-        (e.condominio_nome && e.condominio_nome.toLowerCase() === selectedNomeLower) ||
+        (e.condominio_nome && targetNome && normalize(e.condominio_nome) === targetNome) ||
         !e.id?.toString().startsWith('crm-')
       );
     }
@@ -159,10 +160,11 @@ export default function ShiftsModule({
     const combined = [...kanbanTasks, ...crmTasks];
 
     if (selectedCondominioId && selectedCondominioNome) {
-      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      const normalize = (name) => name ? name.replace(/\s*\(crm\)$/i, '').trim().toLowerCase() : '';
+      const targetNome = normalize(selectedCondominioNome);
       return combined.filter(t => 
         String(t.condominio_id) === String(selectedCondominioId) ||
-        (t.customer_name && t.customer_name.toLowerCase() === selectedNomeLower)
+        (t.customer_name && targetNome && normalize(t.customer_name) === targetNome)
       );
     }
     return combined;
@@ -184,16 +186,17 @@ export default function ShiftsModule({
     let routines = pendingActivities.filter(p => p.source === 'activity');
 
     if (selectedCondominioId && selectedCondominioNome) {
-      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      const normalize = (name) => name ? name.replace(/\s*\(crm\)$/i, '').trim().toLowerCase() : '';
+      const targetNome = normalize(selectedCondominioNome);
       srs = srs.filter(p => 
         String(p.condominio_id) === String(selectedCondominioId) ||
-        (p.customer_name && p.customer_name.toLowerCase() === selectedNomeLower) ||
-        (p.location && p.location.toLowerCase().includes(selectedNomeLower))
+        (p.customer_name && targetNome && normalize(p.customer_name) === targetNome) ||
+        (p.location && targetNome && normalize(p.location).includes(targetNome))
       );
       routines = routines.filter(p => 
         String(p.condominio_id) === String(selectedCondominioId) ||
-        (p.customer_name && p.customer_name.toLowerCase() === selectedNomeLower) ||
-        (p.location && p.location.toLowerCase().includes(selectedNomeLower))
+        (p.customer_name && targetNome && normalize(p.customer_name) === targetNome) ||
+        (p.location && targetNome && normalize(p.location).includes(targetNome))
       );
     }
 
@@ -318,18 +321,19 @@ export default function ShiftsModule({
 
     // Filter by Condominium
     if (selectedCondominioId && selectedCondominioNome) {
-      const selectedNomeLower = selectedCondominioNome.toLowerCase();
+      const normalize = (name) => name ? name.replace(/\s*\(crm\)$/i, '').trim().toLowerCase() : '';
+      const targetNome = normalize(selectedCondominioNome);
       result = result.filter(s => {
         // 1. Check if any assigned employee matches the condominio_id or condominio_nome
         const matchesEmployee = s.assigned_employees?.some(e => 
           String(e.condominio_id) === String(selectedCondominioId) ||
-          (e.condominio_nome && e.condominio_nome.toLowerCase() === selectedNomeLower)
+          (e.condominio_nome && targetNome && normalize(e.condominio_nome) === targetNome)
         );
         if (matchesEmployee) return true;
 
         // 2. Check if the environment name matches the condominium name
         const envName = s.work_environments?.name || '';
-        if (envName.toLowerCase().includes(selectedNomeLower)) return true;
+        if (targetNome && normalize(envName).includes(targetNome)) return true;
 
         // 3. Check if notes has a KANBAN_ID of a task that matches the condominium
         const kanbanId = getKanbanId(s.notes);
@@ -337,14 +341,14 @@ export default function ShiftsModule({
           const linkedTask = mergedKanbanTasks.find(t => t.id === kanbanId);
           if (linkedTask) {
             if (String(linkedTask.condominio_id) === String(selectedCondominioId) ||
-                (linkedTask.customer_name && linkedTask.customer_name.toLowerCase() === selectedNomeLower)) {
+                (linkedTask.customer_name && targetNome && normalize(linkedTask.customer_name) === targetNome)) {
               return true;
             }
           }
         }
 
         // 4. Check if the notes text itself contains the condominium name
-        if (s.notes && s.notes.toLowerCase().includes(selectedNomeLower)) return true;
+        if (s.notes && targetNome && normalize(s.notes).includes(targetNome)) return true;
 
         return false;
       });
