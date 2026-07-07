@@ -739,7 +739,18 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
   const openAddModal = (colId) => {
     setNewTaskCol(colId);
     setFormTitle(''); setFormDesc(''); setFormDeadline(''); setFormAssignees([]);
-    setFormCustomer(''); setFormAiResponse(''); setFormPriority('media');
+    
+    let defaultCustomer = '';
+    if (selectedCondominioId) {
+      const selectedNome = condominios.find(c => String(c.id) === String(selectedCondominioId))?.nome ||
+                           crmOcorrencias.find(c => String(c.condominio_id) === String(selectedCondominioId))?.condominio_nome;
+      if (selectedNome) {
+        defaultCustomer = selectedNome;
+      }
+    }
+    setFormCustomer(defaultCustomer);
+
+    setFormAiResponse(''); setFormPriority('media');
     setFormColumn(colId || 'backlog'); setDescExpanded(false); setOpenPopover(null);
     setIsAddingTask(true);
   };
