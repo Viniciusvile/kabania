@@ -62,6 +62,17 @@ function SortableTaskCard({ task, onDelete, onDismiss, onEdit, onOpenDetail, onO
   const deadlineStatus = getDeadlineStatus(task.deadline);
   const commentCount = task.comments?.length || 0;
 
+  const handleFinalizeCrm = async (e) => {
+    e.stopPropagation();
+    try {
+      const responseMsg = task.aiResponse || 'Ocorrência resolvida via painel de projetos.';
+      await resolveCrmOccurrence(task.id, responseMsg);
+    } catch (err) {
+      console.error("Error finalizing CRM task:", err);
+    }
+    onDismiss(task.id);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -180,6 +191,16 @@ function SortableTaskCard({ task, onDelete, onDismiss, onEdit, onOpenDetail, onO
           )}
         </div>
       </div>
+      {task.columnId === 'done' && task.source === 'crm' && (
+        <button
+          onClick={handleFinalizeCrm}
+          onPointerDown={e => e.stopPropagation()}
+          className="mt-2 w-full py-1.5 px-3 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1 transition-all pointer-events-auto"
+          style={{ background: '#16a34a', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '4px', marginTop: '8px', padding: '6px 12px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', width: '100%', fontSize: '11px' }}
+        >
+          <CheckCircle size={12} /> Concluir no CRM
+        </button>
+      )}
     </div>
   );
 }
@@ -1188,13 +1209,6 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
           supabase.from('tasks').upsert(payload).then(({ error }) => {
             if (error) console.error('Error persisting CRM override column in DB:', error);
           });
-
-          // Se foi movido para Done, envia a resolução para a API do CRM
-          if (newColId === 'done') {
-            const responseMsg = currentTask.aiResponse || 'Ocorrência resolvida via painel de projetos.';
-            console.log(`[CRM Resolve] Resolvendo ocorrência ${currentTask.id} no CRM com a mensagem: "${responseMsg}"`);
-            resolveCrmOccurrence(currentTask.id, responseMsg);
-          }
         }
         setActiveTask(null);
         setDragStartColumn(null);
