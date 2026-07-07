@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -51,7 +51,7 @@ export default function AIInsights({ currentUser, currentCompany }) {
       // Fetch Kanban Tasks
       const { data: tasks, error: tError } = await supabase
         .from('tasks')
-        .select('*')
+        .select('id, column_id, title, description, tag, tag_color, deadline, assignees, comments, company_id, project_id, customer_name, priority, ai_response, created_at')
         .eq('company_id', currentCompany.id);
 
       // Fetch Activities
@@ -113,7 +113,7 @@ export default function AIInsights({ currentUser, currentCompany }) {
     let res = '';
     
     // Refresh data before analysis to ensure Gemini has latest context
-    const { data: tasks } = await supabase.from('tasks').select('*').eq('company_id', currentCompany.id);
+    const { data: tasks } = await supabase.from('tasks').select('id, column_id, title, description, tag, tag_color, deadline, assignees, comments, company_id, project_id, customer_name, priority, ai_response, created_at').eq('company_id', currentCompany.id);
     const { data: activities } = await supabase.from('activities').select('*').eq('company_id', currentCompany.id);
 
     const coName = currentCompany?.name || 'Empresa';

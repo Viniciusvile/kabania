@@ -563,7 +563,7 @@ export default function KanbanBoard({ searchQuery = '', currentUser = 'default',
       // 2. BACKGROUND SYNC
       const { data, error } = await supabase
         .from('tasks')
-        .select('*')
+        .select('id, column_id, title, description, tag, tag_color, deadline, assignees, comments, company_id, project_id, customer_name, priority, ai_response, created_at')
         .eq('project_id', projectId);
 
       if (!error && data) {
